@@ -310,7 +310,23 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .rwcard p{color:var(--mu);margin-bottom:22px;font-size:.9rem}
 .rwclose{padding:11px 30px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer}
 
-/* LIFE AREA COLORS */
+/* VISION PROCESS */
+.vision-step-card{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1.5px solid var(--bo);border-radius:var(--r2);background:var(--bg);cursor:pointer;transition:all .2s}
+.vision-step-card:hover{border-color:var(--p);background:#EEF2FF;transform:translateX(3px)}
+.vision-step-card.completed{border-color:var(--ok);background:#F0FDF4}
+.vstep-num{width:28px;height:28px;border-radius:50%;background:var(--bo);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;color:var(--mu);flex-shrink:0}
+.vision-step-card.completed .vstep-num{background:var(--ok);color:#fff}
+.vstep-info{flex:1}
+.vstep-title{font-size:.9rem;font-weight:700;color:var(--txt)}
+.vstep-desc{font-size:.77rem;color:var(--mu);margin-top:2px}
+.vstep-status{font-size:1rem;color:var(--mu);font-weight:700}
+.vision-step-card.completed .vstep-status{color:var(--ok)}
+.vai-msg{max-width:88%;padding:11px 14px;border-radius:var(--r2);font-size:.86rem;line-height:1.6}
+.vai-msg.bot{background:var(--card);border:1.5px solid var(--bo);align-self:flex-start;border-bottom-left-radius:4px}
+.vai-msg.user{background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.vai-msg.thinking{opacity:.55;font-style:italic;background:var(--card);border:1.5px solid var(--bo);align-self:flex-start}
+.vision-summary-block{border-radius:var(--r2);padding:14px 16px;margin-bottom:12px;border:1.5px solid var(--bo)}
+
 .la-career{background:linear-gradient(135deg,#7C9EE8,#5B7FD4)}
 .la-health{background:linear-gradient(135deg,#6DC98A,#4CAF72)}
 .la-relations{background:linear-gradient(135deg,#F4A96A,#E87E3A)}
@@ -453,29 +469,99 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
     <!-- VISION -->
     <div class="tpanel" id="tab-vision">
-      <div class="sec">
-        <div class="shdr"><div class="stitle">🌟 Meine Lebensvision</div><button class="addbtn" onclick="saveVision()">Speichern</button></div>
-        <p class="sdesc">Deine Vision ist der Nordstern für all deine Entscheidungen und Aufgaben. Nimm dir Zeit, sie tief zu verankern.</p>
-        <div style="margin-bottom:16px">
-          <div class="flbl">Meine übergeordnete Lebensvision (in 5 Jahren)</div>
-          <textarea class="ta" id="vision-5y" placeholder="Wie sieht mein ideales Leben in 5 Jahren aus? Was habe ich erreicht? Wie fühle ich mich? Wer bin ich geworden?" style="min-height:100px"></textarea>
+
+      <!-- VISION PROCESS -->
+      <div class="sec" id="vision-process-sec">
+        <div class="shdr">
+          <div>
+            <div class="stitle">🌟 Deine Lebensvision</div>
+            <div style="font-size:.8rem;color:var(--mu);margin-top:2px">KI-begleitet · psychologisch fundiert</div>
+          </div>
+          <div style="display:flex;gap:7px">
+            <button class="addbtn" onclick="startVisionProcess()" id="vision-start-btn">🚀 Vision-Prozess starten</button>
+            <button onclick="showVisionSummary()" style="padding:9px 14px;border:2px solid var(--bo);background:none;border-radius:var(--r2);cursor:pointer;font-size:.85rem;font-weight:700;color:var(--mu)">📋 Übersicht</button>
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-          <div><div class="flbl">In 1 Jahr</div><textarea class="ta" id="vision-1y" placeholder="Was will ich in 1 Jahr erreicht haben?" style="min-height:80px"></textarea></div>
-          <div><div class="flbl">In 3 Jahren</div><textarea class="ta" id="vision-3y" placeholder="Was will ich in 3 Jahren erreicht haben?" style="min-height:80px"></textarea></div>
-        </div>
-        <div style="margin-bottom:16px">
-          <div class="flbl">Meine Kernwerte (was ist mir im Leben wirklich wichtig?)</div>
-          <textarea class="ta" id="vision-values" placeholder="z.B. Familie, Freiheit, Wachstum, Gesundheit, Kreativität, Ehrlichkeit..."></textarea>
-        </div>
-        <div style="margin-bottom:16px">
-          <div class="flbl">Meine tägliche Affirmation</div>
-          <textarea class="ta" id="vision-affirmation" placeholder="z.B. Ich bin fokussiert, diszipliniert und erschaffe jeden Tag mein bestes Leben." style="min-height:60px"></textarea>
+        <p class="sdesc">Eine Vision die sich wirklich verankert entsteht durch einen Prozess – nicht durch einmaliges Aufschreiben. Lass dich von FocusAI durch 5 psychologisch fundierte Schritte begleiten.</p>
+
+        <!-- PROCESS STEPS OVERVIEW -->
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px" id="vision-steps-overview">
+          <div class="vision-step-card" id="vstep-0" onclick="startVisionProcess(0)">
+            <div class="vstep-num">1</div>
+            <div class="vstep-info"><div class="vstep-title">⚰️ Die Sterbebett-Frage</div><div class="vstep-desc">Was muss passiert sein damit du ohne Reue stirbst?</div></div>
+            <div class="vstep-status" id="vstatus-0">○</div>
+          </div>
+          <div class="vision-step-card" id="vstep-1" onclick="startVisionProcess(1)">
+            <div class="vstep-num">2</div>
+            <div class="vstep-info"><div class="vstep-title">☀️ Dein idealer Tag</div><div class="vstep-desc">Wie sieht dein perfekter Alltag in 5 Jahren aus?</div></div>
+            <div class="vstep-status" id="vstatus-1">○</div>
+          </div>
+          <div class="vision-step-card" id="vstep-2" onclick="startVisionProcess(2)">
+            <div class="vstep-num">3</div>
+            <div class="vstep-info"><div class="vstep-title">💎 Deine Kernwerte</div><div class="vstep-desc">Was ist dir im Leben wirklich am wichtigsten?</div></div>
+            <div class="vstep-status" id="vstatus-2">○</div>
+          </div>
+          <div class="vision-step-card" id="vstep-3" onclick="startVisionProcess(3)">
+            <div class="vstep-num">4</div>
+            <div class="vstep-info"><div class="vstep-title">🧠 Limitierende Glaubenssätze</div><div class="vstep-desc">Was hält dich innerlich zurück?</div></div>
+            <div class="vstep-status" id="vstatus-3">○</div>
+          </div>
+          <div class="vision-step-card" id="vstep-4" onclick="startVisionProcess(4)">
+            <div class="vstep-num">5</div>
+            <div class="vstep-info"><div class="vstep-title">✍️ Deine Vision formulieren</div><div class="vstep-desc">1, 3 und 5 Jahre – in Gegenwartsform</div></div>
+            <div class="vstep-status" id="vstatus-4">○</div>
+          </div>
+          <div class="vision-step-card" id="vstep-5" onclick="startVisionProcess(5)">
+            <div class="vstep-num">6</div>
+            <div class="vstep-info"><div class="vstep-title">💫 Deine Affirmation</div><div class="vstep-desc">Dein täglicher Anker in einem Satz</div></div>
+            <div class="vstep-status" id="vstatus-5">○</div>
+          </div>
         </div>
       </div>
+
+      <!-- VISION AI PROCESS MODAL AREA (inline) -->
+      <div class="sec" id="vision-ai-sec" style="display:none">
+        <div class="shdr">
+          <div>
+            <div class="stitle" id="vision-step-title">Schritt 1</div>
+            <div style="font-size:.8rem;color:var(--mu);margin-top:2px" id="vision-step-subtitle"></div>
+          </div>
+          <button onclick="closeVisionProcess()" style="padding:7px 13px;border:2px solid var(--bo);background:none;border-radius:var(--r2);cursor:pointer;font-size:.82rem;font-weight:700;color:var(--mu)">✕ Schließen</button>
+        </div>
+
+        <!-- STEP PROGRESS -->
+        <div style="display:flex;gap:4px;margin-bottom:16px" id="vision-step-progress"></div>
+
+        <!-- AI CHAT FOR THIS STEP -->
+        <div style="height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px;margin-bottom:12px;border:1.5px solid var(--bo);border-radius:var(--r2);background:var(--bg)" id="vision-ai-messages"></div>
+
+        <!-- USER INPUT -->
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <textarea class="ta" id="vision-ai-input" placeholder="Schreibe deine Antwort..." style="min-height:70px;flex:1" onkeydown="if(event.key==='Enter'&&event.ctrlKey)sendVisionMessage()"></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="addbtn" onclick="sendVisionMessage()" id="vision-send-btn" style="flex:2">Antworten ↑</button>
+          <button onclick="saveVisionStepAndContinue()" class="addbtn" id="vision-save-btn" style="flex:2;background:linear-gradient(135deg,var(--ok),#4CAF72)">✓ Speichern & weiter</button>
+        </div>
+        <div style="margin-top:10px;font-size:.78rem;color:var(--mu);text-align:center">Strg+Enter zum Senden · Speichern wenn du bereit bist für den nächsten Schritt</div>
+      </div>
+
+      <!-- VISION SUMMARY -->
+      <div class="sec" id="vision-summary-sec" style="display:none">
+        <div class="shdr">
+          <div class="stitle">📋 Meine Lebensvision</div>
+          <div style="display:flex;gap:7px">
+            <button class="addbtn" onclick="startVisionProcess()" style="font-size:.82rem">✏️ Bearbeiten</button>
+            <button onclick="hideVisionSummary()" style="padding:9px 14px;border:2px solid var(--bo);background:none;border-radius:var(--r2);cursor:pointer;font-size:.82rem;font-weight:700;color:var(--mu)">✕</button>
+          </div>
+        </div>
+        <div id="vision-summary-content"></div>
+      </div>
+
+      <!-- LIFE AREAS -->
       <div class="sec">
         <div class="shdr"><div class="stitle">🎯 Lebensbereiche</div></div>
-        <p class="sdesc">Klicke auf einen Bereich um deine Vision und Ziele dafür zu definieren. Aufgaben können einem Bereich zugeordnet werden.</p>
+        <p class="sdesc">Klicke auf einen Bereich um deine Vision und Ziele dafür zu definieren. FocusAI hilft dir dabei.</p>
         <div class="life-grid" id="life-grid"></div>
         <div id="life-detail" style="display:none">
           <div class="flbl" id="life-detail-label">Vision für diesen Bereich</div>
@@ -1020,22 +1106,237 @@ async function saveEveningData(){
   toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
 }
 
-// ── VISION ──
-async function saveVision(){
-  D.vision={y5:gv('vision-5y'),y3:gv('vision-3y'),y1:gv('vision-1y'),values:gv('vision-values'),affirmation:gv('vision-affirmation')};
-  await saveProfile();toast('🌟 Vision gespeichert! Sie leitet jetzt all deine Entscheidungen.');
-}
-function renderVision(){
-  if(D.vision){
-    const f=id=>document.getElementById(id);
-    if(D.vision.y5)f('vision-5y').value=D.vision.y5;
-    if(D.vision.y3)f('vision-3y').value=D.vision.y3;
-    if(D.vision.y1)f('vision-1y').value=D.vision.y1;
-    if(D.vision.values)f('vision-values').value=D.vision.values;
-    if(D.vision.affirmation)f('vision-affirmation').value=D.vision.affirmation;
+// ── VISION AI PROCESS ──
+const VISION_STEPS=[
+  {
+    id:'deathbed',title:'⚰️ Die Sterbebett-Frage',subtitle:'Was wirklich zählt im Leben',
+    systemPrompt:`Du begleitest den Nutzer durch die "Sterbebett-Frage" – eine der kraftvollsten Übungen der Positiven Psychologie (basierend auf Bronnie Wares Forschung zu den größten Lebensreue-Momenten und Viktor Frankls Logotherapie).
+
+Dein Ziel: Den Nutzer tief in seine echten Werte und Prioritäten führen, fernab gesellschaftlicher Erwartungen.
+
+Starte mit einer warmen, einladenden Einführung dieser Übung. Stelle dann die zentrale Frage: "Stell dir vor, du bist 85 Jahre alt und schaust auf dein Leben zurück. Was muss passiert sein – in deinen Beziehungen, deiner Arbeit, deinem inneren Leben – damit du mit einem Lächeln sagen kannst: Ich habe wirklich gelebt. Ich bereue nichts."
+
+Wenn der Nutzer antwortet, vertiefe mit 2-3 Folgefragen wie:
+- "Was davon wäre für dich das Allerwichtigste?"
+- "Gibt es etwas das du heute tust das dich von diesem Leben wegführt?"
+- "Welche Angst oder welcher Glaubenssatz hält dich davon ab?"
+
+Sei einfühlsam, tiefgründig und ermutigend. Keine oberflächlichen Antworten akzeptieren – freundlich nachhaken. Antworte auf Deutsch, max 150 Wörter.`,
+    startMessage:'👋 Willkommen beim Vision-Prozess! Ich werde dich durch 6 Schritte begleiten, die auf Erkenntnissen aus Positiver Psychologie, Logotherapie und Coaching basieren.\n\nWir beginnen mit der vielleicht kraftvollsten Frage überhaupt.\n\n**Stell dir vor: Du bist 85 Jahre alt, liegst in deinem Bett und schaust auf dein Leben zurück.**\n\nDein Körper ist ruhig, dein Geist klar. Neben dir sitzen die Menschen die dir wichtig sind.\n\nWas muss in deinem Leben passiert sein – in deinen Beziehungen, deiner Arbeit, deinem inneren Wachstum – damit du mit einem tiefen Lächeln sagen kannst:\n\n*„Ich habe wirklich gelebt. Ich bereue nichts."*\n\nNimm dir Zeit. Schreibe was dir wirklich in den Sinn kommt – ohne Filter.'
+  },
+  {
+    id:'idealday',title:'☀️ Dein idealer Tag',subtitle:'Dein Leben in 5 Jahren konkret vorstellen',
+    systemPrompt:`Du begleitest den Nutzer durch die "Idealer Tag"-Visualisierung – eine Technik aus dem Life Design (Stanford d.school) und dem mentalen Kontrastieren (Gabriele Oettingen, WOOP-Methode).
+
+Ziel: Eine lebhafte, emotionale und konkrete Vorstellung des gewünschten Lebens entwickeln.
+
+Bitte den Nutzer, seinen idealen Alltag in 5 Jahren so detailliert wie möglich zu beschreiben. Starte mit: "Es ist ein normaler Dienstag in deinem Leben in 5 Jahren. Du wachst auf..."
+
+Frage konkret nach:
+- Wo bist du physisch? Wie sieht deine Umgebung aus?
+- Was machst du beruflich? Wie fühlt sich deine Arbeit an?
+- Mit wem verbringst du Zeit? Wie sind deine Beziehungen?
+- Wie ist dein Körper? Deine Energie? Dein Geist?
+- Was hast du heute Abend erreicht? Wie schläfst du ein?
+
+Hilf dem Nutzer, von abstrakten Wünschen zu konkreten, sinnlichen Bildern zu kommen. Frage nach Gefühlen, nicht nur Fakten. Antworte auf Deutsch, max 150 Wörter.`,
+    startMessage:'☀️ Wunderbar. Jetzt machen wir das Abstrakte konkret.\n\n**Es ist ein ganz normaler Dienstag in deinem Leben – 5 Jahre von heute.**\n\nDein Wecker klingelt. Du öffnest die Augen.\n\nWo bist du? Wie riecht die Luft? Was siehst du als erstes? Wie fühlt sich dein Körper an wenn du aufstehst?\n\nBeschreibe mir diesen Tag so lebendig wie möglich – von dem Moment wo du aufwachst bis zu dem Moment wo du einschläfst.\n\nWas machst du? Mit wem? Wie fühlt sich deine Arbeit an? Wie sind deine Beziehungen? Was hast du am Abend erreicht?\n\n*Je konkreter und bildlicher, desto tiefer verankert sich deine Vision.*'
+  },
+  {
+    id:'values',title:'💎 Deine Kernwerte',subtitle:'Was dir wirklich am wichtigsten ist',
+    systemPrompt:`Du begleitest den Nutzer durch eine Werte-Klärung basierend auf ACT (Acceptance and Commitment Therapy, Steven Hayes) und Positive Psychologie (Martin Seligman).
+
+Ziel: Die echten, tief verwurzelten Werte des Nutzers herausarbeiten – nicht die gesellschaftlich erwarteten.
+
+Erkläre kurz den Unterschied zwischen Zielen (was wir haben wollen) und Werten (wie wir sein wollen). Werte sind Richtungen, keine Destinationen.
+
+Frage den Nutzer:
+- "In welchen Momenten deines Lebens hast du dich am lebendigsten gefühlt? Was war in diesen Momenten wichtig?"
+- "Was bringt dich auf wenn du siehst dass es in der Welt fehlt?"
+- "Wenn jemand deine Beerdigung hält – was sollen sie über dich sagen?"
+
+Hilf dem Nutzer, aus seinen Antworten 5-7 Kernwerte zu destillieren. Wichtig: Hinterfrage ob es wirklich SEINE Werte sind oder übernommene Werte (von Eltern, Gesellschaft). Antworte auf Deutsch, max 150 Wörter.`,
+    startMessage:'💎 Jetzt gehen wir tiefer.\n\nEs gibt einen wichtigen Unterschied den die meisten Menschen nie reflektieren:\n\n**Ziele** sind das was wir haben oder erreichen wollen.\n**Werte** sind das wie wir sein und leben wollen – jeden Tag, unabhängig von Ergebnissen.\n\nEine Vision die nicht aus echten Werten kommt, fühlt sich hohl an – und wird sabotiert.\n\nLass uns also deine echten Werte herausarbeiten.\n\n**Erste Frage:** Denk an die 3 Momente in deinem Leben wo du dich am lebendigsten, echtesten und erfülltesten gefühlt hast.\n\nWas war in diesen Momenten wichtig? Was hat diese Momente so besonders gemacht?\n\nNimm dir Zeit und beschreibe sie so genau du kannst.'
+  },
+  {
+    id:'beliefs',title:'🧠 Limitierende Glaubenssätze',subtitle:'Was dich innerlich zurückhält',
+    systemPrompt:`Du begleitest den Nutzer durch die Arbeit mit limitierenden Glaubenssätzen – basierend auf kognitiver Verhaltenstherapie (CBT), Narrative Therapy und Byron Katies "The Work".
+
+Ziel: Unbewusste, sabotierende Überzeugungen aufdecken und transformieren.
+
+Erkläre: Glaubenssätze sind Überzeugungen die wir über uns, andere und die Welt haben – meist unbewusst. Sie entstehen oft in der Kindheit und bestimmen was wir für möglich halten.
+
+Frage den Nutzer:
+- "Wenn du an deine Vision denkst – was sagt die kleine, kritische Stimme in dir sofort?"
+- "Welche Sätze hörst du wenn du groß träumst? (Ich bin nicht gut genug / Das ist nicht für mich / Ich verdiene das nicht...)"
+- "Woher kommen diese Überzeugungen? Von wem hast du sie übernommen?"
+
+Dann führe durch eine sanfte Transformation: Ist dieser Glaubenssatz wirklich wahr? Was wäre möglich wenn du ihn loslässt? Wie würde ein ermächtigender Gegensatz klingen?
+
+Sei besonders einfühlsam und nicht wertend. Antworte auf Deutsch, max 150 Wörter.`,
+    startMessage:'🧠 Wir machen jetzt etwas was die meisten Menschen meiden – aber es ist vielleicht der wichtigste Schritt.\n\nJeder von uns trägt innere Stimmen mit sich. Überzeugungen die uns sagen was möglich ist und was nicht. Was wir verdienen und was nicht.\n\nDiese Glaubenssätze entstehen oft früh im Leben – durch Erfahrungen, durch Menschen die wir geliebt haben, durch Misserfolge die wir falsch interpretiert haben.\n\n**Und sie sabotieren unsere Vision – still und effektiv.**\n\nHier ist meine erste Frage:\n\nWenn du an deine Vision denkst – an das Leben das du wirklich führen willst – **was sagt die kritische, zweifelnde Stimme in dir sofort?**\n\nSchreibe die ersten Gedanken auf die kommen. Ohne Filter. Ich verspreche dir – wir werden sie gemeinsam transformieren.'
+  },
+  {
+    id:'vision',title:'✍️ Deine Vision formulieren',subtitle:'In Gegenwartsform, mit Gefühl',
+    systemPrompt:`Du begleitest den Nutzer beim Formulieren seiner Lebensvision – basierend auf Erkenntnissen aus dem Neurolinguistischen Programmieren (NLP), Positive Psychology (Seligman) und dem Konzept des "Future Self" (Benjamin Hardy).
+
+Ziel: Eine kraftvolle, emotionale Vision in Gegenwartsform formulieren die das Nervensystem aktiviert.
+
+Erkläre: Unser Gehirn unterscheidet nicht zwischen lebhaft vorgestellter und erlebter Realität (mentale Simulation). Gegenwartsform aktiviert andere neuronale Muster als Zukunftsform.
+
+Hilf dem Nutzer basierend auf den vorigen Schritten eine Vision zu formulieren für:
+- 1 Jahr (konkret, erreichbar, spürbar)
+- 3 Jahre (mittelfristig, wachsend)
+- 5 Jahre (groß, mutig, erfüllend)
+
+Jede Vision soll:
+- In der Gegenwartsform sein ("Ich bin / Ich habe / Ich erlebe")
+- Ein Gefühl transportieren, nicht nur Fakten
+- Aus den echten Werten kommen
+- Spezifisch und bildlich sein
+
+Wenn der Nutzer formuliert, hilf ihm zu verfeinern: "Kannst du das noch konkreter machen? Was fühlst du dabei?" Antworte auf Deutsch, max 150 Wörter.`,
+    startMessage:'✍️ Jetzt kommt der Moment wo alles zusammenkommt.\n\nDu hast reflektiert was wirklich zählt. Du hast deinen idealen Tag beschrieben. Du kennst deine Werte. Du hast deine Glaubenssätze angeschaut.\n\nJetzt formulieren wir deine Vision – und wir tun es auf eine Weise die sich im Nervensystem verankert.\n\n**Wichtig:** Wir schreiben in der Gegenwartsform. Nicht "Ich will" oder "Ich werde" – sondern **"Ich bin", "Ich habe", "Ich lebe"**.\n\nUnser Gehirn verarbeitet das anders. Es fühlt sich vielleicht seltsam an – das ist gut so.\n\nStarten wir mit **einem Jahr von heute**.\n\nBeschreibe wer du in einem Jahr bist, was du erreichst hast, wie du dich fühlst – in Gegenwartsform, als wäre es schon Realität.\n\nWas kommt?'
+  },
+  {
+    id:'affirmation',title:'💫 Deine Affirmation',subtitle:'Dein täglicher Anker',
+    systemPrompt:`Du begleitest den Nutzer bei der Erstellung seiner persönlichen Affirmation – basierend auf Selbstaffirmationstheorie (Claude Steele), Neuroplastizität-Forschung und Dr. Shad Helmstettlers Arbeit zu "Self-Talk".
+
+Ziel: Eine Affirmation die sich echt anfühlt, emotional resoniert und täglich gesprochen werden kann.
+
+Erkläre: Affirmationen funktionieren nicht wenn sie sich leer oder gelogen anfühlen. Sie müssen:
+- Im Einklang mit echten Werten sein
+- Emotional resonieren ("Ich fühle" statt nur "Ich bin")
+- Spezifisch genug sein um real zu wirken
+- Kurz genug um täglich erinnerbar zu sein
+
+Hilf dem Nutzer eine 2-3 Satz Affirmation zu entwickeln die seine Vision destilliert. Teste gemeinsam: "Wenn du das laut liest – wie fühlt es sich an? Klingt es wahr? Was würde es noch echter machen?"
+
+Schließe den Prozess emotional ab: Beglückwünsche den Nutzer zu diesem wichtigen Schritt. Erkläre wie er die Affirmation täglich in der Morgenroutine nutzt. Antworte auf Deutsch, max 150 Wörter.`,
+    startMessage:'💫 Letzter Schritt – und vielleicht der der am stärksten in deinen Alltag wirkt.\n\nDeine Affirmation ist nicht ein motivierender Spruch aus dem Internet. Sie ist **dein persönlicher Anker** – destilliert aus allem was du in diesem Prozess entdeckt hast.\n\nSie wird jeden Morgen in deiner Routine erscheinen. Du wirst sie lesen, atmen, fühlen.\n\nEine gute Affirmation:\n✓ Fühlt sich wahr an – nicht aufgesetzt\n✓ Transportiert ein Gefühl, nicht nur Worte\n✓ Erinnert dich wer du bist und sein willst\n✓ Ist kurz genug um sie täglich zu sagen\n\nBasierend auf allem was wir erarbeitet haben – **was ist der Kern? Wer bist du? Wofür stehst du?**\n\nVersuche einmal 2-3 Sätze zu formulieren die sich tief und wahr anfühlen.'
   }
-  renderLifeGrid();
+];
+
+let visionStep=0,visionConversations={},currentVisionConv=[];
+
+function startVisionProcess(stepIdx=0){
+  visionStep=stepIdx!==undefined?stepIdx:0;
+  document.getElementById('vision-process-sec').style.display='block';
+  document.getElementById('vision-ai-sec').style.display='block';
+  document.getElementById('vision-summary-sec').style.display='none';
+  openVisionStep(visionStep);
 }
+function closeVisionProcess(){
+  document.getElementById('vision-ai-sec').style.display='none';
+  updateVisionStepsOverview();
+}
+function openVisionStep(idx){
+  visionStep=idx;
+  const step=VISION_STEPS[idx];
+  document.getElementById('vision-step-title').textContent=`Schritt ${idx+1}/6: ${step.title}`;
+  document.getElementById('vision-step-subtitle').textContent=step.subtitle;
+  // Progress dots
+  document.getElementById('vision-step-progress').innerHTML=VISION_STEPS.map((_,i)=>`<div style="flex:1;height:5px;border-radius:3px;background:${i<idx?'var(--ok)':i===idx?'var(--p)':'var(--bo)'}"></div>`).join('');
+  // Load or start conversation
+  currentVisionConv=visionConversations[step.id]||[];
+  const msgBox=document.getElementById('vision-ai-messages');
+  if(currentVisionConv.length===0){
+    // Start fresh with opening message
+    msgBox.innerHTML=`<div class="vai-msg bot">${step.startMessage.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>`;
+    currentVisionConv=[{role:'assistant',content:step.startMessage}];
+  } else {
+    msgBox.innerHTML=currentVisionConv.map(m=>`<div class="vai-msg ${m.role==='user'?'user':'bot'}">${m.content.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>`).join('');
+  }
+  document.getElementById('vision-ai-input').value='';
+  msgBox.scrollTop=msgBox.scrollHeight;
+}
+async function sendVisionMessage(){
+  const input=document.getElementById('vision-ai-input');
+  const msg=input.value.trim();if(!msg)return;
+  const step=VISION_STEPS[visionStep];
+  const btn=document.getElementById('vision-send-btn');btn.disabled=true;input.value='';
+  const msgBox=document.getElementById('vision-ai-messages');
+  msgBox.innerHTML+=`<div class="vai-msg user">${msg.replace(/\n/g,'<br>')}</div>`;
+  const thinking=document.createElement('div');thinking.className='vai-msg thinking';thinking.textContent='✨ Denke nach...';msgBox.appendChild(thinking);
+  msgBox.scrollTop=msgBox.scrollHeight;
+  currentVisionConv.push({role:'user',content:msg});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:step.systemPrompt+'\n\nNutzer-Kontext:\nBisherige Vision-Erkenntnisse: '+JSON.stringify(D.vision||{})+'\nKernwerte: '+(D.vision?.values||'noch nicht definiert'),messages:currentVisionConv})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'Entschuldigung, bitte versuche es erneut.';
+    currentVisionConv.push({role:'assistant',content:reply});
+    visionConversations[step.id]=[...currentVisionConv];
+    thinking.remove();
+    msgBox.innerHTML+=`<div class="vai-msg bot">${reply.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>`;
+  }catch(e){thinking.remove();msgBox.innerHTML+=`<div class="vai-msg bot">❌ Verbindungsfehler. Bitte versuche es erneut.</div>`;}
+  btn.disabled=false;msgBox.scrollTop=msgBox.scrollHeight;
+}
+async function saveVisionStepAndContinue(){
+  const step=VISION_STEPS[visionStep];
+  // Extract key content from conversation and save
+  if(!D.vision)D.vision={};
+  // Save conversation summary for this step
+  if(!D.vision.stepData)D.vision.stepData={};
+  D.vision.stepData[step.id]=currentVisionConv.filter(m=>m.role==='user').map(m=>m.content).join('\n\n');
+  // Special handling for specific steps
+  if(step.id==='values'){
+    const userTexts=currentVisionConv.filter(m=>m.role==='user').map(m=>m.content).join(' ');
+    D.vision.values=userTexts.slice(0,500);
+  }
+  if(step.id==='affirmation'){
+    const lastUser=currentVisionConv.filter(m=>m.role==='user').pop();
+    if(lastUser)D.vision.affirmation=lastUser.content.slice(0,300);
+  }
+  if(step.id==='vision'){
+    const userTexts=currentVisionConv.filter(m=>m.role==='user').map(m=>m.content).join('\n');
+    D.vision.y5=userTexts.slice(0,600);
+  }
+  // Ask AI to summarize this step
+  const summaryPrompt=`Fasse die wichtigsten Erkenntnisse des Nutzers aus diesem Gespräch in 2-3 prägnanten Sätzen zusammen. Nur die Essenz, keine Fragen mehr. Beginne mit "Deine Kernerkenntnisse:"`;
+  currentVisionConv.push({role:'user',content:summaryPrompt});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:step.systemPrompt,messages:currentVisionConv})});
+    const data=await res.json();
+    const summary=data.content?.[0]?.text||'';
+    if(!D.vision.summaries)D.vision.summaries={};
+    D.vision.summaries[step.id]=summary;
+  }catch(e){}
+  await saveProfile();
+  toast('✅ Schritt gespeichert!');
+  if(visionStep<VISION_STEPS.length-1){visionStep++;openVisionStep(visionStep);}
+  else{closeVisionProcess();toast('🌟 Vision-Prozess abgeschlossen! Deine Vision ist jetzt verankert!');showVisionSummary();}
+  updateVisionStepsOverview();
+}
+function updateVisionStepsOverview(){
+  VISION_STEPS.forEach((step,i)=>{
+    const card=document.getElementById('vstep-'+i);
+    const status=document.getElementById('vstatus-'+i);
+    const numEl=card?.querySelector('.vstep-num');
+    const hasData=D.vision?.stepData?.[step.id];
+    if(card){card.classList.toggle('completed',!!hasData);}
+    if(status)status.textContent=hasData?'✓':'○';
+    if(numEl&&hasData)numEl.style.background='var(--ok)';
+  });
+}
+function showVisionSummary(){
+  document.getElementById('vision-summary-sec').style.display='block';
+  const el=document.getElementById('vision-summary-content');
+  if(!D.vision||!D.vision.stepData){el.innerHTML='<div class="empty">Noch kein Vision-Prozess abgeschlossen.</div>';return;}
+  const summaries=D.vision.summaries||{};
+  const stepColors={deathbed:'#FEF9C3',idealday:'#DBEAFE',values:'#DCFCE7',beliefs:'#FEE2E2',vision:'#EDE9FE',affirmation:'#FFF7ED'};
+  el.innerHTML=VISION_STEPS.map(step=>{
+    const data=D.vision.stepData?.[step.id];
+    const summary=summaries[step.id];
+    if(!data&&!summary)return'';
+    return`<div class="vision-summary-block" style="background:${stepColors[step.id]||'var(--bg)'}">
+      <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px">${step.title}</div>
+      ${summary?`<div style="font-size:.87rem;line-height:1.6;color:var(--txt)">${summary.replace(/\n/g,'<br>')}</div>`:''}
+      ${D.vision.affirmation&&step.id==='affirmation'?`<div style="margin-top:10px;font-size:.95rem;font-weight:700;font-style:italic;color:#92400E;background:rgba(251,191,36,.2);border-radius:8px;padding:10px 13px">💫 "${D.vision.affirmation}"</div>`:''}
+    </div>`;
+  }).join('');
+}
+function hideVisionSummary(){document.getElementById('vision-summary-sec').style.display='none';}
+
 function renderLifeGrid(){
   const doneCounts={};
   D.tasks.forEach(t=>{if(t.lifeArea&&t.done)doneCounts[t.lifeArea]=(doneCounts[t.lifeArea]||0)+1;});
