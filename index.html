@@ -366,17 +366,28 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
     <!-- MORNING BANNER -->
     <div class="morning-banner" id="morning-banner" style="background:linear-gradient(135deg,#7C9EE8,#9B8EE8)">
-      <h2 id="morning-h">Guten Morgen! ☀️</h2>
-      <p id="morning-p">Wie startest du in den Tag?</p>
-      <div class="mood-row">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;width:100%">
+        <div style="flex:1">
+          <h2 id="morning-h">Guten Morgen! ☀️</h2>
+          <p id="morning-p">Wie startest du in den Tag?</p>
+        </div>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button onclick="openMorningRoutine()" style="padding:7px 14px;background:rgba(255,255,255,.25);border:none;border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s" id="morning-btn">🌅 Morgenroutine</button>
+          <button onclick="openEveningRoutine()" style="padding:7px 14px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s" id="evening-btn">🌙 Abendreflexion</button>
+        </div>
+      </div>
+      <div class="mood-row" style="margin-top:10px">
         <button class="mbtn" onclick="setMood('😴','Müde')">😴</button>
         <button class="mbtn" onclick="setMood('😔','Unmotiviert')">😔</button>
         <button class="mbtn" onclick="setMood('😐','Okay')">😐</button>
         <button class="mbtn" onclick="setMood('😊','Gut')">😊</button>
         <button class="mbtn" onclick="setMood('🔥','Fokussiert')">🔥</button>
-        <button onclick="openMorningRoutine()" style="margin-left:8px;padding:7px 14px;background:rgba(255,255,255,.25);border:none;border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s">🌅 Morgenroutine</button>
       </div>
-      <div class="morning-quote" id="morning-quote"></div>
+      <!-- TAGES-ZUSAMMENFASSUNG (nach Morgenroutine) -->
+      <div id="morning-summary" style="display:none;margin-top:12px;background:rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:.83rem;line-height:1.6">
+        <div id="morning-summary-content"></div>
+      </div>
+      <div class="morning-quote" id="morning-quote" style="margin-top:8px"></div>
     </div>
 
     <!-- STATS -->
@@ -397,7 +408,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="tbtn" onclick="showTab('gantt',this)">📊 Gantt</button>
       <button class="tbtn" onclick="showTab('wellbeing',this)">🧘 Wohlbefinden</button>
       <button class="tbtn" onclick="showTab('review',this)">🔄 Wochenrückblick</button>
-      <button class="tbtn" onclick="showTab('diary',this)">📓 Tagebuch</button>
+      <button class="tbtn" onclick="showTab('diary',this)">📓 Journal</button>
       <button class="tbtn" onclick="showTab('ai',this)">🤖 FocusAI</button>
       <button class="tbtn" onclick="showTab('analytics',this)">📈 Analytics</button>
     </div>
@@ -598,34 +609,44 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
     </div>
 
-    <!-- DIARY -->
+    <!-- JOURNAL -->
     <div class="tpanel" id="tab-diary">
       <div class="sec">
-        <div class="stitle" style="margin-bottom:5px">📓 Gewohnheits-Tagebuch</div>
-        <p class="sdesc">Dokumentiere Rückfälle und Gegenstrategien. Muster erkennen = Prokrastination besiegen.</p>
-        <div style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border-radius:var(--r2);padding:12px 15px;margin-bottom:14px;border:1px solid #BBF7D0;display:flex;align-items:center;gap:10px">
-          <div style="font-size:1.3rem;font-weight:800;color:var(--ok)" id="dcnt">0</div>
-          <div style="font-size:.82rem;color:#15803D;font-weight:700">Einträge insgesamt im Tagebuch</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
-          <div class="row">
-            <select class="sel" id="dcat" style="flex:1"><option value="aufschieben">📋 Aufschieben</option><option value="handy">📱 Handy</option><option value="ablenkung">🎮 Ablenkung</option><option value="essen">🍕 Essen</option><option value="sozial">💬 Soziale Medien</option><option value="sonstiges">📌 Sonstiges</option></select>
-            <input type="date" class="sel" id="ddate">
+        <div class="shdr">
+          <div class="stitle">📓 Tagesjournal</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="cal-nav" onclick="journalMove(-1)">‹</button>
+            <div id="journal-date-label" style="font-size:.85rem;font-weight:800;min-width:130px;text-align:center"></div>
+            <button class="cal-nav" onclick="journalMove(1)">›</button>
+            <button class="cal-nav" onclick="journalGoToday()" style="font-size:.75rem;padding:5px 10px">Heute</button>
           </div>
-          <textarea class="ta" id="dhabit" placeholder="😔 Was war die schlechte Angewohnheit?"></textarea>
-          <textarea class="ta" id="dtrig" placeholder="⚡ Was hat es ausgelöst?"></textarea>
-          <textarea class="ta" id="dstrat" placeholder="✅ Wie habe ich dagegen gehandelt?"></textarea>
-          <button class="addbtn" style="width:100%" id="add-diary-btn" onclick="addDiary()">📝 Eintrag speichern</button>
         </div>
-        <div class="dfltrs">
-          <button class="dfbtn on" onclick="fltDiary('all',this)">Alle</button>
-          <button class="dfbtn" onclick="fltDiary('aufschieben',this)">📋 Aufschieben</button>
-          <button class="dfbtn" onclick="fltDiary('handy',this)">📱 Handy</button>
-          <button class="dfbtn" onclick="fltDiary('ablenkung',this)">🎮 Ablenkung</button>
-          <button class="dfbtn" onclick="fltDiary('essen',this)">🍕 Essen</button>
-          <button class="dfbtn" onclick="fltDiary('sozial',this)">💬 Sozial</button>
+        <p class="sdesc">Dein vollständiges Tagesprotokoll – automatisch befüllt aus allen Bereichen der App, dauerhaft gespeichert.</p>
+
+        <!-- TODAY ENTRY FORM -->
+        <div id="journal-today-form" style="display:none">
+          <div style="font-size:.78rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">✏️ Ergänzungen für heute</div>
+          <div style="margin-bottom:10px">
+            <div class="flbl">📝 Freie Notiz / Gedanken</div>
+            <textarea class="ta" id="j-note" placeholder="Was beschäftigt dich? Wie war dein Tag in deinen eigenen Worten?" style="min-height:80px"></textarea>
+          </div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">😬 Schlechte Angewohnheit hinzufügen</div>
+          <div class="row">
+            <select class="sel" id="j-hcat" style="flex:1">
+              <option value="aufschieben">📋 Aufschieben</option><option value="handy">📱 Handy</option>
+              <option value="ablenkung">🎮 Ablenkung</option><option value="essen">🍕 Essen</option>
+              <option value="sozial">💬 Soziale Medien</option><option value="sonstiges">📌 Sonstiges</option>
+            </select>
+          </div>
+          <textarea class="ta" id="j-habit" placeholder="😔 Was war die Angewohnheit?" style="min-height:55px;margin-top:7px"></textarea>
+          <textarea class="ta" id="j-trigger" placeholder="⚡ Was hat es ausgelöst?" style="min-height:55px;margin-top:7px"></textarea>
+          <textarea class="ta" id="j-strategy" placeholder="✅ Wie habe ich dagegen gehandelt?" style="min-height:55px;margin-top:7px"></textarea>
+          <button class="addbtn" style="width:100%;margin-top:10px" onclick="addHabitToJournal()">+ Angewohnheit hinzufügen</button>
+          <button class="addbtn" style="width:100%;margin-top:8px;background:linear-gradient(135deg,var(--ok),#4CAF72)" onclick="saveJournalEntry()">💾 Tageseintrag speichern</button>
         </div>
-        <div class="dents" id="dents"><div class="empty">Noch keine Einträge 📓</div></div>
+
+        <!-- JOURNAL DISPLAY -->
+        <div id="journal-display"></div>
       </div>
     </div>
 
@@ -716,6 +737,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="addbtn" style="flex:2" id="morning-next-btn" onclick="nextMorningStep()">Weiter ›</button>
     </div>
     <button class="modal-close" onclick="document.getElementById('morningmod').style.display='none'">Überspringen</button>
+  </div>
+</div>
+
+<!-- EVENING ROUTINE MODAL -->
+<div class="modal-bg" id="eveningmod">
+  <div class="modal-card">
+    <div class="modal-title">🌙 Abendreflexion</div>
+    <div id="evening-step-content"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="modal-close" style="flex:1" onclick="prevEveningStep()">‹ Zurück</button>
+      <button class="addbtn" style="flex:2" id="evening-next-btn" onclick="nextEveningStep()">Weiter ›</button>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('eveningmod').style.display='none'">Überspringen</button>
   </div>
 </div>
 
@@ -819,11 +853,12 @@ async function loadProfile(){
     if(p.life_areas)D.lifeAreas=p.life_areas;
     if(p.wellbeing)D.wellbeing=p.wellbeing;
     if(p.reviews)D.reviews=p.reviews;
+    if(p.daily_log)D.dailyLog=p.daily_log;
   }
 }
 async function saveStats(){await sbFetch('/rest/v1/stats?user_id=eq.'+UID,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({user_id:UID,streak:D.streak,last_date:D.lastDate,pomo_sess:D.pomoSess,today_done:D.todayDone,today_score:D.todayScore,week_done:D.weekDone})});}
 async function saveMIT(){await sbFetch('/rest/v1/mit_tasks?user_id=eq.'+UID,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({user_id:UID,tasks:D.mitTasks,done:D.mitDone})});}
-async function saveProfile(){await sbFetch('/rest/v1/profiles?id=eq.'+UID,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:UID,vision:D.vision,life_areas:D.lifeAreas,wellbeing:D.wellbeing,reviews:D.reviews})});}
+async function saveProfile(){await sbFetch('/rest/v1/profiles?id=eq.'+UID,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({id:UID,vision:D.vision,life_areas:D.lifeAreas,wellbeing:D.wellbeing,reviews:D.reviews,daily_log:D.dailyLog})});}
 
 function checkStreak(){
   const today=new Date().toDateString();if(D.lastDate===today)return;
@@ -849,36 +884,141 @@ function setMood(e,l){
   document.getElementById('morning-banner').style.background=`linear-gradient(135deg,${c})`;
   document.getElementById('morning-h').textContent='Stimmung: '+e+' '+l;
   document.getElementById('morning-p').textContent='Schön, dass du hier bist! ✨';
+  D.currentMood=e+' '+l;
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.dailyLog)D.dailyLog={};
+  if(!D.dailyLog[today])D.dailyLog[today]={};
+  D.dailyLog[today].mood=e+' '+l;
   toast('Stimmung: '+e+' '+l);
 }
 
-// ── MORNING ROUTINE ──
+// ── MORNING / EVENING ROUTINE ──
 const MORNING_STEPS=[
   {title:'🙏 Dankbarkeit',q:'Für was bist du heute dankbar?',placeholder:'Nenne 3 Dinge für die du heute dankbar bist...',key:'gratitude'},
   {title:'🌟 Tagesintention',q:'Was ist deine Intention für heute?',placeholder:'Wie möchtest du dich heute fühlen und was möchtest du erreichen?',key:'intention'},
-  {title:'💫 Affirmation',q:'Deine Affirmation für heute',placeholder:D.vision?.affirmation||'Ich bin fokussiert und erschaffe mein bestes Leben.',key:'affirmation',readonly:true},
+  {title:'💫 Affirmation',q:'Deine Affirmation für heute – sprich sie laut aus!',placeholder:'',key:'affirmation',fromVision:true},
   {title:'🎯 Fokus-Aufgabe',q:'Was ist deine wichtigste Aufgabe heute?',placeholder:'Die eine Aufgabe die heute alles andere übertrifft...',key:'focus'},
 ];
-let morningData={};
-function openMorningRoutine(){morningStep=0;morningData={};renderMorningStep();document.getElementById('morningmod').style.display='flex';}
+const EVENING_STEPS=[
+  {title:'🏆 Erfolge',q:'Was habe ich heute erreicht, worauf ich stolz bin?',placeholder:'Auch kleine Erfolge zählen...',key:'wins'},
+  {title:'📚 Lernmomente',q:'Was habe ich heute gelernt oder was würde ich anders machen?',placeholder:'Jeder Tag lehrt uns etwas...',key:'learnings'},
+  {title:'😬 Prokrastination',q:'Habe ich heute etwas aufgeschoben? Was und warum?',placeholder:'Ehrliche Reflexion ohne Selbstkritik...',key:'procr'},
+  {title:'🙏 Dankbarkeit',q:'Wofür bin ich heute dankbar?',placeholder:'3 Dinge aus dem heutigen Tag...',key:'gratitude_eve'},
+  {title:'🌙 Intention für morgen',q:'Was nehme ich mir für morgen vor?',placeholder:'Eine klare Intention für den kommenden Tag...',key:'tomorrow'},
+];
+let morningData={},eveningData={},eveningStep=0;
+
+function openMorningRoutine(){
+  morningStep=0;
+  // Pre-fill from saved data if exists
+  const saved=D.dailyLog?.[new Date().toISOString().split('T')[0]]?.morning;
+  morningData=saved?{...saved}:{};
+  renderMorningStep();
+  document.getElementById('morningmod').style.display='flex';
+}
 function renderMorningStep(){
   const step=MORNING_STEPS[morningStep];
   const isLast=morningStep===MORNING_STEPS.length-1;
-  document.getElementById('morning-next-btn').textContent=isLast?'Fertig ✓':'Weiter ›';
+  document.getElementById('morning-next-btn').textContent=isLast?'✓ Fertig':'Weiter ›';
+  const val=step.fromVision?(D.vision?.affirmation||'Ich bin fokussiert und erschaffe mein bestes Leben.'):morningData[step.key]||'';
   document.getElementById('morning-step-content').innerHTML=`
-    <div style="font-size:.75rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${morningStep+1} von ${MORNING_STEPS.length}</div>
+    <div style="font-size:.73rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${morningStep+1} von ${MORNING_STEPS.length}</div>
     <div style="font-size:1rem;font-weight:800;margin-bottom:5px">${step.title}</div>
-    <div style="font-size:.88rem;color:var(--mu);margin-bottom:12px">${step.q}</div>
-    <textarea class="ta" id="morning-input" placeholder="${step.placeholder}" ${step.readonly?'style="background:#F0FDF4;color:#065F46"':''}>${step.readonly?step.placeholder:morningData[step.key]||''}</textarea>
-    <div style="display:flex;gap:4px;margin-top:8px">${MORNING_STEPS.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=morningStep?'var(--p)':'var(--bo)'}"></div>`).join('')}</div>`;
+    <div style="font-size:.87rem;color:var(--mu);margin-bottom:12px">${step.q}</div>
+    <textarea class="ta" id="morning-input" placeholder="${step.placeholder}" ${step.fromVision?'style="background:#F0FDF4;color:#065F46;font-weight:600"':''}>${val}</textarea>
+    <div style="display:flex;gap:4px;margin-top:10px">${MORNING_STEPS.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=morningStep?'var(--p)':'var(--bo)'}"></div>`).join('')}</div>`;
 }
 function nextMorningStep(){
   const step=MORNING_STEPS[morningStep];
-  morningData[step.key]=document.getElementById('morning-input').value;
+  morningData[step.key]=document.getElementById('morning-input').value.trim();
   if(morningStep<MORNING_STEPS.length-1){morningStep++;renderMorningStep();}
-  else{document.getElementById('morningmod').style.display='none';toast('🌅 Morgenroutine abgeschlossen! Schönen Tag! ✨');}
+  else{
+    // Save & show summary
+    document.getElementById('morningmod').style.display='none';
+    saveMorningData();
+    toast('🌅 Morgenroutine abgeschlossen! Schönen Tag! ✨');
+  }
 }
-function prevMorningStep(){if(morningStep>0){morningStep--;renderMorningStep();}}
+function prevMorningStep(){if(morningStep>0){morningData[MORNING_STEPS[morningStep].key]=document.getElementById('morning-input').value.trim();morningStep--;renderMorningStep();}}
+
+function saveMorningData(){
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.dailyLog)D.dailyLog={};
+  if(!D.dailyLog[today])D.dailyLog[today]={};
+  D.dailyLog[today].morning=morningData;
+  D.dailyLog[today].mood=D.currentMood||'';
+  showMorningSummary();
+  saveProfile();
+}
+function showMorningSummary(){
+  const today=new Date().toISOString().split('T')[0];
+  const m=D.dailyLog?.[today]?.morning;
+  if(!m||!m.gratitude)return;
+  document.getElementById('morning-summary').style.display='block';
+  document.getElementById('morning-btn').textContent='🌅 Routine ✓';
+  document.getElementById('morning-summary-content').innerHTML=
+    (m.intention?`<div><strong>🌟 Intention:</strong> ${m.intention}</div>`:'')
+    +(m.focus?`<div><strong>🎯 Fokus:</strong> ${m.focus}</div>`:'')
+    +(m.gratitude?`<div><strong>🙏 Dankbar für:</strong> ${m.gratitude}</div>`:'')
+    +(m.affirmation?`<div style="margin-top:6px;font-style:italic;opacity:.85">💫 ${m.affirmation}</div>`:'');
+}
+
+// EVENING
+function openEveningRoutine(){
+  eveningStep=0;
+  const saved=D.dailyLog?.[new Date().toISOString().split('T')[0]]?.evening;
+  eveningData=saved?{...saved}:{};
+  renderEveningStep();
+  document.getElementById('eveningmod').style.display='flex';
+}
+function renderEveningStep(){
+  const step=EVENING_STEPS[eveningStep];
+  const isLast=eveningStep===EVENING_STEPS.length-1;
+  document.getElementById('evening-next-btn').textContent=isLast?'✓ Abschließen & ins Tagebuch':'Weiter ›';
+  document.getElementById('evening-step-content').innerHTML=`
+    <div style="font-size:.73rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${eveningStep+1} von ${EVENING_STEPS.length}</div>
+    <div style="font-size:1rem;font-weight:800;margin-bottom:5px">${step.title}</div>
+    <div style="font-size:.87rem;color:var(--mu);margin-bottom:12px">${step.q}</div>
+    <textarea class="ta" id="evening-input" placeholder="${step.placeholder}">${eveningData[step.key]||''}</textarea>
+    <div style="display:flex;gap:4px;margin-top:10px">${EVENING_STEPS.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=eveningStep?'#B08EE8':'var(--bo)'}"></div>`).join('')}</div>`;
+}
+function nextEveningStep(){
+  const step=EVENING_STEPS[eveningStep];
+  eveningData[step.key]=document.getElementById('evening-input').value.trim();
+  if(eveningStep<EVENING_STEPS.length-1){eveningStep++;renderEveningStep();}
+  else{document.getElementById('eveningmod').style.display='none';saveEveningData();}
+}
+function prevEveningStep(){if(eveningStep>0){eveningData[EVENING_STEPS[eveningStep].key]=document.getElementById('evening-input').value.trim();eveningStep--;renderEveningStep();}}
+
+async function saveEveningData(){
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.dailyLog)D.dailyLog={};
+  if(!D.dailyLog[today])D.dailyLog[today]={};
+  D.dailyLog[today].evening=eveningData;
+
+  // Auto-create diary entry from full day
+  const m=D.dailyLog[today]?.morning||{};
+  const e=eveningData;
+  const doneTasks=D.tasks.filter(t=>t.done&&t.createdAt&&t.createdAt.startsWith(today)).map(t=>t.name).join(', ')||'Keine';
+  const diaryText=`🌅 MORGEN:\n🙏 Dankbar: ${m.gratitude||'-'}\n🌟 Intention: ${m.intention||'-'}\n🎯 Fokus: ${m.focus||'-'}\n\n🌙 ABEND:\n🏆 Erfolge: ${e.wins||'-'}\n📚 Gelernt: ${e.learnings||'-'}\n😬 Aufgeschoben: ${e.procr||'-'}\n🙏 Abend-Dankbarkeit: ${e.gratitude_eve||'-'}\n\n✅ Erledigte Aufgaben: ${doneTasks}\n\n🌙 Morgen nehme ich mir vor: ${e.tomorrow||'-'}`;
+
+  const id=Date.now();
+  const entry={id,habit:'Tagesreflexion',trigger:'',strategy:diaryText,cat:'sonstiges',date:today,isDailyLog:true};
+  // Remove old entry for today if exists
+  D.diary=D.diary.filter(d=>!(d.isDailyLog&&d.date===today));
+  D.diary.unshift(entry);
+  await sbFetch('/rest/v1/diary',{method:'POST',body:JSON.stringify({id,user_id:UID,habit:'Tagesreflexion 📓',trigger:'',strategy:diaryText,cat:'sonstiges',date:today})});
+
+  // Auto-save journal when evening is done
+  await saveProfile();
+  pendingHabits=[];
+  await autoSaveJournal();
+  document.getElementById('evening-btn').textContent='🌙 Reflexion ✓';
+  document.getElementById('evening-btn').style.background='rgba(176,142,232,.4)';
+  await saveProfile();
+  renderDiary();
+  toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
+}
 
 // ── VISION ──
 async function saveVision(){
@@ -1214,33 +1354,172 @@ function renderReviews(){
 }
 function getWeekNum(d){const dt=new Date(d);const start=new Date(dt.getFullYear(),0,1);return Math.ceil(((dt-start)/864e5+start.getDay()+1)/7);}
 
-// ── DIARY ──
-async function addDiary(){
-  const h=document.getElementById('dhabit').value.trim(),s=document.getElementById('dstrat').value.trim();
-  if(!h||!s){toast('Bitte Angewohnheit und Gegenstrategie ausfüllen!');return;}
-  const btn=document.getElementById('add-diary-btn');btn.disabled=true;
-  const id=Date.now();
-  const entry={id,habit:h,trigger:document.getElementById('dtrig').value.trim(),strategy:s,cat:gs('dcat'),date:gs('ddate')||new Date().toISOString().split('T')[0]};
-  const r=await sbFetch('/rest/v1/diary',{method:'POST',body:JSON.stringify({id,user_id:UID,...entry})});
-  btn.disabled=false;if(!r.ok){toast('❌ Fehler.');return;}
-  D.diary.unshift(entry);['dhabit','dtrig','dstrat'].forEach(id=>document.getElementById(id).value='');
-  renderDiary();toast('📓 Tagebucheintrag gespeichert!');
+// ── JOURNAL ──
+let journalDate=new Date().toISOString().split('T')[0];
+let journalCache={};
+let pendingHabits=[];
+
+async function loadJournalEntry(date){
+  if(journalCache[date])return journalCache[date];
+  const r=await sbFetch('/rest/v1/journal?user_id=eq.'+UID+'&date=eq.'+date);
+  if(r.ok&&r.data&&r.data.length){journalCache[date]=r.data[0];return r.data[0];}
+  return null;
 }
-async function delDiary(id){D.diary=D.diary.filter(x=>x.id!==id);await sbFetch('/rest/v1/diary?id=eq.'+id,{method:'DELETE'});renderDiary();}
-function fltDiary(cat,btn){dFlt=cat;document.querySelectorAll('.dfbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderDiary();}
-function renderDiary(){
-  document.getElementById('dcnt').textContent=D.diary.length;
-  const entries=dFlt==='all'?D.diary:D.diary.filter(e=>e.cat===dFlt);
-  const el=document.getElementById('dents');
-  if(!entries.length){el.innerHTML='<div class="empty">Keine Einträge'+(dFlt!=='all'?' in dieser Kategorie':'')+' 📓</div>';return;}
-  el.innerHTML=entries.map(e=>{
-    const d=new Date(e.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'});
-    return `<div class="dent"><div class="dhdr"><span class="dcat c-${e.cat}">${CATLBLS[e.cat]||e.cat}</span><span class="ddate2">${d}</span><button class="ddel" onclick="delDiary(${e.id})">🗑</button></div>
-      <div class="dlbl">😔 Angewohnheit</div><div class="dtxt">${e.habit}</div>
-      ${e.trigger?`<div class="dtrig">⚡ Auslöser: ${e.trigger}</div>`:''}
-      <div class="dstrat">✅ Gegenstrategie: ${e.strategy}</div>
+async function saveJournalEntry(){
+  const today=new Date().toISOString().split('T')[0];
+  if(journalDate!==today){toast('Du kannst nur den heutigen Eintrag bearbeiten.');return;}
+  const entry=await buildTodayEntry();
+  entry.free_note=document.getElementById('j-note').value.trim();
+  const existing=await loadJournalEntry(today);
+  const id=existing?.id||(UID+'_'+today);
+  const payload={id,user_id:UID,date:today,...entry,updated_at:new Date().toISOString()};
+  const r=await sbFetch('/rest/v1/journal?id=eq.'+id,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(payload)});
+  if(r.ok){journalCache[today]={...payload};toast('📓 Tageseintrag gespeichert!');renderJournal();}
+  else toast('❌ Fehler beim Speichern.');
+}
+async function autoSaveJournal(){
+  const today=new Date().toISOString().split('T')[0];
+  const entry=await buildTodayEntry();
+  const existing=await loadJournalEntry(today);
+  const id=existing?.id||(UID+'_'+today);
+  const freeNote=existing?.free_note||'';
+  const payload={id,user_id:UID,date:today,...entry,free_note:freeNote,updated_at:new Date().toISOString()};
+  await sbFetch('/rest/v1/journal?id=eq.'+id,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(payload)});
+  journalCache[today]={...payload};
+}
+async function buildTodayEntry(){
+  const today=new Date().toISOString().split('T')[0];
+  const doneTasks=D.tasks.filter(t=>t.done).map(t=>({name:t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''),lifeArea:t.lifeArea||'',diff:t.diff,pts:t.diff==='hard'?30:t.diff==='medium'?20:10}));
+  const morning=D.dailyLog?.[today]?.morning||null;
+  const evening=D.dailyLog?.[today]?.evening||null;
+  const mood=D.dailyLog?.[today]?.mood||'';
+  const wb=D.wellbeing?.find(w=>w.date===today)||null;
+  const existing=await loadJournalEntry(today);
+  const habits=existing?.habits||pendingHabits;
+  return{morning,evening,mood,wellbeing:wb,tasks_done:doneTasks,pomo_count:D.pomoSess,habits,score:D.todayScore};
+}
+function addHabitToJournal(){
+  const habit=document.getElementById('j-habit').value.trim();
+  const strategy=document.getElementById('j-strategy').value.trim();
+  if(!habit){toast('Bitte Angewohnheit beschreiben!');return;}
+  if(!strategy){toast('Bitte Gegenstrategie beschreiben!');return;}
+  pendingHabits.push({cat:gs('j-hcat'),habit,trigger:document.getElementById('j-trigger').value.trim(),strategy});
+  document.getElementById('j-habit').value='';
+  document.getElementById('j-trigger').value='';
+  document.getElementById('j-strategy').value='';
+  saveJournalEntry();
+  toast('✅ Angewohnheit zum Journal hinzugefügt!');
+}
+function journalMove(dir){
+  const dt=new Date(journalDate+'T12:00:00');dt.setDate(dt.getDate()+dir);
+  journalDate=dt.toISOString().split('T')[0];
+  renderJournal();
+}
+function journalGoToday(){journalDate=new Date().toISOString().split('T')[0];renderJournal();}
+async function renderJournal(){
+  const today=new Date().toISOString().split('T')[0];
+  const isToday=journalDate===today;
+  const dt=new Date(journalDate+'T12:00:00');
+  document.getElementById('journal-date-label').textContent=dt.toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('journal-today-form').style.display=isToday?'block':'none';
+  const disp=document.getElementById('journal-display');
+  disp.innerHTML='<div class="empty" style="padding:16px">⏳ Lade Eintrag...</div>';
+  // Auto-save today before displaying
+  if(isToday)await autoSaveJournal();
+  const entry=await loadJournalEntry(journalDate);
+  if(!entry&&!isToday){disp.innerHTML='<div class="empty">Kein Eintrag für diesen Tag.</div>';return;}
+  if(!entry){disp.innerHTML='<div class="empty">Noch kein Eintrag für heute. Starte mit der Morgenroutine! 🌅</div>';return;}
+  const CATLBLS2={handy:'📱 Handy',aufschieben:'📋 Aufschieben',ablenkung:'🎮 Ablenkung',essen:'🍕 Essen',sozial:'💬 Soziale Medien',sonstiges:'📌 Sonstiges'};
+  const LA2={career:'💼',health:'💪',relations:'❤️',finance:'💰',personal:'🧠',meaning:'✨'};
+  let html='<div style="display:flex;flex-direction:column;gap:14px;margin-top:14px">';
+
+  // HEADER
+  html+=`<div style="background:linear-gradient(135deg,var(--p),var(--pd));border-radius:var(--r2);padding:14px 16px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div><div style="font-size:1rem;font-weight:800">${dt.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div style="font-size:.82rem;opacity:.85;margin-top:2px">${entry.mood?'Stimmung: '+entry.mood:''}</div></div>
+    <div style="text-align:right"><div style="font-size:1.4rem;font-weight:800">${entry.score||0} Pkt</div><div style="font-size:.72rem;opacity:.8">${(entry.tasks_done||[]).length} Aufgaben · ${entry.pomo_count||0} Pomodoros</div></div>
+  </div>`;
+
+  // MORNING
+  if(entry.morning&&entry.morning.gratitude){
+    html+=`<div style="border:1.5px solid #FDE68A;border-radius:var(--r2);padding:14px;background:#FFFBEB">
+      <div style="font-size:.78rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">🌅 Morgenroutine</div>
+      ${entry.morning.gratitude?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🙏 Dankbarkeit</div><div style="font-size:.87rem;margin-top:2px">${entry.morning.gratitude}</div></div>`:''}
+      ${entry.morning.intention?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🌟 Intention</div><div style="font-size:.87rem;margin-top:2px">${entry.morning.intention}</div></div>`:''}
+      ${entry.morning.focus?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🎯 Fokus-Aufgabe</div><div style="font-size:.87rem;margin-top:2px">${entry.morning.focus}</div></div>`:''}
+      ${entry.morning.affirmation?`<div style="font-style:italic;font-size:.84rem;color:#92400E;background:rgba(251,191,36,.2);border-radius:8px;padding:7px 10px;margin-top:4px">💫 ${entry.morning.affirmation}</div>`:''}
     </div>`;
-  }).join('');
+  }
+
+  // WELLBEING
+  if(entry.wellbeing){
+    const wb=entry.wellbeing;
+    html+=`<div style="border:1.5px solid #BBF7D0;border-radius:var(--r2);padding:14px;background:#F0FDF4">
+      <div style="font-size:.78rem;font-weight:700;color:#065F46;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">🧘 Wohlbefinden</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <span style="font-size:.87rem;font-weight:700">😴 ${wb.sleep}h Schlaf</span>
+        <span style="font-size:.87rem;font-weight:700">⚡ Energie: ${wb.energy}/10</span>
+        <span style="font-size:.87rem;font-weight:700">😰 Stress: ${wb.stress}/10</span>
+        <span style="font-size:.87rem;font-weight:700">🏃 ${wb.move}min Bewegung</span>
+      </div>
+      ${wb.note?`<div style="font-size:.84rem;color:var(--mu);margin-top:8px;font-style:italic">${wb.note}</div>`:''}
+    </div>`;
+  }
+
+  // TASKS
+  if(entry.tasks_done&&entry.tasks_done.length){
+    html+=`<div style="border:1.5px solid var(--bo);border-radius:var(--r2);padding:14px;background:var(--bg)">
+      <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">✅ Erledigte Aufgaben (${entry.tasks_done.length})</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${entry.tasks_done.map(t=>`<div style="display:flex;align-items:center;gap:8px;font-size:.86rem">
+          <span style="color:var(--ok);font-weight:700">✓</span>
+          <span style="flex:1">${t.name}</span>
+          ${t.lifeArea?`<span style="font-size:.72rem">${LA2[t.lifeArea]||''}</span>`:''}
+          <span style="font-size:.72rem;font-weight:700;color:var(--ok)">+${t.pts}Pkt</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // HABITS
+  if(entry.habits&&entry.habits.length){
+    html+=`<div style="border:1.5px solid #FEE2E2;border-radius:var(--r2);padding:14px;background:#FFF5F5">
+      <div style="font-size:.78rem;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">😬 Schlechte Angewohnheiten & Gegenstrategien</div>
+      ${entry.habits.map(h=>`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #FEE2E2;last-child:border-0">
+        <div style="font-size:.73rem;font-weight:700;color:#991B1B;background:#FEE2E2;display:inline-block;padding:2px 7px;border-radius:20px;margin-bottom:5px">${CATLBLS2[h.cat]||h.cat}</div>
+        <div style="font-size:.86rem;margin-bottom:3px"><strong>😔</strong> ${h.habit}</div>
+        ${h.trigger?`<div style="font-size:.82rem;color:var(--mu);font-style:italic;margin-bottom:3px">⚡ ${h.trigger}</div>`:''}
+        <div style="font-size:.86rem;color:#065F46;background:#DCFCE7;border-radius:6px;padding:6px 9px;margin-top:4px">✅ ${h.strategy}</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // EVENING
+  if(entry.evening&&entry.evening.wins){
+    html+=`<div style="border:1.5px solid #EDE9FE;border-radius:var(--r2);padding:14px;background:#FAF5FF">
+      <div style="font-size:.78rem;font-weight:700;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">🌙 Abendreflexion</div>
+      ${entry.evening.wins?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">🏆 Erfolge</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.wins}</div></div>`:''}
+      ${entry.evening.learnings?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">📚 Lernmomente</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.learnings}</div></div>`:''}
+      ${entry.evening.procr?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">😬 Prokrastination</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.procr}</div></div>`:''}
+      ${entry.evening.gratitude_eve?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">🙏 Dankbarkeit</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.gratitude_eve}</div></div>`:''}
+      ${entry.evening.tomorrow?`<div style="font-style:italic;font-size:.84rem;color:#6D28D9;background:rgba(139,92,246,.1);border-radius:8px;padding:7px 10px;margin-top:4px">🌙 Morgen: ${entry.evening.tomorrow}</div>`:''}
+    </div>`;
+  }
+
+  // FREE NOTE
+  if(entry.free_note){
+    html+=`<div style="border:1.5px solid var(--bo);border-radius:var(--r2);padding:14px;background:var(--bg)">
+      <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">📝 Notizen</div>
+      <div style="font-size:.87rem;line-height:1.6;white-space:pre-wrap">${entry.free_note}</div>
+    </div>`;
+  }
+
+  html+='</div>';
+  disp.innerHTML=html;
+
+  // Pre-fill form with saved data
+  if(isToday&&entry.free_note)document.getElementById('j-note').value=entry.free_note;
+  if(isToday&&entry.habits)pendingHabits=[...entry.habits];
 }
 
 // ── AI COACH ──
@@ -1347,7 +1626,7 @@ function showTab(name,btn){
   if(name==='gantt')renderGantt();
   if(name==='wellbeing')renderWellbeing();
   if(name==='review')renderReviews();
-  if(name==='diary')renderDiary();
+  if(name==='diary'){journalDate=new Date().toISOString().split('T')[0];renderJournal();}
   if(name==='analytics')renderAnalytics();
 }
 
@@ -1358,7 +1637,21 @@ const RWS=[{e:'🏆',t:'Fantastisch!',m:'5 Aufgaben erledigt!'},{e:'🌟',t:'Sup
 function showRw(done){const r=RWS[Math.min(Math.floor(done/5)-1,RWS.length-1)];document.getElementById('rwe').textContent=r.e;document.getElementById('rwt').textContent=r.t;document.getElementById('rwm').textContent=r.m;document.getElementById('rwmodal').style.display='flex';}
 function closeRw(){document.getElementById('rwmodal').style.display='none';}
 
-function renderAll(){renderTasks();renderMIT();renderStats();renderVision();renderWellbeing();renderReviews();renderDiary();updPomo();updateDepSelect();}
+function renderAll(){renderTasks();renderMIT();renderStats();renderVision();renderWellbeing();renderReviews();updPomo();updateDepSelect();showMorningSummary();checkEveningPrompt();}
+
+function checkEveningPrompt(){
+  const h=new Date().getHours();
+  const today=new Date().toISOString().split('T')[0];
+  const hasEvening=D.dailyLog?.[today]?.evening;
+  if(h>=19&&!hasEvening){
+    document.getElementById('evening-btn').style.background='rgba(255,200,100,.4)';
+    document.getElementById('evening-btn').style.border='1.5px solid rgba(255,220,150,.6)';
+    document.getElementById('evening-btn').textContent='🌙 Abendreflexion (empfohlen!)';
+  } else if(hasEvening){
+    document.getElementById('evening-btn').textContent='🌙 Reflexion ✓';
+    document.getElementById('evening-btn').style.background='rgba(176,142,232,.4)';
+  }
+}
 </script>
 </body>
 </html>
