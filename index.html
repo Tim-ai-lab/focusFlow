@@ -1617,17 +1617,19 @@ const PATH_STAGES=[
 ];
 
 function getPathProgress(){
-  const completed=JSON.parse(localStorage.getItem('ff_path_'+UID)||'{}');
-  return completed;
+  if(!UID)return{};
+  try{return JSON.parse(localStorage.getItem('ff_path_'+UID)||'{}');}catch(e){return{};}
 }
 function markPathStep(stepId){
+  if(!UID)return;
   const completed=getPathProgress();
   completed[stepId]=new Date().toISOString();
-  localStorage.setItem('ff_path_'+UID,JSON.stringify(completed));
+  try{localStorage.setItem('ff_path_'+UID,JSON.stringify(completed));}catch(e){}
   renderPath();
   toast('✅ Schritt abgehakt! Weiter so! 🚀');
 }
 function computePathStats(){
+  if(!UID||!D)return{};
   const completed=getPathProgress();
   // Auto-detect completed steps from app data
   if(D.vision?.stepData&&Object.keys(D.vision.stepData).length>=6)completed['vision_process']=completed['vision_process']||'auto';
