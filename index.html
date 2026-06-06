@@ -310,7 +310,58 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .rwcard p{color:var(--mu);margin-bottom:22px;font-size:.9rem}
 .rwclose{padding:11px 30px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer}
 
-/* VISION PROCESS */
+/* EMOTION CHECK */
+.emotion-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.emotion-btn{padding:12px 8px;border:2px solid var(--bo);border-radius:var(--r2);background:var(--bg);cursor:pointer;text-align:center;transition:all .2s;font-family:inherit}
+.emotion-btn:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.emotion-btn.selected{border-color:var(--p);background:#EEF2FF}
+.emotion-emoji{font-size:1.6rem;display:block;margin-bottom:4px}
+.emotion-label{font-size:.72rem;font-weight:700;color:var(--txt)}
+.emotion-strategy{border-radius:var(--r2);padding:14px 16px;margin-top:12px;font-size:.87rem;line-height:1.6;border:1.5px solid}
+
+/* DAILY FLOW */
+.flow-step{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:var(--r2);margin-bottom:8px;border:1.5px solid var(--bo);background:var(--bg);transition:all .2s}
+.flow-step.active{border-color:var(--p);background:#EEF2FF}
+.flow-step.done{border-color:var(--ok);background:#F0FDF4;opacity:.7}
+.flow-step-num{width:28px;height:28px;border-radius:50%;background:var(--bo);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;color:var(--mu);flex-shrink:0}
+.flow-step.active .flow-step-num{background:var(--p);color:#fff}
+.flow-step.done .flow-step-num{background:var(--ok);color:#fff}
+.flow-step-info{flex:1}
+.flow-step-title{font-size:.9rem;font-weight:700}
+.flow-step-sub{font-size:.76rem;color:var(--mu);margin-top:2px}
+.flow-step-time{font-size:.72rem;font-weight:700;color:var(--p);background:#EEF2FF;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+
+/* ENERGY INSIGHT */
+.energy-insight{border-radius:var(--r2);padding:14px 16px;border:1.5px solid;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start}
+.energy-insight-icon{font-size:1.5rem;flex-shrink:0}
+.energy-insight-text{font-size:.85rem;line-height:1.55;font-weight:600}
+
+.path-stage{border:1.5px solid var(--bo);border-radius:var(--r);overflow:hidden;transition:all .2s}
+.path-stage.active{border-color:var(--p);box-shadow:0 4px 20px rgba(124,158,232,.15)}
+.path-stage.completed{border-color:var(--ok)}
+.path-stage-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:all .2s;user-select:none}
+.path-stage-header:hover{background:var(--bg)}
+.path-stage-icon{font-size:1.6rem;flex-shrink:0}
+.path-stage-info{flex:1}
+.path-stage-name{font-size:.95rem;font-weight:800;color:var(--txt)}
+.path-stage-desc{font-size:.78rem;color:var(--mu);margin-top:2px}
+.path-stage-badge{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.path-stage-prog{font-size:.75rem;color:var(--mu);font-weight:700;flex-shrink:0}
+.path-stage-steps{display:none;border-top:1px solid var(--bo);background:var(--bg)}
+.path-stage.open .path-stage-steps{display:block}
+.path-step{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--bo);transition:all .2s;cursor:pointer}
+.path-step:last-child{border-bottom:none}
+.path-step:hover{background:#EEF2FF}
+.path-step.completed{background:#F0FDF4}
+.path-step-cb{width:22px;height:22px;border-radius:50%;border:2px solid var(--bo);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.78rem;transition:all .2s}
+.path-step.completed .path-step-cb{background:var(--ok);border-color:var(--ok);color:#fff}
+.path-step-info{flex:1}
+.path-step-title{font-size:.88rem;font-weight:700;color:var(--txt)}
+.path-step-why{font-size:.76rem;color:var(--mu);margin-top:2px;line-height:1.4}
+.path-step-time{font-size:.72rem;font-weight:700;color:var(--p);background:#EEF2FF;padding:2px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.path-step-action{padding:8px 14px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0;transition:all .2s}
+.path-step-action:hover{transform:translateY(-1px)}
+
 .vision-step-card{display:flex;align-items:center;gap:12px;padding:13px 15px;border:1.5px solid var(--bo);border-radius:var(--r2);background:var(--bg);cursor:pointer;transition:all .2s}
 .vision-step-card:hover{border-color:var(--p);background:#EEF2FF;transform:translateX(3px)}
 .vision-step-card.completed{border-color:var(--ok);background:#F0FDF4}
@@ -388,7 +439,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
           <p id="morning-p">Wie startest du in den Tag?</p>
         </div>
         <div style="display:flex;gap:7px;flex-wrap:wrap">
-          <button onclick="openMorningRoutine()" style="padding:7px 14px;background:rgba(255,255,255,.25);border:none;border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s" id="morning-btn">🌅 Morgenroutine</button>
+          <button onclick="openDailyFlow()" style="padding:7px 14px;background:rgba(255,255,255,.35);border:1.5px solid rgba(255,255,255,.5);border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s" id="flow-btn">⚡ Tages-Flow</button>
+        <button onclick="openMorningRoutine()" style="padding:7px 14px;background:rgba(255,255,255,.2);border:none;border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s" id="morning-btn">🌅 Morgenroutine</button>
           <button onclick="openEveningRoutine()" style="padding:7px 14px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);border-radius:20px;color:#fff;font-weight:700;cursor:pointer;font-size:.82rem;transition:all .2s" id="evening-btn">🌙 Abendreflexion</button>
         </div>
       </div>
@@ -418,6 +470,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <div class="tnav">
       <button class="tbtn on" onclick="showTab('tasks',this)">📋 Aufgaben</button>
       <button class="tbtn" onclick="showTab('mit',this)">🎯 Tagesziele</button>
+      <button class="tbtn" onclick="showTab('path',this)">🗺️ Mein Pfad</button>
       <button class="tbtn" onclick="showTab('vision',this)">🌟 Vision</button>
       <button class="tbtn" onclick="showTab('pomo',this)">⏱️ Pomodoro</button>
       <button class="tbtn" onclick="showTab('cal',this)">📅 Kalender</button>
@@ -467,8 +520,131 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
     </div>
 
-    <!-- VISION -->
-    <div class="tpanel" id="tab-vision">
+    <!-- PATH TAB -->
+    <div class="tpanel" id="tab-path">
+
+      <!-- NEXT STEP AI RECOMMENDATION -->
+      <div class="sec" id="path-ai-rec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="font-size:2rem;flex-shrink:0">🤖</div>
+          <div style="flex:1">
+            <div style="font-size:.78rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">FocusAI · Dein nächster Schritt</div>
+            <div id="path-ai-text" style="font-size:.9rem;line-height:1.6;color:var(--txt)">Analysiere deinen Fortschritt...</div>
+            <div id="path-ai-action" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS OVERVIEW -->
+      <div class="sec">
+        <div class="shdr">
+          <div class="stitle">🗺️ Dein persönlicher Entwicklungspfad</div>
+          <div id="path-overall-progress" style="font-size:.82rem;font-weight:700;color:var(--p)"></div>
+        </div>
+        <p class="sdesc">Alle Features sind zugänglich – dieser Pfad zeigt dir die psychologisch optimale Reihenfolge für maximale Wirkung. Folge dem Pfad oder wähle frei.</p>
+
+        <!-- OVERALL PROGRESS BAR -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;color:var(--mu);margin-bottom:6px">
+            <span>Gesamtfortschritt</span>
+            <span id="path-pct">0%</span>
+          </div>
+          <div style="height:10px;background:var(--bo);border-radius:5px;overflow:hidden">
+            <div id="path-bar" style="height:100%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div>
+          </div>
+        </div>
+
+        <!-- 5 STAGES -->
+        <div id="path-stages" style="display:flex;flex-direction:column;gap:16px"></div>
+      </div>
+
+      <!-- PHILOSOPHY -->
+      <div class="sec">
+        <div class="shdr"><div class="stitle">💡 Warum dieser Pfad funktioniert</div></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="background:#EEF2FF;border-radius:var(--r2);padding:14px 16px;border:1px solid #C7D2FE">
+            <div style="font-size:.85rem;font-weight:800;color:#3730A3;margin-bottom:6px">⚡ Energie entsteht aus drei Quellen</div>
+            <div style="font-size:.83rem;color:#3730A3;line-height:1.6">
+              <strong>1. Klarheit</strong> – Ich weiß wer ich bin, was ich will und warum.<br>
+              <strong>2. Ausrichtung</strong> – Mein Alltag spiegelt meine Vision wider.<br>
+              <strong>3. Zustand</strong> – Körper, Geist und Emotionen sind reguliert.<br><br>
+              <em>Fehlt eines dieser drei Elemente, entsteht Prokrastination, Erschöpfung oder Ziellosigkeit.</em>
+            </div>
+          </div>
+          <div style="background:#FFF7ED;border-radius:var(--r2);padding:14px 16px;border:1px solid #FED7AA">
+            <div style="font-size:.85rem;font-weight:800;color:#92400E;margin-bottom:6px">⏱️ 15-30 Minuten täglich</div>
+            <div style="font-size:.83rem;color:#92400E;line-height:1.6">
+              Die App ist auf <strong>maximale Wirkung bei minimalem Zeitaufwand</strong> ausgelegt.<br><br>
+              Morgenritual: 7 Min · Tagesarbeit: 5-10 Min · Abendreflexion: 8 Min<br>
+              <strong>Gesamt: ~20 Min täglich</strong> für nachhaltigen Wandel.
+            </div>
+          </div>
+          <div style="background:#F0FDF4;border-radius:var(--r2);padding:14px 16px;border:1px solid #BBF7D0">
+            <div style="font-size:.85rem;font-weight:800;color:#065F46;margin-bottom:6px">🧠 Psychologisches Fundament</div>
+            <div style="font-size:.83rem;color:#065F46;line-height:1.6">
+              Dieser Pfad basiert auf: <strong>Positiver Psychologie</strong> (Seligman), <strong>Selbstbestimmungstheorie</strong> (Deci & Ryan), <strong>ACT</strong> (Hayes), <strong>CBT</strong>, <strong>Logotherapie</strong> (Frankl), <strong>Habit-Forschung</strong> (Clear/Fogg) und <strong>Neuroplastizität</strong>-Forschung.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAILY RITUAL GUIDE -->
+      <div class="sec">
+        <div class="stitle" style="margin-bottom:14px">📅 Dein ideales Tagesritual</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border-radius:var(--r2);border:1px solid #FED7AA">
+            <div style="font-size:1.4rem;flex-shrink:0">🌅</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:800;color:#92400E">Morgen · 7 Minuten</div>
+              <div style="font-size:.8rem;color:#92400E;margin-top:3px;line-height:1.5">
+                <strong>1 Min</strong> – Affirmation & Tagesintention setzen<br>
+                <strong>1 Min</strong> – Energie-Level einschätzen<br>
+                <strong>2 Min</strong> – 3 MIT-Aufgaben die zur Vision beitragen wählen<br>
+                <strong>3 Min</strong> – Dankbarkeit & Fokus-Aufgabe bestimmen
+              </div>
+            </div>
+            <button onclick="openMorningRoutine()" style="padding:7px 12px;background:var(--ac);border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Starten →</button>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#EEF2FF,#E8EFFF);border-radius:var(--r2);border:1px solid #C7D2FE">
+            <div style="font-size:1.4rem;flex-shrink:0">☀️</div>
+            <div style="flex:1">
+              <div style="font-size:.88rem;font-weight:800;color:#3730A3">Tag · 5-10 Minuten</div>
+              <div style="font-size:.8rem;color:#3730A3;margin-top:3px;line-height:1.5">
+                <strong>Pomodoro-Blöcke</strong> für tiefe Fokus-Arbeit<br>
+                <strong>MIT-Aufgaben</strong> nach Energie-Level einteilen<br>
+                <strong>Aufgaben</strong> immer mit Vision-Bezug anlegen
+              </div>
+            </div>
+            <button onclick="showTab('tasks',document.querySelectorAll('.tbtn')[0])" style="padding:7px 12px;background:var(--p);border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Zu Aufgaben →</button>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#FAF5FF,#EDE9FE);border-radius:var(--r2);border:1px solid #DDD6FE">
+            <div style="font-size:1.4rem;flex-shrink:0">🌙</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:800;color:#6D28D9">Abend · 8 Minuten</div>
+              <div style="font-size:.8rem;color:#6D28D9;margin-top:3px;line-height:1.5">
+                <strong>3 Min</strong> – Was hat Energie gegeben / genommen?<br>
+                <strong>2 Min</strong> – Hat mein Tag zu meiner Vision beigetragen?<br>
+                <strong>3 Min</strong> – Intention für morgen setzen
+              </div>
+            </div>
+            <button onclick="openEveningRoutine()" style="padding:7px 12px;background:#8B5CF6;border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Starten →</button>
+          </div>
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border-radius:var(--r2);border:1px solid #BBF7D0">
+            <div style="font-size:1.4rem;flex-shrink:0">📅</div>
+            <div style="flex:1">
+              <div style="font-size:.88rem;font-weight:800;color:#065F46">Woche · Sonntag 20 Minuten</div>
+              <div style="font-size:.8rem;color:#065F46;margin-top:3px;line-height:1.5">
+                <strong>Wochenrückblick</strong> – Was lief gut? Was lerne ich?<br>
+                <strong>Vision-Alignment</strong> – Hat meine Woche zu meiner Vision beigetragen?
+              </div>
+            </div>
+            <button onclick="showTab('review',document.querySelectorAll('.tbtn')[7])" style="padding:7px 12px;background:var(--ok);border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Starten →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISION TAB -->    <div class="tpanel" id="tab-vision">
 
       <!-- VISION PROCESS -->
       <div class="sec" id="vision-process-sec">
@@ -813,7 +989,43 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- MORNING ROUTINE MODAL -->
+<!-- EMOTION CHECK MODAL -->
+<div class="modal-bg" id="emotionmod">
+  <div class="modal-card" style="max-width:400px">
+    <div style="font-size:.78rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">⚡ Emotions-Check</div>
+    <div class="modal-title" id="emotion-task-name">Wie fühlst du dich gerade?</div>
+    <p style="font-size:.83rem;color:var(--mu);margin-bottom:4px">Prokrastination ist meist eine Emotions-Reaktion. Wähle was du spürst:</p>
+    <div class="emotion-grid">
+      <button class="emotion-btn" onclick="selectEmotion('angst')"><span class="emotion-emoji">😰</span><span class="emotion-label">Angst / Druck</span></button>
+      <button class="emotion-btn" onclick="selectEmotion('overwhelm')"><span class="emotion-emoji">🤯</span><span class="emotion-label">Überforderung</span></button>
+      <button class="emotion-btn" onclick="selectEmotion('langeweile')"><span class="emotion-emoji">😑</span><span class="emotion-label">Langeweile</span></button>
+      <button class="emotion-btn" onclick="selectEmotion('erschoepfung')"><span class="emotion-emoji">😴</span><span class="emotion-label">Erschöpfung</span></button>
+      <button class="emotion-btn" onclick="selectEmotion('zweifel')"><span class="emotion-emoji">🤔</span><span class="emotion-label">Zweifel / Unklar</span></button>
+      <button class="emotion-btn" onclick="selectEmotion('fokus')"><span class="emotion-emoji">🔥</span><span class="emotion-label">Fokussiert!</span></button>
+    </div>
+    <div id="emotion-strategy" style="display:none"></div>
+    <button class="addbtn" style="width:100%;margin-top:12px" id="emotion-action-btn" onclick="document.getElementById('emotionmod').style.display='none'">Verstanden – loslegen! 💪</button>
+    <button class="modal-close" onclick="document.getElementById('emotionmod').style.display='none'">Überspringen</button>
+  </div>
+</div>
+
+<!-- DAILY FLOW MODAL -->
+<div class="modal-bg" id="flowmod">
+  <div class="modal-card" style="max-width:460px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div class="modal-title" style="margin-bottom:2px">☀️ Dein Tages-Flow</div>
+        <div style="font-size:.8rem;color:var(--mu)" id="flow-date-label"></div>
+      </div>
+      <div id="flow-energy-badge" style="font-size:.82rem;font-weight:700;padding:5px 12px;border-radius:20px;background:#EEF2FF;color:var(--p)">Energie: ?</div>
+    </div>
+    <!-- ENERGY INSIGHTS -->
+    <div id="flow-insights"></div>
+    <!-- FLOW STEPS -->
+    <div id="flow-steps"></div>
+    <button class="modal-close" onclick="document.getElementById('flowmod').style.display='none'">Schließen</button>
+  </div>
+</div>
 <div class="modal-bg" id="morningmod">
   <div class="modal-card">
     <div class="modal-title">🌅 Morgenroutine</div>
@@ -1106,7 +1318,434 @@ async function saveEveningData(){
   toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
 }
 
-// ── VISION AI PROCESS ──
+// ── EMOTIONS-CHECK ──
+const EMOTION_STRATEGIES={
+  angst:{
+    color:'#FEE2E2',border:'#FCA5A5',icon:'😰',
+    title:'Angst & Druck – das ist normal',
+    text:'Angst vor einer Aufgabe entsteht oft durch Perfektionismus oder Versagensangst. Dein Gehirn übertreibt das Risiko.',
+    steps:['<strong>Worst-Case-Analyse:</strong> Was ist das Schlimmste das passieren kann? Ist es wirklich so schlimm?','<strong>2-Minuten-Regel:</strong> Starte nur für 2 Minuten – kein Druck, kein Ergebnis nötig','<strong>Reframing:</strong> Diese Aufgabe ist ein Schritt zu deiner Vision – kein Test deines Wertes'],
+    btn:'2 Minuten starten 💪'
+  },
+  overwhelm:{
+    color:'#FFF7ED',border:'#FED7AA',icon:'🤯',
+    title:'Überforderung – zerteile es',
+    text:'Überforderung entsteht wenn eine Aufgabe zu groß und zu unspezifisch ist. Dein Gehirn weigert sich anzufangen.',
+    steps:['<strong>Nächster Mini-Schritt:</strong> Was ist die kleinste mögliche Aktion – 2 Minuten oder weniger?','<strong>Alles andere ausblenden:</strong> Nur dieser eine Schritt, sonst nichts','<strong>Pomodoro starten:</strong> 25 Minuten – danach neu bewerten'],
+    btn:'Kleinsten Schritt definieren 🎯'
+  },
+  langeweile:{
+    color:'#F1F5F9',border:'#CBD5E1',icon:'😑',
+    title:'Langeweile – finde den Sinn',
+    text:'Langeweile bei Aufgaben entsteht wenn der Sinnbezug fehlt. Verbinde die Aufgabe mit dem größeren Warum.',
+    steps:['<strong>Vision-Verbindung:</strong> Warum ist diese Aufgabe wichtig für deine Vision?','<strong>Challenge erhöhen:</strong> Wie kannst du die Aufgabe interessanter gestalten – Zeitlimit, Gamification?','<strong>Musik/Flow-State:</strong> Nutze Musik oder den Fokus-Modus für Flow'],
+    btn:'Sinn-Verbindung herstellen 🌟'
+  },
+  erschoepfung:{
+    color:'#EEF2FF',border:'#C7D2FE',icon:'😴',
+    title:'Erschöpfung – höre auf deinen Körper',
+    text:'Erschöpfung ist ein körperliches Signal, kein Charakterfehler. Weiterarbeiten bei echter Erschöpfung kostet mehr als es bringt.',
+    steps:['<strong>Ehrliche Frage:</strong> Ist das echte Erschöpfung oder Vermeidung? Wenn echt: Pause ist produktiv','<strong>5-Minuten-Auffrischung:</strong> Kurzer Spaziergang, Wasser trinken, 3 tiefe Atemzüge','<strong>Energie-Aufgaben:</strong> Wechsle zu einer leichten Aufgabe – sei heute trotzdem produktiv'],
+    btn:'Energie-Aufgabe wählen ⚡'
+  },
+  zweifel:{
+    color:'#F0FDF4',border:'#BBF7D0',icon:'🤔',
+    title:'Zweifel & Unklarheit – kläre zuerst',
+    text:'Unklarheit ist der häufigste versteckte Prokrastinations-Grund. Das Gehirn meidet was es nicht versteht.',
+    steps:['<strong>Aufgabe konkretisieren:</strong> Was genau ist das Ergebnis? Wann ist sie erledigt?','<strong>Erste Frage beantworten:</strong> Was weißt du noch nicht? Kläre nur das – alles andere danach','<strong>FocusAI fragen:</strong> Nutze den Coach um die Aufgabe zu strukturieren'],
+    btn:'Aufgabe konkretisieren 🎯'
+  },
+  fokus:{
+    color:'#F0FDF4',border:'#6DC98A',icon:'🔥',
+    title:'Du bist fokussiert – nutze es!',
+    text:'Fokus-Momente sind wertvoll. Dein Gehirn ist gerade im optimalen Zustand für tiefe Arbeit.',
+    steps:['<strong>Handy weg:</strong> Keine Ablenkungen in den nächsten 25 Minuten','<strong>Pomodoro starten:</strong> Nutze diesen Fokus-Zustand maximal','<strong>Wichtigste Aufgabe:</strong> Starte jetzt mit deiner Frog-Aufgabe oder MIT'],
+    btn:'Fokus-Modus starten 🔲'
+  }
+};
+let currentEmotionTaskId=null;
+
+function openEmotionCheck(taskId){
+  currentEmotionTaskId=taskId;
+  const t=D.tasks.find(x=>x.id===taskId);
+  document.getElementById('emotion-task-name').textContent=t?`⚡ "${t.name.slice(0,40)}"`:' Emotions-Check';
+  document.getElementById('emotion-strategy').style.display='none';
+  document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('emotion-action-btn').textContent='Verstanden – loslegen! 💪';
+  document.getElementById('emotionmod').style.display='flex';
+}
+function selectEmotion(type){
+  document.querySelectorAll('.emotion-btn').forEach(b=>b.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const s=EMOTION_STRATEGIES[type];
+  const el=document.getElementById('emotion-strategy');
+  el.style.display='block';
+  el.style.background=s.color;el.style.borderColor=s.border;
+  el.className='emotion-strategy';
+  el.innerHTML=`<div style="font-size:.88rem;font-weight:800;margin-bottom:6px">${s.icon} ${s.title}</div>
+    <div style="font-size:.83rem;color:var(--mu);margin-bottom:10px;font-style:italic">${s.text}</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${s.steps.map((step,i)=>`<div style="display:flex;gap:8px;font-size:.83rem;line-height:1.5"><span style="font-weight:800;color:var(--p);flex-shrink:0">${i+1}.</span><span>${step}</span></div>`).join('')}
+    </div>`;
+  const btn=document.getElementById('emotion-action-btn');
+  btn.textContent=s.btn;
+  if(type==='fokus'){btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';openFocus();};}
+  else if(type==='erschoepfung'){btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';showTab('wellbeing',document.querySelectorAll('.tbtn')[6]);};}
+  else{btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';};}
+  // Log emotion to journal
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.dailyLog)D.dailyLog={};if(!D.dailyLog[today])D.dailyLog[today]={};
+  if(!D.dailyLog[today].emotions)D.dailyLog[today].emotions=[];
+  D.dailyLog[today].emotions.push({type,taskId:currentEmotionTaskId,time:new Date().toISOString()});
+}
+
+// ── ENERGIE-INTELLIGENZ ──
+function computeEnergyInsights(){
+  const insights=[];
+  const wb=D.wellbeing||[];
+  const today=new Date().toISOString().split('T')[0];
+  const todayWb=wb.find(w=>w.date===today);
+  const last7=wb.slice(0,7);
+
+  // Sleep insight
+  if(last7.length>=3){
+    const avgSleep=last7.reduce((s,w)=>s+w.sleep,0)/last7.length;
+    const todaySleep=todayWb?.sleep;
+    if(todaySleep&&todaySleep<6){
+      insights.push({icon:'😴',type:'warning',color:'#FFF7ED',border:'#FED7AA',title:'Wenig Schlaf heute',text:`Nur ${todaySleep}h Schlaf. An solchen Tagen erledigst du erfahrungsgemäß weniger. Plane heute hauptsächlich leichte und mittlere Aufgaben. Schwere Aufgaben auf morgen verschieben.`});
+    } else if(avgSleep<6.5){
+      insights.push({icon:'💤',type:'warning',color:'#FFF7ED',border:'#FED7AA',title:'Schlaf-Defizit erkannt',text:`Dein Schlaf-Durchschnitt der letzten ${last7.length} Tage liegt bei ${avgSleep.toFixed(1)}h – zu wenig für optimale kognitive Leistung. Priorisiere heute Abend frühere Schlafenszeit.`});
+    }
+  }
+
+  // Energy level insight
+  if(todayWb?.energy){
+    if(todayWb.energy>=8){
+      insights.push({icon:'🔥',type:'boost',color:'#F0FDF4',border:'#BBF7D0',title:'Hohe Energie heute!',text:`Energie-Level ${todayWb.energy}/10 – perfekt für deine schwersten Aufgaben. Nutze diesen Zustand für Frog-Aufgaben und kreative Arbeit. Nicht mit Routine verschwenden!`});
+    } else if(todayWb.energy<=4){
+      insights.push({icon:'⚡',type:'low',color:'#EEF2FF',border:'#C7D2FE',title:'Niedrige Energie heute',text:`Energie-Level ${todayWb.energy}/10. Das ist kein Versagen – es ist Information. Fokussiere dich heute auf leichte, klare Aufgaben. Schwere Entscheidungen und kreative Arbeit auf morgen.`});
+    }
+  }
+
+  // Stress insight
+  if(todayWb?.stress>=8){
+    insights.push({icon:'😰',type:'stress',color:'#FEE2E2',border:'#FCA5A5',title:'Hoher Stresslevel heute',text:`Stress ${todayWb.stress}/10. Hoher Stress beeinträchtigt den Präfrontalen Kortex – die Entscheidungszentrale. Starte mit einer kleinen, erledigbaren Aufgabe für ein Erfolgserlebnis. Das reguliert den Stresslevel.`});
+  }
+
+  // Productivity pattern
+  if(last7.length>=5){
+    const dow=new Date().getDay();
+    const sameDayEntries=wb.filter(w=>new Date(w.date+'T12:00:00').getDay()===dow);
+    if(sameDayEntries.length>=2){
+      const avgEnergy=sameDayEntries.reduce((s,w)=>s+w.energy,0)/sameDayEntries.length;
+      if(avgEnergy>=7){
+        insights.push({icon:'📊',type:'pattern',color:'#F4F6FB',border:'#E4EAF4',title:'Dein persönliches Muster',text:`${['Sonntage','Montage','Dienstage','Mittwoche','Donnerstage','Freitage','Samstage'][dow]} sind für dich typischerweise energiereiche Tage (Ø ${avgEnergy.toFixed(1)}/10). Plane heute deine wichtigsten Aufgaben!`});
+      }
+    }
+  }
+
+  // Overdue tasks insight
+  const overdueCount=D.tasks.filter(t=>isOverdue(t)).length;
+  if(overdueCount>0){
+    insights.push({icon:'⚠️',type:'overdue',color:'#FFF5F5',border:'#FCA5A5',title:`${overdueCount} überfällige Aufgabe${overdueCount>1?'n':''}`,text:`Du hast ${overdueCount} überfällige Aufgabe${overdueCount>1?'n':''} – das erzeugt unbewussten Stress auch wenn du nicht daran denkst. Wähle heute eine davon als MIT-Aufgabe.`});
+  }
+
+  return insights;
+}
+
+// ── TAGES-FLOW-MODUS ──
+function openDailyFlow(){
+  const today=new Date();
+  document.getElementById('flow-date-label').textContent=today.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
+  const todayWb=D.wellbeing?.find(w=>w.date===today.toISOString().split('T')[0]);
+  const energyLevel=todayWb?.energy||null;
+  const energyBadge=document.getElementById('flow-energy-badge');
+  if(energyLevel){
+    const color=energyLevel>=7?'#F0FDF4':energyLevel>=5?'#EEF2FF':'#FFF7ED';
+    const textColor=energyLevel>=7?'#065F46':energyLevel>=5?'#3730A3':'#92400E';
+    const label=energyLevel>=7?'🔥 Hohe Energie':energyLevel>=5?'⚡ Mittlere Energie':'😴 Niedrige Energie';
+    energyBadge.style.background=color;energyBadge.style.color=textColor;
+    energyBadge.textContent=label+' ('+energyLevel+'/10)';
+  } else {
+    energyBadge.textContent='Energie: noch nicht erfasst';
+  }
+
+  // Render energy insights
+  const insights=computeEnergyInsights();
+  const insightsEl=document.getElementById('flow-insights');
+  if(insights.length){
+    insightsEl.innerHTML=insights.map(i=>`<div class="energy-insight" style="background:${i.color};border-color:${i.border}">
+      <div class="energy-insight-icon">${i.icon}</div>
+      <div><div style="font-size:.82rem;font-weight:800;margin-bottom:3px">${i.title}</div>
+      <div class="energy-insight-text" style="font-weight:400">${i.text}</div></div>
+    </div>`).join('');
+  } else {insightsEl.innerHTML='';}
+
+  // Build smart flow steps based on context
+  const todayStr=today.toISOString().split('T')[0];
+  const hasMorning=D.dailyLog?.[todayStr]?.morning;
+  const hasWb=!!todayWb;
+  const hasEvening=D.dailyLog?.[todayStr]?.evening;
+  const mitDone=D.mitDone?.every(Boolean);
+  const openTasks=D.tasks.filter(t=>!t.done).length;
+  const frog=D.tasks.find(t=>t.special==='frog'&&!t.done);
+
+  const steps=[];
+
+  // Step 1: Energie erfassen (if not done)
+  if(!hasWb){
+    steps.push({done:false,time:'1 Min',title:'⚡ Energie erfassen',sub:'Kurzer Wohlbefinden-Check – gibt dir und der App wichtige Daten',action:()=>{document.getElementById('flowmod').style.display='none';showTab('wellbeing',document.querySelectorAll('.tbtn')[6]);}});
+  } else {
+    steps.push({done:true,time:'✓',title:'⚡ Energie erfasst',sub:`Energie: ${todayWb.energy}/10 · Schlaf: ${todayWb.sleep}h`});
+  }
+
+  // Step 2: Morgenroutine (if not done)
+  if(!hasMorning){
+    steps.push({done:false,time:'5 Min',title:'🌅 Morgenroutine',sub:'Intention setzen, Dankbarkeit, Affirmation & Fokus-Aufgabe',action:()=>{document.getElementById('flowmod').style.display='none';openMorningRoutine();}});
+  } else {
+    steps.push({done:true,time:'✓',title:'🌅 Morgenroutine abgeschlossen',sub:`Intention: ${hasMorning.intention?.slice(0,50)||'gesetzt'}...`});
+  }
+
+  // Step 3: MIT (smart recommendation based on energy)
+  if(!mitDone){
+    const rec=energyLevel>=7?'Hohe Energie → heute eine schwere Aufgabe als MIT wählen':energyLevel&&energyLevel<=4?'Niedrige Energie → heute leichte MIT-Aufgaben wählen':'3 Aufgaben wählen die heute zur Vision beitragen';
+    steps.push({done:false,time:'2 Min',title:'🎯 Tagesziele setzen (MIT)',sub:rec,action:()=>{document.getElementById('flowmod').style.display='none';showTab('mit',document.querySelectorAll('.tbtn')[1]);}});
+  } else {
+    steps.push({done:true,time:'✓',title:'🎯 Tagesziele gesetzt',sub:'MIT-Aufgaben für heute definiert'});
+  }
+
+  // Step 4: Frog or first task
+  if(frog){
+    steps.push({done:false,time:'25 Min',title:`🐸 Frog-Aufgabe starten: "${frog.name.slice(0,35)}"`,sub:'Diese Aufgabe gibt dir die meiste Energie wenn du sie erledigst – starte jetzt',action:()=>{document.getElementById('flowmod').style.display='none';openFocus();},highlight:true});
+  } else if(openTasks>0){
+    const topTask=D.tasks.filter(t=>!t.done).sort((a,b)=>{const p={high:0,normal:1,low:2};return p[a.prio]-p[b.prio];})[0];
+    if(topTask)steps.push({done:false,time:'25 Min',title:`▶ Starten: "${topTask.name.slice(0,35)}"`,sub:'Deine wichtigste offene Aufgabe – Pomodoro starten',action:()=>{document.getElementById('flowmod').style.display='none';startPomo();}});
+  }
+
+  // Step 5: Evening (if time is right)
+  const hour=new Date().getHours();
+  if(hour>=17){
+    if(!hasEvening){
+      steps.push({done:false,time:'8 Min',title:'🌙 Abendreflexion',sub:'Tag abschließen, Muster erkennen, Morgen vorbereiten',action:()=>{document.getElementById('flowmod').style.display='none';openEveningRoutine();}});
+    } else {
+      steps.push({done:true,time:'✓',title:'🌙 Abendreflexion abgeschlossen',sub:'Tag erfolgreich reflektiert'});
+    }
+  }
+
+  // Render steps
+  document.getElementById('flow-steps').innerHTML=steps.map((s,i)=>`
+    <div class="flow-step${s.done?' done':i===steps.findIndex(x=>!x.done)?' active':''}${s.highlight?' frog':''}" ${s.action&&!s.done?`onclick="flowSteps[${i}].action()"style="cursor:pointer"`:''}>
+      <div class="flow-step-num">${s.done?'✓':i+1}</div>
+      <div class="flow-step-info">
+        <div class="flow-step-title">${s.title}</div>
+        <div class="flow-step-sub">${s.sub}</div>
+      </div>
+      <span class="flow-step-time">${s.time}</span>
+    </div>`).join('');
+
+  // Store steps for onclick
+  window.flowSteps=steps;
+
+  // Total time
+  const totalMin=steps.filter(s=>!s.done).reduce((sum,s)=>{const m=parseInt(s.time);return sum+(isNaN(m)?0:m);},0);
+  if(totalMin>0){
+    document.getElementById('flow-steps').innerHTML+=`<div style="text-align:center;font-size:.8rem;font-weight:700;color:var(--mu);margin-top:8px;padding:8px;background:var(--bg);border-radius:var(--r3)">⏱ Noch ca. ${totalMin} Minuten für deinen heutigen Flow</div>`;
+  } else {
+    document.getElementById('flow-steps').innerHTML+=`<div style="text-align:center;font-size:.88rem;font-weight:700;color:var(--ok);margin-top:8px;padding:10px;background:#F0FDF4;border-radius:var(--r3);border:1px solid #BBF7D0">🎉 Tages-Flow abgeschlossen! Großartige Arbeit!</div>`;
+  }
+
+  document.getElementById('flowmod').style.display='flex';
+}
+
+const PATH_STAGES=[
+  {
+    id:'self',icon:'🔍',name:'Stufe 1 – Selbsterkenntnis',
+    desc:'Wer bin ich? Was will ich wirklich?',
+    color:'#7C9EE8',badge:'Fundament',
+    why:'Ohne Selbstkenntnis keine echte Vision. Diese Stufe legt das psychologische Fundament für alles andere.',
+    steps:[
+      {id:'vision_process',title:'Vision-Prozess durchführen',why:'Der 6-Schritte-Prozess führt dich von der Sterbebett-Frage zur fertigen Affirmation – psychologisch fundiert und KI-begleitet.',time:'60-90 Min',tab:'vision',action:'startVisionProcess()'},
+      {id:'life_areas',title:'Lebensbereiche definieren',why:'Ohne klare Lebensbereiche fehlt die Struktur für Ziele. Du brauchst Klarheit in welchen Feldern du wachsen willst.',time:'20-30 Min',tab:'vision',action:'showTab("vision",document.querySelectorAll(".tbtn")[3])'},
+      {id:'beliefs_done',title:'Glaubenssätze pro Lebensbereich notiert',why:'Limitierende Glaubenssätze sind die unsichtbare Bremse. Wer sie kennt, kann sie transformieren.',time:'15 Min',tab:'vision',action:'showTab("vision",document.querySelectorAll(".tbtn")[3])'},
+    ]
+  },
+  {
+    id:'align',icon:'🎯',name:'Stufe 2 – Ausrichtung',
+    desc:'Wie bringe ich meinen Alltag in Einklang mit meiner Vision?',
+    color:'#F4A96A',badge:'Struktur',
+    why:'Vision ohne Ausrichtung bleibt ein Traum. Diese Stufe macht die Vision alltagstauglich.',
+    steps:[
+      {id:'first_tasks',title:'Erste Aufgaben mit Lebensbereich anlegen',why:'Wenn jede Aufgabe einem Lebensbereich zugeordnet ist, bekommt Arbeit automatisch mehr Sinn – das stärkste Anti-Prokrastinations-Werkzeug.',time:'10 Min',tab:'tasks',action:'showTab("tasks",document.querySelectorAll(".tbtn")[0])'},
+      {id:'mit_used',title:'MIT-Methode 3 Tage angewendet',why:'Die 3 wichtigsten Aufgaben pro Tag auswählen verhindert Überforderung und schafft tägliche Erfolgserlebnisse.',time:'2 Min/Tag',tab:'mit',action:'showTab("mit",document.querySelectorAll(".tbtn")[1])'},
+      {id:'cal_used',title:'Kalender mit Zeitblöcken genutzt',why:'Aufgaben ohne Zeitplan werden 3x häufiger aufgeschoben. Zeit einplanen = Commitment.',time:'5 Min',tab:'cal',action:'showTab("cal",document.querySelectorAll(".tbtn")[4])'},
+    ]
+  },
+  {
+    id:'energy',icon:'⚡',name:'Stufe 3 – Energie & Rhythmus',
+    desc:'Wie erzeuge ich täglich Energie und Fokus?',
+    color:'#6DC98A',badge:'Energie',
+    why:'Energie ist keine Ressource die man hat – sie wird täglich erzeugt durch Rituale und Rhythmus.',
+    steps:[
+      {id:'morning_done',title:'Erste Morgenroutine abgeschlossen',why:'Die Morgenroutine ist der stärkste Energiegenerator des Tages. Sie aktiviert Intention, Dankbarkeit und Fokus in 7 Minuten.',time:'7 Min',tab:'pomo',action:'openMorningRoutine()'},
+      {id:'pomodoro_used',title:'Pomodoro-Technik 3x genutzt',why:'25-Minuten-Sprints überwinden den Startwiderstand. Das Gehirn prokrastiniert bei großen Aufgaben, nicht bei kleinen Zeitblöcken.',time:'25 Min/Block',tab:'pomo',action:'showTab("pomo",document.querySelectorAll(".tbtn")[3])'},
+      {id:'evening_done',title:'Erste Abendreflexion abgeschlossen',why:'Der Abschluss-Loop ist entscheidend. Was nicht reflektiert wird, wiederholt sich. Abendreflexion schafft Lernschleifen.',time:'8 Min',tab:'diary',action:'openEveningRoutine()'},
+      {id:'wellbeing_tracked',title:'Wohlbefinden 3 Tage getrackt',why:'Energie hat körperliche Ursachen. Wer Schlaf, Stress und Bewegung trackt, erkennt seine persönlichen Energie-Muster.',time:'2 Min/Tag',tab:'wellbeing',action:'showTab("wellbeing",document.querySelectorAll(".tbtn")[6])'},
+    ]
+  },
+  {
+    id:'reflect',icon:'🔄',name:'Stufe 4 – Reflexion & Muster',
+    desc:'Wie lerne ich aus meinen Erfahrungen?',
+    color:'#B08EE8',badge:'Wachstum',
+    why:'Wachstum entsteht nicht durch Erfahrung – sondern durch reflektierte Erfahrung.',
+    steps:[
+      {id:'first_review',title:'Ersten Wochenrückblick durchgeführt',why:'Der Wochenrückblick ist das mächtigste Werkzeug gegen Prokrastination. Er macht Muster sichtbar bevor sie sich verfestigen.',time:'20 Min',tab:'review',action:'showTab("review",document.querySelectorAll(".tbtn")[7])'},
+      {id:'journal_7days',title:'Journal 7 Tage geführt',why:'Das Journal verbindet alle Bereiche zu einem ganzheitlichen Tagesprotokoll. Nach 7 Tagen werden erste Muster sichtbar.',time:'Auto-befüllt',tab:'diary',action:'showTab("diary",document.querySelectorAll(".tbtn")[8])'},
+      {id:'analytics_checked',title:'Analytics-Insights angeschaut',why:'Daten über dich selbst sind Gold. Wann bist du produktiv? Was korreliert mit deiner Energie? Diese Einblicke verändern Verhalten.',time:'5 Min',tab:'analytics',action:'showTab("analytics",document.querySelectorAll(".tbtn")[10])'},
+    ]
+  },
+  {
+    id:'master',icon:'🌱',name:'Stufe 5 – Integration & Meisterschaft',
+    desc:'Alle Systeme greifen ineinander – der Weg wird persönlicher.',
+    color:'#E87C9B',badge:'Meisterschaft',
+    why:'Ab hier wird die App zu deinem persönlichsten Werkzeug. KI-Coach, Quartals-Review und tiefe Muster-Arbeit.',
+    steps:[
+      {id:'ai_coach_used',title:'FocusAI für tiefe Reflexion genutzt',why:'Der KI-Coach kennt deine Vision, Glaubenssätze und Muster. Tiefe Gespräche bringen Erkenntnisse die alleine schwer erreichbar sind.',time:'10-20 Min',tab:'ai',action:'showTab("ai",document.querySelectorAll(".tbtn")[9])'},
+      {id:'quarterly_review',title:'Ersten Quartals-Review durchgeführt',why:'Alle 90 Tage: Stimmt meine Vision noch? Was hat sich verändert? Dieser Review verhindert dass man fleißig in die falsche Richtung läuft.',time:'30 Min',tab:'review',action:'showTab("review",document.querySelectorAll(".tbtn")[7])'},
+      {id:'beliefs_revisited',title:'Glaubenssätze nach 30 Tagen überprüft',why:'Glaubenssätze verändern sich durch Erfahrung. Nach 30 Tagen zeigen sich neue Schichten – und neue Möglichkeiten zur Transformation.',time:'20 Min',tab:'vision',action:'startVisionProcess(3)'},
+    ]
+  }
+];
+
+function getPathProgress(){
+  const completed=JSON.parse(localStorage.getItem('ff_path_'+UID)||'{}');
+  return completed;
+}
+function markPathStep(stepId){
+  const completed=getPathProgress();
+  completed[stepId]=new Date().toISOString();
+  localStorage.setItem('ff_path_'+UID,JSON.stringify(completed));
+  renderPath();
+  toast('✅ Schritt abgehakt! Weiter so! 🚀');
+}
+function computePathStats(){
+  const completed=getPathProgress();
+  // Auto-detect completed steps from app data
+  if(D.vision?.stepData&&Object.keys(D.vision.stepData).length>=6)completed['vision_process']=completed['vision_process']||'auto';
+  if(D.lifeAreas&&Object.values(D.lifeAreas).some(a=>a.vision))completed['life_areas']=completed['life_areas']||'auto';
+  if(D.lifeAreas&&Object.values(D.lifeAreas).some(a=>a.beliefs))completed['beliefs_done']=completed['beliefs_done']||'auto';
+  if(D.tasks&&D.tasks.some(t=>t.lifeArea))completed['first_tasks']=completed['first_tasks']||'auto';
+  if(D.mitDone&&D.mitDone.some(Boolean))completed['mit_used']=completed['mit_used']||'auto';
+  if(D.pomoSess>0)completed['pomodoro_used']=completed['pomodoro_used']||'auto';
+  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.morning))completed['morning_done']=completed['morning_done']||'auto';
+  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.evening))completed['evening_done']=completed['evening_done']||'auto';
+  if(D.wellbeing&&D.wellbeing.length>=3)completed['wellbeing_tracked']=completed['wellbeing_tracked']||'auto';
+  if(D.reviews&&D.reviews.length>0)completed['first_review']=completed['first_review']||'auto';
+  if(journalCache&&Object.keys(journalCache).length>=7)completed['journal_7days']=completed['journal_7days']||'auto';
+  return completed;
+}
+function renderPath(){
+  const completed=computePathStats();
+  const totalSteps=PATH_STAGES.reduce((s,st)=>s+st.steps.length,0);
+  const doneSteps=PATH_STAGES.reduce((s,st)=>s+st.steps.filter(sp=>completed[sp.id]).length,0);
+  const pct=Math.round((doneSteps/totalSteps)*100);
+  document.getElementById('path-pct').textContent=pct+'%';
+  document.getElementById('path-bar').style.width=pct+'%';
+  document.getElementById('path-overall-progress').textContent=doneSteps+' von '+totalSteps+' Schritten';
+
+  // Find next recommended step
+  let nextStep=null,nextStage=null;
+  outer:for(const stage of PATH_STAGES){
+    for(const step of stage.steps){
+      if(!completed[step.id]){nextStep=step;nextStage=stage;break outer;}
+    }
+  }
+  renderPathAI(nextStep,nextStage,pct);
+
+  // Render stages
+  const stagesEl=document.getElementById('path-stages');
+  stagesEl.innerHTML='';
+  PATH_STAGES.forEach((stage,si)=>{
+    const stageDone=stage.steps.filter(s=>completed[s.id]).length;
+    const stageTotal=stage.steps.length;
+    const isComplete=stageDone===stageTotal;
+    const isActive=nextStage?.id===stage.id;
+    const div=document.createElement('div');
+    div.className='path-stage'+(isComplete?' completed':isActive?' active':'');
+    div.innerHTML=`<div class="path-stage-header" onclick="togglePathStage(this)">
+      <div class="path-stage-icon">${stage.icon}</div>
+      <div class="path-stage-info">
+        <div class="path-stage-name">${stage.name}</div>
+        <div class="path-stage-desc">${stage.desc}</div>
+        <div style="height:4px;background:var(--bo);border-radius:2px;margin-top:7px;overflow:hidden;max-width:200px">
+          <div style="height:100%;width:${Math.round((stageDone/stageTotal)*100)}%;background:${isComplete?'var(--ok)':'var(--p)'};border-radius:2px;transition:width .5s"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <span class="path-stage-badge" style="background:${isComplete?'#DCFCE7':isActive?'#EEF2FF':'var(--bg)'};color:${isComplete?'#15803D':isActive?'var(--p)':'var(--mu)'};border:1.5px solid ${isComplete?'#BBF7D0':isActive?'#C7D2FE':'var(--bo)'}">${isComplete?'✓ Abgeschlossen':isActive?'● Aktiv':stage.badge}</span>
+        <span class="path-stage-prog">${stageDone}/${stageTotal}</span>
+      </div>
+    </div>
+    <div class="path-stage-steps">
+      <div style="padding:12px 16px 8px;font-size:.8rem;color:var(--mu);line-height:1.5;border-bottom:1px solid var(--bo);font-style:italic">💡 ${stage.why}</div>
+      ${stage.steps.map(step=>{
+        const done=!!completed[step.id];
+        return`<div class="path-step${done?' completed':''}">
+          <div class="path-step-cb">${done?'✓':''}</div>
+          <div class="path-step-info">
+            <div class="path-step-title">${step.title}</div>
+            <div class="path-step-why">${step.why}</div>
+          </div>
+          <span class="path-step-time">⏱ ${step.time}</span>
+          ${!done?`<button class="path-step-action" onclick="${step.action};closePathAndGo('${step.tab}')">Starten →</button>`:`<button onclick="markPathStep('${step.id}')" style="padding:6px 10px;border:2px solid var(--ok);background:none;border-radius:var(--r3);color:var(--ok);cursor:pointer;font-size:.75rem;font-weight:700;white-space:nowrap">✓ Erledigt</button>`}
+        </div>`;
+      }).join('')}
+    </div>`;
+    // Auto-open active stage
+    if(isActive||isComplete)div.classList.add('open');
+    stagesEl.appendChild(div);
+  });
+}
+function togglePathStage(header){header.parentElement.classList.toggle('open');}
+function closePathAndGo(tab){
+  const btn=Array.from(document.querySelectorAll('.tbtn')).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+tab+"'"));
+  if(btn)btn.click();
+}
+async function renderPathAI(nextStep,nextStage,pct){
+  const textEl=document.getElementById('path-ai-text');
+  const actionEl=document.getElementById('path-ai-action');
+  if(pct===100){
+    textEl.textContent='🎉 Du hast alle Schritte abgeschlossen! Das ist eine außergewöhnliche Leistung. Dein nächster Schritt ist der Quartals-Review – überprüfe deine Vision und setze neue Impulse.';
+    actionEl.innerHTML=`<button class="path-step-action" onclick="showTab('review',document.querySelectorAll('.tbtn')[7])">Zum Quartals-Review →</button>`;
+    return;
+  }
+  if(!nextStep){textEl.textContent='Analysiere...';return;}
+  // Generate AI recommendation
+  textEl.innerHTML='<em style="color:var(--mu)">✨ Analysiere deinen Fortschritt...</em>';
+  actionEl.innerHTML='';
+  try{
+    const context=`Du bist ein motivierender Life-Coach. Der Nutzer verwendet FocusFlow, eine App für Energie und Lebensvision.
+Sein aktueller Fortschritt: ${pct}% des Entwicklungspfads abgeschlossen.
+Sein nächster empfohlener Schritt: "${nextStep.title}" in Stufe "${nextStage.name}".
+Vision-Status: ${D.vision?.y5?'Vision formuliert':'Noch keine Vision'}.
+Streak: ${D.streak} Tage.
+
+Schreibe 2-3 motivierende Sätze (max 60 Wörter) die:
+1. Den aktuellen Stand anerkennen
+2. Erklären WARUM genau dieser nächste Schritt jetzt wichtig ist
+3. Zur Aktion einladen
+
+Ton: warm, direkt, psychologisch fundiert. Keine Floskeln. Auf Deutsch.`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:context}]})});
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'';
+    textEl.textContent=reply;
+    actionEl.innerHTML=`<button class="path-step-action" onclick="${nextStep.action};closePathAndGo('${nextStep.tab}')">Jetzt: ${nextStep.title} →</button>`;
+  }catch(e){
+    textEl.textContent=`Dein nächster Schritt: "${nextStep.title}" – ${nextStep.why}`;
+    actionEl.innerHTML=`<button class="path-step-action" onclick="${nextStep.action};closePathAndGo('${nextStep.tab}')">Jetzt starten →</button>`;
+  }
+}
+
 const VISION_STEPS=[
   {
     id:'deathbed',title:'⚰️ Die Sterbebett-Frage',subtitle:'Was wirklich zählt im Leben',
@@ -1454,6 +2093,7 @@ function renderTasks(){
           ${depT?'<span class="badge b-dep">🔗 Abhängig</span>':''}
         </div>
       </div>
+      <button class="delbtn" onclick="openEmotionCheck(${t.id})" title="Emotions-Check" style="color:var(--p)">⚡</button>
       <button class="delbtn" onclick="delTask(${t.id})">🗑</button>
     </div>`;
   }).join('');
@@ -1921,6 +2561,7 @@ function showTab(name,btn){
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+name).classList.add('on');btn.classList.add('on');
+  if(name==='path')renderPath();
   if(name==='mit')renderMIT();
   if(name==='vision')renderVision();
   if(name==='cal'){if(calView==='month')renderCal();else renderDayView();}
@@ -1938,16 +2579,24 @@ const RWS=[{e:'🏆',t:'Fantastisch!',m:'5 Aufgaben erledigt!'},{e:'🌟',t:'Sup
 function showRw(done){const r=RWS[Math.min(Math.floor(done/5)-1,RWS.length-1)];document.getElementById('rwe').textContent=r.e;document.getElementById('rwt').textContent=r.t;document.getElementById('rwm').textContent=r.m;document.getElementById('rwmodal').style.display='flex';}
 function closeRw(){document.getElementById('rwmodal').style.display='none';}
 
-function renderAll(){renderTasks();renderMIT();renderStats();renderVision();renderWellbeing();renderReviews();updPomo();updateDepSelect();showMorningSummary();checkEveningPrompt();}
+function renderAll(){renderTasks();renderMIT();renderStats();renderVision();renderWellbeing();renderReviews();updPomo();updateDepSelect();showMorningSummary();checkEveningPrompt();renderPath();}
 
 function checkEveningPrompt(){
   const h=new Date().getHours();
   const today=new Date().toISOString().split('T')[0];
   const hasEvening=D.dailyLog?.[today]?.evening;
+  const hasMorning=D.dailyLog?.[today]?.morning;
+  const hasWb=D.wellbeing?.some(w=>w.date===today);
+  // Flow btn status
+  const flowBtn=document.getElementById('flow-btn');
+  const completedToday=([hasMorning,hasWb,hasEvening||h<17].filter(Boolean).length);
+  if(completedToday===0)flowBtn.textContent='⚡ Tages-Flow starten';
+  else if(completedToday===3||( completedToday===2&&h<17))flowBtn.textContent='⚡ Tages-Flow ✓';
+  else flowBtn.textContent=`⚡ Tages-Flow (${completedToday}/3)`;
   if(h>=19&&!hasEvening){
     document.getElementById('evening-btn').style.background='rgba(255,200,100,.4)';
     document.getElementById('evening-btn').style.border='1.5px solid rgba(255,220,150,.6)';
-    document.getElementById('evening-btn').textContent='🌙 Abendreflexion (empfohlen!)';
+    document.getElementById('evening-btn').textContent='🌙 Abendreflexion (jetzt!)';
   } else if(hasEvening){
     document.getElementById('evening-btn').textContent='🌙 Reflexion ✓';
     document.getElementById('evening-btn').style.background='rgba(176,142,232,.4)';
