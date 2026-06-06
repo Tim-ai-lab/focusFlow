@@ -2579,7 +2579,19 @@ const RWS=[{e:'🏆',t:'Fantastisch!',m:'5 Aufgaben erledigt!'},{e:'🌟',t:'Sup
 function showRw(done){const r=RWS[Math.min(Math.floor(done/5)-1,RWS.length-1)];document.getElementById('rwe').textContent=r.e;document.getElementById('rwt').textContent=r.t;document.getElementById('rwm').textContent=r.m;document.getElementById('rwmodal').style.display='flex';}
 function closeRw(){document.getElementById('rwmodal').style.display='none';}
 
-function renderAll(){renderTasks();renderMIT();renderStats();renderVision();renderWellbeing();renderReviews();updPomo();updateDepSelect();showMorningSummary();checkEveningPrompt();renderPath();}
+function renderAll(){
+  try{renderTasks();}catch(e){console.error('renderTasks',e);}
+  try{renderMIT();}catch(e){console.error('renderMIT',e);}
+  try{renderStats();}catch(e){console.error('renderStats',e);}
+  try{renderVision();}catch(e){console.error('renderVision',e);}
+  try{renderWellbeing();}catch(e){console.error('renderWellbeing',e);}
+  try{renderReviews();}catch(e){console.error('renderReviews',e);}
+  try{updPomo();}catch(e){console.error('updPomo',e);}
+  try{updateDepSelect();}catch(e){console.error('updateDepSelect',e);}
+  try{showMorningSummary();}catch(e){console.error('showMorningSummary',e);}
+  try{checkEveningPrompt();}catch(e){console.error('checkEveningPrompt',e);}
+  try{renderPath();}catch(e){console.error('renderPath',e);}
+}
 
 function checkEveningPrompt(){
   const h=new Date().getHours();
