@@ -1128,31 +1128,41 @@ async function loadAllData(){
   checkStreak();generateRecurring();renderAll();
 }
 async function loadTasks(){
-  const r=await sbFetch('/rest/v1/tasks?user_id=eq.'+UID+'&order=created_at.desc');
-  if(r.ok&&r.data)D.tasks=r.data.map(t=>({id:t.id,name:t.name,prio:t.prio,diff:t.diff,special:t.special||'',lifeArea:t.life_area||'',recurring:t.recurring||'',start:t.start_date||'',end:t.end_date||'',startTime:t.start_time||'',endTime:t.end_time||'',dep:t.dep||'',done:t.done,createdAt:t.created_at}));
+  try{
+    const r=await sbFetch('/rest/v1/tasks?user_id=eq.'+UID+'&order=created_at.desc');
+    if(r.ok&&r.data)D.tasks=r.data.map(t=>({id:t.id,name:t.name,prio:t.prio,diff:t.diff,special:t.special||'',lifeArea:t.life_area||'',recurring:t.recurring||'',start:t.start_date||'',end:t.end_date||'',startTime:t.start_time||'',endTime:t.end_time||'',dep:t.dep||'',done:t.done,createdAt:t.created_at}));
+  }catch(e){console.error('loadTasks',e);}
 }
 async function loadStats(){
-  const r=await sbFetch('/rest/v1/stats?user_id=eq.'+UID);
-  if(r.ok&&r.data&&r.data.length){const s=r.data[0];D.streak=s.streak||0;D.lastDate=s.last_date||'';D.pomoSess=s.pomo_sess||0;D.todayDone=s.today_done||0;D.todayScore=s.today_score||0;D.weekDone=s.week_done||[0,0,0,0,0,0,0];}
+  try{
+    const r=await sbFetch('/rest/v1/stats?user_id=eq.'+UID);
+    if(r.ok&&r.data&&r.data.length){const s=r.data[0];D.streak=s.streak||0;D.lastDate=s.last_date||'';D.pomoSess=s.pomo_sess||0;D.todayDone=s.today_done||0;D.todayScore=s.today_score||0;D.weekDone=s.week_done||[0,0,0,0,0,0,0];}
+  }catch(e){console.error('loadStats',e);}
 }
 async function loadDiary(){
-  const r=await sbFetch('/rest/v1/diary?user_id=eq.'+UID+'&order=created_at.desc');
-  if(r.ok&&r.data)D.diary=r.data.map(d=>({id:d.id,habit:d.habit,trigger:d.trigger||'',strategy:d.strategy,cat:d.cat,date:d.date}));
+  try{
+    const r=await sbFetch('/rest/v1/diary?user_id=eq.'+UID+'&order=created_at.desc');
+    if(r.ok&&r.data)D.diary=r.data.map(d=>({id:d.id,habit:d.habit,trigger:d.trigger||'',strategy:d.strategy,cat:d.cat,date:d.date}));
+  }catch(e){console.error('loadDiary',e);}
 }
 async function loadMIT(){
-  const r=await sbFetch('/rest/v1/mit_tasks?user_id=eq.'+UID);
-  if(r.ok&&r.data&&r.data.length){D.mitTasks=r.data[0].tasks||['','',''];D.mitDone=r.data[0].done||[false,false,false];}
+  try{
+    const r=await sbFetch('/rest/v1/mit_tasks?user_id=eq.'+UID);
+    if(r.ok&&r.data&&r.data.length){D.mitTasks=r.data[0].tasks||['','',''];D.mitDone=r.data[0].done||[false,false,false];}
+  }catch(e){console.error('loadMIT',e);}
 }
 async function loadProfile(){
-  const r=await sbFetch('/rest/v1/profiles?id=eq.'+UID);
-  if(r.ok&&r.data&&r.data.length){
-    const p=r.data[0];
-    if(p.vision)D.vision=p.vision;
-    if(p.life_areas)D.lifeAreas=p.life_areas;
-    if(p.wellbeing)D.wellbeing=p.wellbeing;
-    if(p.reviews)D.reviews=p.reviews;
-    if(p.daily_log)D.dailyLog=p.daily_log;
-  }
+  try{
+    const r=await sbFetch('/rest/v1/profiles?id=eq.'+UID);
+    if(r.ok&&r.data&&r.data.length){
+      const p=r.data[0];
+      if(p.vision)D.vision=p.vision;
+      if(p.life_areas)D.lifeAreas=p.life_areas;
+      if(p.wellbeing)D.wellbeing=p.wellbeing;
+      if(p.reviews)D.reviews=p.reviews;
+      if(p.daily_log)D.dailyLog=p.daily_log;
+    }
+  }catch(e){console.error('loadProfile',e);}
 }
 async function saveStats(){await sbFetch('/rest/v1/stats?user_id=eq.'+UID,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({user_id:UID,streak:D.streak,last_date:D.lastDate,pomo_sess:D.pomoSess,today_done:D.todayDone,today_score:D.todayScore,week_done:D.weekDone})});}
 async function saveMIT(){await sbFetch('/rest/v1/mit_tasks?user_id=eq.'+UID,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({user_id:UID,tasks:D.mitTasks,done:D.mitDone})});}
@@ -1401,6 +1411,7 @@ function selectEmotion(type){
 
 // ── ENERGIE-INTELLIGENZ ──
 function computeEnergyInsights(){
+  if(!D)return[];
   const insights=[];
   const wb=D.wellbeing||[];
   const today=new Date().toISOString().split('T')[0];
@@ -1455,6 +1466,7 @@ function computeEnergyInsights(){
 
 // ── TAGES-FLOW-MODUS ──
 function openDailyFlow(){
+  if(!D||!UID){toast('Bitte erst einloggen.');return;}
   const today=new Date();
   document.getElementById('flow-date-label').textContent=today.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
   const todayWb=D.wellbeing?.find(w=>w.date===today.toISOString().split('T')[0]);
@@ -1646,6 +1658,7 @@ function computePathStats(){
   return completed;
 }
 function renderPath(){
+  if(!UID||!D)return;
   const completed=computePathStats();
   const totalSteps=PATH_STAGES.reduce((s,st)=>s+st.steps.length,0);
   const doneSteps=PATH_STAGES.reduce((s,st)=>s+st.steps.filter(sp=>completed[sp.id]).length,0);
@@ -1713,6 +1726,7 @@ function closePathAndGo(tab){
   if(btn)btn.click();
 }
 async function renderPathAI(nextStep,nextStage,pct){
+  if(!document.getElementById('path-ai-text'))return;
   const textEl=document.getElementById('path-ai-text');
   const actionEl=document.getElementById('path-ai-action');
   if(pct===100){
