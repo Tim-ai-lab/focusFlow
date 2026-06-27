@@ -2240,6 +2240,7 @@ function renderJourney(){
   const nextId=journey.find(id=>!completed[id]);
   const bi=BLOCKER_INFO[p.blocker]||{t:p.blocker,s:''};
   let html='';
+  html+=renderNextActionCard();
   html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
     <div class="shdr"><div class="stitle">🧭 Dein persönlicher Weg</div>
       <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
@@ -2303,6 +2304,73 @@ async function journeyAI(stepId){
   const reply=await callAI([{role:'user',content:msg}],sys,500);
   if(reply){box.innerHTML='<div style="background:var(--bg);border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px;font-size:.86rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.2rem;flex-shrink:0">🤖</div><div>'+reply.replace(/\n/g,'<br>')+'</div></div>';}
   else{box.innerHTML='<div class="info-box info-orange" style="margin-top:0">⚠️ FocusAI ist gerade nicht erreichbar. Tipp: Starte mit dem allerkleinsten möglichen Schritt – 2 Minuten genügen.</div>';}
+}
+
+// ── Jetzt sofort: konkrete nächste Handlung (regelbasiert, KI auf Klick) ──
+let nextActionObj=null;
+function computeNextAction(){
+  const today=new Date().toISOString().split('T')[0];
+  const hour=new Date().getHours();
+  const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
+  const clean=n=>(n||'').replace(/_rec_\d{4}-\d{2}-\d{2}$/,'');
+  const open=(D.tasks||[]).filter(t=>!t.done);
+  const frog=open.find(t=>t.special==='frog');
+  const overdue=open.filter(t=>isOverdue(t));
+  const hasWb=(D.wellbeing||[]).some(w=>w.date===today);
+  const hasMorning=D.dailyLog&&D.dailyLog[today]&&D.dailyLog[today].morning;
+  const hasEvening=D.dailyLog&&D.dailyLog[today]&&D.dailyLog[today].evening;
+  const mitSet=(D.mitTasks||[]).some(t=>t&&t.trim());
+  const mitFirstUndone=(D.mitTasks||[]).findIndex((t,i)=>t&&t.trim()&&!(D.mitDone&&D.mitDone[i]));
+  const A=(icon,title,why,btn,run,ctx)=>({icon,title,why,btn,run,ctx});
+  const acts={};
+  acts.frog = frog ? A('🐸','Iss den Frosch: „'+clean(frog.name).slice(0,40)+'"','Deine schwerste Aufgabe gibt dir die meiste Energie, wenn du sie zuerst erledigst. Starte 25 fokussierte Minuten.','🔲 Fokus-Modus starten',()=>{startPomo();openFocus();},'Frog-Aufgabe „'+clean(frog.name)+'" als Erstes mit Fokus-Modus erledigen') : null;
+  acts.overdue = overdue.length ? A('⚠️',overdue.length+' überfällige Aufgabe'+(overdue.length>1?'n':'')+' – starte mit „'+clean(overdue[0].name).slice(0,32)+'"','Überfälliges erzeugt unbewussten Stress, auch wenn du nicht daran denkst. Eine davon jetzt anzugehen entlastet sofort.','Zu den Aufgaben →',()=>closePathAndGo('tasks'),overdue.length+' überfällige Aufgaben, zuerst „'+clean(overdue[0].name)+'"') : null;
+  acts.energy = (!hasWb && hour<16) ? A('⚡','Erfasse kurz deine Energie (1 Min)','Mit deinem Energie-Level empfiehlt dir die App die passenden Aufgaben – und du erkennst mit der Zeit deine Muster.','Energie erfassen →',()=>closePathAndGo('wellbeing'),'Wohlbefinden/Energie für heute eintragen') : null;
+  acts.morning = (!hasMorning && hour<14) ? A('🌅','Starte deine Morgenroutine (7 Min)','Intention, Dankbarkeit und Fokus-Aufgabe setzen den Ton für den ganzen Tag.','Morgenroutine starten →',()=>openMorningRoutine(),'Morgenroutine durchführen') : null;
+  acts.mitSet = (!mitSet && open.length>0) ? A('🎯','Setze deine 3 wichtigsten Aufgaben für heute','Maximal 3 – das verhindert Überforderung und schafft klare Priorität.','Tagesziele setzen →',()=>closePathAndGo('mit'),'die 3 MIT-Aufgaben für heute festlegen') : null;
+  acts.mitDo = (mitFirstUndone>=0) ? A('🎯','Erledige deine Hauptaufgabe: „'+D.mitTasks[mitFirstUndone].slice(0,40)+'"','Diese Aufgabe trägt heute am meisten zu deinem Ziel bei – sie zuerst.','Zu den Tageszielen →',()=>closePathAndGo('mit'),'MIT-Aufgabe „'+D.mitTasks[mitFirstUndone]+'" erledigen') : null;
+  acts.topTask = open.length ? (()=>{const top=open.slice().sort((a,b)=>{const pr={high:0,normal:1,low:2};return pr[a.prio]-pr[b.prio];})[0];return A('▶️','Starte mit „'+clean(top.name).slice(0,40)+'"','Deine wichtigste offene Aufgabe – 25 Minuten Pomodoro bringen dich ins Tun.','▶ Pomodoro starten',()=>{closePathAndGo('pomo');startPomo();},'Aufgabe „'+clean(top.name)+'" mit Pomodoro starten');})() : null;
+  acts.evening = (hour>=17 && !hasEvening) ? A('🌙','Schließe den Tag mit der Abendreflexion ab','Was nicht reflektiert wird, wiederholt sich. 8 Minuten für Lernen & Vorbereitung auf morgen.','Abendreflexion starten →',()=>openEveningRoutine(),'Abendreflexion durchführen') : null;
+  acts.journey = (()=>{const ob=D.vision&&D.vision.onboarding;if(!(ob&&ob.done&&ob.journey))return null;const cat=journeyCatalog();const completed=computePathStats();const nid=ob.journey.find(id=>cat[id]&&!completed[id]);if(!nid)return null;const s=cat[nid];return A(s.icon,s.title,s.why,'Jetzt starten →',()=>journeyGo(nid),s.title+' angehen');})();
+  acts.firstTask = A('➕','Lege deine erste Aufgabe an','Jede große Veränderung beginnt mit einer konkreten ersten Aufgabe.','Aufgabe anlegen →',()=>closePathAndGo('tasks'),'die erste Aufgabe anlegen');
+  // Reihenfolge – je nach Haupt-Blockade leicht angepasst
+  let order=['frog','overdue','energy','morning','mitSet','mitDo','topTask','evening','journey','firstTask'];
+  if(p.blocker==='lowenergy')order=['energy','morning','overdue','frog','mitDo','mitSet','topTask','evening','journey','firstTask'];
+  else if(p.blocker==='overwhelm')order=['mitSet','mitDo','frog','overdue','energy','morning','topTask','evening','journey','firstTask'];
+  else if(p.blocker==='distraction'||p.blocker==='procrastination')order=['frog','topTask','overdue','mitDo','mitSet','energy','morning','evening','journey','firstTask'];
+  for(const k of order){if(acts[k])return acts[k];}
+  return acts.firstTask;
+}
+function renderNextActionCard(){
+  nextActionObj=computeNextAction();
+  const a=nextActionObj;if(!a)return '';
+  return `<div class="sec" style="background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1.5px solid #FED7AA">
+    <div style="font-size:.74rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px">⚡ Jetzt sofort</div>
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:1.8rem;flex-shrink:0">${a.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:1rem;font-weight:800;line-height:1.35;margin-bottom:3px">${a.title}</div>
+        <div style="font-size:.84rem;color:#92400E;line-height:1.5">${a.why}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">
+          <button class="addbtn" style="background:linear-gradient(135deg,var(--ac),#E87E3A)" onclick="runNextAction()">${a.btn}</button>
+          <button onclick="refineNextAction()" style="padding:10px 14px;border:2px solid #FED7AA;background:#fff;border-radius:var(--r2);color:#92400E;font-weight:700;cursor:pointer;font-size:.84rem">🤖 verfeinern</button>
+        </div>
+        <div id="next-action-ai" style="display:none;margin-top:11px"></div>
+      </div>
+    </div>
+  </div>`;
+}
+function runNextAction(){if(nextActionObj&&nextActionObj.run){try{nextActionObj.run();}catch(e){console.error('runNextAction',e);}}}
+async function refineNextAction(){
+  const box=document.getElementById('next-action-ai');if(!box||!nextActionObj)return;
+  const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
+  box.style.display='block';
+  box.innerHTML='<div style="font-size:.84rem;color:var(--mu);font-style:italic">✨ FocusAI denkt nach…</div>';
+  const sys='Du bist FocusAI, ein konkreter, motivierender Coach. Antworte auf Deutsch, max 110 Wörter, mit 2–3 sehr konkreten Mini-Schritten zum sofort Loslegen. Direkt und warmherzig.';
+  const msg='Empfohlene nächste Handlung des Nutzers: '+nextActionObj.ctx+'. Profil: Blockade='+(p.blocker||'?')+', Energie='+(p.energyBaseline||'?')+', Zeit/Tag='+(p.timePerDay||'?')+'. Hilf ihm, genau JETZT damit anzufangen – nenne den allerersten Mini-Schritt und wie er den inneren Widerstand überwindet.';
+  const reply=await callAI([{role:'user',content:msg}],sys,400);
+  if(reply)box.innerHTML='<div style="background:#fff;border:1.5px solid #FED7AA;border-radius:var(--r2);padding:11px 13px;font-size:.85rem;line-height:1.6;display:flex;gap:9px"><div style="font-size:1.1rem;flex-shrink:0">🤖</div><div>'+reply.replace(/\n/g,'<br>')+'</div></div>';
+  else box.innerHTML='<div class="info-box info-orange" style="margin-top:0">⚠️ FocusAI gerade nicht erreichbar. Mach einfach den allerkleinsten Schritt – 2 Minuten genügen, um den Widerstand zu brechen.</div>';
 }
 
 // ═══════════════════════════════════════════════════════════════
