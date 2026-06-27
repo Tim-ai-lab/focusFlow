@@ -505,7 +505,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
     <!-- TABS -->
     <div class="tnav">
-      <button class="tbtn on" onclick="showTab('tasks',this)">📋 Aufgaben</button>
+      <button class="tbtn" onclick="showTab('tasks',this)">📋 Aufgaben</button>
       <button class="tbtn" onclick="showTab('mit',this)">🎯 Tagesziele</button>
       <button class="tbtn" onclick="showTab('path',this)">🗺️ Mein Pfad</button>
       <button class="tbtn" onclick="showTab('vision',this)">🌟 Vision</button>
@@ -517,10 +517,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="tbtn" onclick="showTab('diary',this)">📓 Journal</button>
       <button class="tbtn" onclick="showTab('ai',this)">🤖 FocusAI</button>
       <button class="tbtn" onclick="showTab('analytics',this)">📈 Analytics</button>
+      <button class="tbtn on" id="tbtn-journey" onclick="showTab('journey',this)" style="order:-1">🧭 Mein Weg</button>
+    </div>
+
+    <!-- MEIN WEG (personalisierte Strecke) -->
+    <div class="tpanel on" id="tab-journey">
+      <div id="journey-content"></div>
     </div>
 
     <!-- TASKS -->
-    <div class="tpanel on" id="tab-tasks">
+    <div class="tpanel" id="tab-tasks">
       <div class="sec">
         <div class="shdr"><div class="stitle">Aufgaben</div><span style="font-size:.74rem;color:var(--mu);font-weight:700" id="task-counter"></span></div>
         <div id="frogtip" style="display:none" class="frogtip">🐸 Eat the Frog: Starte mit deiner schwersten Aufgabe!</div>
@@ -1092,6 +1098,51 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- ONBOARDING / EINGANGSTEST (obligatorisch) -->
+<div id="onboardmod" style="position:fixed;inset:0;background:linear-gradient(135deg,#EEF2FF,#F4F6FB,#FFF5EE);display:none;z-index:400;overflow-y:auto;padding:20px">
+  <div style="max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center">
+    <div style="background:var(--card);border-radius:24px;padding:32px 28px;box-shadow:0 8px 40px rgba(124,158,232,.15)">
+      <div id="ob-intro">
+        <div style="font-size:2.4rem;text-align:center;margin-bottom:8px">🧭</div>
+        <h2 style="text-align:center;font-size:1.4rem;font-weight:800;margin-bottom:8px">Dein persönlicher Weg</h2>
+        <p style="text-align:center;color:var(--mu);font-size:.9rem;line-height:1.6;margin-bottom:22px">Bevor du startest, lernen wir dich kennen. In ~16 kurzen Fragen findet FocusFlow heraus, wo du stehst und was dich wirklich weiterbringt – und erstellt daraus deine individuelle Strecke zum Ziel.</p>
+        <div class="info-box info-blue" style="margin-bottom:22px">🔒 Deine Antworten bleiben privat und bestimmen nur deinen persönlichen Weg in der App.</div>
+        <button class="btnmain" onclick="beginOnboarding()">Los geht's →</button>
+      </div>
+      <div id="ob-quiz" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em" id="ob-counter">Frage 1 / 16</div>
+          <div style="font-size:.74rem;font-weight:700;color:var(--mu)" id="ob-pct">6%</div>
+        </div>
+        <div style="height:8px;background:var(--bo);border-radius:5px;overflow:hidden;margin-bottom:22px"><div id="ob-bar" style="height:100%;width:6%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .4s"></div></div>
+        <div id="ob-question" style="font-size:1.12rem;font-weight:800;line-height:1.4;margin-bottom:6px"></div>
+        <div id="ob-sub" style="font-size:.85rem;color:var(--mu);margin-bottom:16px;line-height:1.5"></div>
+        <div id="ob-options" style="display:flex;flex-direction:column;gap:9px"></div>
+        <div style="margin-top:18px">
+          <button class="modal-close" style="width:auto;padding:9px 18px;margin-top:0" onclick="prevOb()" id="ob-back-btn">‹ Zurück</button>
+        </div>
+      </div>
+      <div id="ob-result" style="display:none;text-align:center">
+        <div class="spinner" style="margin:10px auto 16px"></div>
+        <div style="font-size:1.05rem;font-weight:800;margin-bottom:6px">Dein Weg wird erstellt…</div>
+        <div style="font-size:.85rem;color:var(--mu)" id="ob-result-sub">FocusFlow wertet deine Antworten aus.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.ob-opt{text-align:left;padding:13px 15px;border:2px solid var(--bo);border-radius:var(--r2);background:var(--bg);cursor:pointer;font-size:.92rem;font-weight:600;color:var(--txt);transition:all .15s;font-family:inherit;line-height:1.4}
+.ob-opt:hover{border-color:var(--p);background:#EEF2FF;transform:translateX(2px)}
+.ob-opt.sel{border-color:var(--p);background:#EEF2FF;box-shadow:0 0 0 3px rgba(124,158,232,.12)}
+.jstep{display:flex;align-items:flex-start;gap:12px;padding:14px 15px;border:1.5px solid var(--bo);border-radius:var(--r2);background:var(--bg);transition:all .2s;margin-bottom:9px}
+.jstep.current{border-color:var(--p);background:#EEF2FF;box-shadow:0 4px 18px rgba(124,158,232,.14)}
+.jstep.done{border-color:var(--ok);background:#F0FDF4;opacity:.82}
+.jstep-num{width:30px;height:30px;border-radius:50%;background:var(--bo);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:var(--mu);flex-shrink:0}
+.jstep.current .jstep-num{background:var(--p);color:#fff}
+.jstep.done .jstep-num{background:var(--ok);color:#fff}
+</style>
+
 <script>
 // ═══════════════════════════════════════════════════════════════
 // ── CONFIG ──  Supabase-Schlüssel, Konstanten, Lookup-Tabellen
@@ -1306,6 +1357,7 @@ async function loadAndShow(user){
   initAIProvider();
   try{await loadAllData();}catch(e){console.error('loadAllData',e);}
   loading(false);
+  try{maybeStartOnboarding();}catch(e){console.error('onboarding',e);}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1977,6 +2029,280 @@ async function renderPathAI(nextStep,nextStage,pct){
   };
   textEl.textContent=recs[nextStep.id]||`Dein nächster Schritt: "${nextStep.title}" – ${nextStep.why}`;
   actionEl.innerHTML=`<button class="path-step-action" onclick="${nextStep.action};closePathAndGo('${nextStep.tab}')">Jetzt starten →</button>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ── ONBOARDING & JOURNEY ──  Eingangstest + personalisierte Strecke
+// ═══════════════════════════════════════════════════════════════
+const ONBOARD_QUESTIONS=[
+ {id:'goal',q:'Was ist dein wichtigstes Ziel mit FocusFlow?',sub:'Worauf soll dein Weg zuerst einzahlen?',o:[
+   {v:'vision',label:'🌟 Klarheit & Vision finden'},
+   {v:'procrastination',label:'🚀 Prokrastination überwinden'},
+   {v:'productivity',label:'⚡ Produktiver & fokussierter werden'},
+   {v:'balance',label:'🧘 Ausgeglichener & energiegeladener leben'},
+   {v:'habits',label:'🔁 Dranbleiben & gute Gewohnheiten aufbauen'}]},
+ {id:'area',q:'Welcher Lebensbereich ist dir gerade am wichtigsten?',o:[
+   {v:'career',label:'💼 Karriere & Beruf'},
+   {v:'health',label:'💪 Gesundheit & Körper'},
+   {v:'relations',label:'❤️ Beziehungen'},
+   {v:'finance',label:'💰 Finanzen'},
+   {v:'personal',label:'🧠 Persönlichkeit & Lernen'},
+   {v:'meaning',label:'✨ Sinn & Zweck'}]},
+ {id:'visionClarity',q:'Wie klar ist deine langfristige Vision?',sub:'Weißt du, wohin du in 3–5 Jahren willst?',o:[
+   {v:'low',label:'🌫️ Eher unklar – ich suche noch'},
+   {v:'mid',label:'🌤️ Grobe Idee, aber nicht konkret'},
+   {v:'high',label:'☀️ Sehr klar – ich weiß, wohin'}]},
+ {id:'blocker',q:'Was hält dich am meisten auf?',sub:'Dein größter innerer Widerstand.',o:[
+   {v:'overwhelm',label:'🤯 Überforderung – zu viel auf einmal'},
+   {v:'unclarity',label:'🤔 Unklarheit – ich weiß nicht, wo anfangen'},
+   {v:'lowenergy',label:'😴 Niedrige Energie / Erschöpfung'},
+   {v:'fear',label:'😰 Angst & Selbstzweifel'},
+   {v:'distraction',label:'🎮 Ablenkung – Handy, Social Media'},
+   {v:'procrastination',label:'⏳ Aufschieben trotz besserem Wissen'}]},
+ {id:'energy',q:'Wie ist deine Energie typischerweise?',o:[
+   {v:'low',label:'🔋 Oft niedrig'},
+   {v:'mid',label:'🔋🔋 Mittel, schwankend'},
+   {v:'high',label:'🔋🔋🔋 Meist hoch'}]},
+ {id:'time',q:'Wie viel Zeit kannst du täglich investieren?',o:[
+   {v:'low',label:'⏱️ Unter 10 Minuten'},
+   {v:'mid',label:'⏱️ 10–25 Minuten'},
+   {v:'high',label:'⏱️ Mehr als 25 Minuten'}]},
+ {id:'consistency',q:'Wie konsistent hältst du Vorhaben durch?',o:[
+   {v:'low',label:'😅 Selten – ich verliere schnell den Faden'},
+   {v:'mid',label:'🙂 Mal so, mal so'},
+   {v:'high',label:'💪 Ziemlich zuverlässig'}]},
+ {id:'priorities',q:'Hast du klare Tagesprioritäten?',sub:'Weißt du morgens, was heute wirklich zählt?',o:[
+   {v:'low',label:'❌ Selten oder nie'},
+   {v:'mid',label:'➖ Manchmal'},
+   {v:'high',label:'✅ Fast immer'}]},
+ {id:'values',q:'Wie gut kennst du deine eigenen Werte?',o:[
+   {v:'low',label:'🤷 Habe ich kaum reflektiert'},
+   {v:'mid',label:'🧩 Teilweise'},
+   {v:'high',label:'💎 Sehr gut'}]},
+ {id:'procr_freq',q:'Wie häufig schiebst du Wichtiges auf?',o:[
+   {v:'high',label:'😬 Täglich'},
+   {v:'mid',label:'😐 Ab und zu'},
+   {v:'low',label:'😎 Selten'}]},
+ {id:'sleep',q:'Wie erholsam sind dein Schlaf & deine Pausen?',o:[
+   {v:'low',label:'😵 Schlecht'},
+   {v:'mid',label:'😐 Okay'},
+   {v:'high',label:'😴 Gut'}]},
+ {id:'stress',q:'Wie gehst du mit Stress um?',o:[
+   {v:'low',label:'🌊 Fühle mich oft überwältigt'},
+   {v:'mid',label:'⚖️ Wechselhaft'},
+   {v:'high',label:'🧘 Meist gut reguliert'}]},
+ {id:'reflection',q:'Reflektierst du regelmäßig (Journal/Rückblick)?',o:[
+   {v:'low',label:'❌ Nie'},
+   {v:'mid',label:'➖ Selten'},
+   {v:'high',label:'📓 Regelmäßig'}]},
+ {id:'motivation',q:'Was motiviert dich am meisten?',o:[
+   {v:'wins',label:'🏆 Kleine, schnelle Erfolge'},
+   {v:'meaning',label:'✨ Langfristige Bedeutung'},
+   {v:'deadlines',label:'⏰ Klare Deadlines & Struktur'},
+   {v:'growth',label:'🌱 Persönliches Wachstum'}]},
+ {id:'structure',q:'Wie strukturiert ist dein Alltag?',o:[
+   {v:'low',label:'🌪️ Eher chaotisch'},
+   {v:'mid',label:'🧱 Teils strukturiert'},
+   {v:'high',label:'📐 Klar strukturiert'}]},
+ {id:'selfdoubt',q:'Wie stark ist dein innerer Kritiker?',sub:'Selbstzweifel, die dich bremsen.',o:[
+   {v:'high',label:'🌧️ Stark'},
+   {v:'mid',label:'⛅ Mittel'},
+   {v:'low',label:'☀️ Eher gering'}]}
+];
+let obStep=0,obAnswers={};
+const LIFE_LABEL={career:'💼 Karriere',health:'💪 Gesundheit',relations:'❤️ Beziehungen',finance:'💰 Finanzen',personal:'🧠 Persönlichkeit',meaning:'✨ Sinn & Zweck'};
+const BLOCKER_INFO={
+  overwhelm:{t:'Überforderung',s:'Wir zerlegen alles in kleine, machbare Schritte. Weniger, dafür das Richtige.'},
+  unclarity:{t:'Unklarheit',s:'Zuerst Klarheit schaffen – wenn das Ziel klar ist, kommt die Energie von selbst.'},
+  lowenergy:{t:'Niedrige Energie',s:'Energie ist die Basis. Wir stärken zuerst Körper, Schlaf und Rhythmus.'},
+  fear:{t:'Angst & Selbstzweifel',s:'Wir arbeiten an den Glaubenssätzen, die dich bremsen, und bauen kleine Erfolge auf.'},
+  distraction:{t:'Ablenkung',s:'Fokus-Werkzeuge und klare Zeitblöcke schützen deine Aufmerksamkeit.'},
+  procrastination:{t:'Aufschieben',s:'Mit der 2-Minuten-Regel und Pomodoro überwinden wir den Startwiderstand.'}
+};
+
+function maybeStartOnboarding(){
+  if(!UID)return;
+  if(D.vision&&D.vision.onboarding&&D.vision.onboarding.done)return;
+  startOnboarding();
+}
+function startOnboarding(){
+  obStep=0;obAnswers={};
+  document.getElementById('ob-intro').style.display='block';
+  document.getElementById('ob-quiz').style.display='none';
+  document.getElementById('ob-result').style.display='none';
+  document.getElementById('onboardmod').style.display='block';
+}
+function beginOnboarding(){
+  document.getElementById('ob-intro').style.display='none';
+  document.getElementById('ob-result').style.display='none';
+  document.getElementById('ob-quiz').style.display='block';
+  renderObStep();
+}
+function renderObStep(){
+  const q=ONBOARD_QUESTIONS[obStep];const n=ONBOARD_QUESTIONS.length;
+  document.getElementById('ob-counter').textContent='Frage '+(obStep+1)+' / '+n;
+  const pct=Math.round(((obStep+1)/n)*100);
+  document.getElementById('ob-pct').textContent=pct+'%';
+  document.getElementById('ob-bar').style.width=pct+'%';
+  document.getElementById('ob-question').textContent=q.q;
+  const sub=document.getElementById('ob-sub');sub.textContent=q.sub||'';sub.style.display=q.sub?'block':'none';
+  document.getElementById('ob-back-btn').style.visibility=obStep>0?'visible':'hidden';
+  document.getElementById('ob-options').innerHTML=q.o.map(opt=>
+    `<button class="ob-opt${obAnswers[q.id]===opt.v?' sel':''}" onclick="selectOb('${q.id}','${opt.v}')">${opt.label}</button>`).join('');
+}
+function selectOb(qid,v){
+  obAnswers[qid]=v;renderObStep();
+  setTimeout(()=>{
+    if(obStep<ONBOARD_QUESTIONS.length-1){obStep++;renderObStep();}
+    else finishOnboarding();
+  },180);
+}
+function prevOb(){if(obStep>0){obStep--;renderObStep();}}
+
+function computeOnboardingProfile(a){
+  return {
+    goal:a.goal||'productivity',
+    goalArea:a.area||'personal',
+    visionClarity:a.visionClarity||'mid',
+    blocker:a.blocker||'unclarity',
+    energyBaseline:a.energy||'mid',
+    timePerDay:a.time||'mid',
+    consistency:a.consistency||'mid',
+    reflection:a.reflection||'low',
+    motivation:a.motivation||'growth',
+    selfdoubt:a.selfdoubt||'mid'
+  };
+}
+function computeJourney(p){
+  const base=['vision_process','life_areas','beliefs_done','first_tasks','mit_used','cal_used','morning_done','pomodoro_used','evening_done','wellbeing_tracked','first_review','journal_7days','analytics_checked','ai_coach_used','quarterly_review','beliefs_revisited'];
+  const boost={};base.forEach(id=>boost[id]=0);
+  const add=(id,n)=>{if(boost[id]!=null)boost[id]+=n;};
+  if(p.visionClarity==='high'){add('vision_process',-4);add('first_tasks',5);add('mit_used',5);}
+  if(p.visionClarity==='low'){add('vision_process',6);add('life_areas',3);add('beliefs_done',2);}
+  switch(p.blocker){
+    case 'overwhelm':add('mit_used',8);add('first_tasks',5);add('pomodoro_used',4);break;
+    case 'unclarity':add('vision_process',6);add('life_areas',5);add('first_tasks',3);break;
+    case 'lowenergy':add('wellbeing_tracked',8);add('morning_done',5);break;
+    case 'fear':add('beliefs_done',8);add('ai_coach_used',3);break;
+    case 'distraction':add('pomodoro_used',8);add('morning_done',3);break;
+    case 'procrastination':add('mit_used',6);add('pomodoro_used',5);add('first_tasks',3);break;
+  }
+  if(p.goal==='vision')add('vision_process',4);
+  if(p.goal==='balance'){add('wellbeing_tracked',4);add('morning_done',3);}
+  if(p.goal==='habits'){add('morning_done',4);add('evening_done',3);}
+  if(p.energyBaseline==='low')add('wellbeing_tracked',3);
+  if(p.consistency==='low'){add('morning_done',3);add('evening_done',2);}
+  if(p.selfdoubt==='high')add('beliefs_done',3);
+  return base.map((id,i)=>({id,score:i-boost[id]})).sort((x,y)=>x.score-y.score).map(x=>x.id);
+}
+// Flacher Katalog aus den bestehenden PATH_STAGES (Titel/Aktion/Tab/Zeit + Stufen-Icon)
+function journeyCatalog(){
+  const cat={};
+  PATH_STAGES.forEach(st=>st.steps.forEach(s=>{cat[s.id]={...s,icon:st.icon};}));
+  return cat;
+}
+async function finishOnboarding(){
+  document.getElementById('ob-quiz').style.display='none';
+  document.getElementById('ob-result').style.display='block';
+  const p=computeOnboardingProfile(obAnswers);
+  const journey=computeJourney(p);
+  if(!D.vision)D.vision={};
+  D.vision.onboarding={done:true,date:new Date().toISOString().split('T')[0],answers:{...obAnswers},profile:p,journey,aiIntro:''};
+  try{await saveProfile();}catch(e){console.error('saveProfile onboarding',e);}
+  // KI-Begleittext (best effort – Weg funktioniert auch ohne)
+  try{
+    const sys='Du bist FocusAI, ein warmherziger, motivierender Lebenscoach. Antworte auf Deutsch, max 110 Wörter, persönlich und konkret, nutze 1–2 Emojis. Kein Aufzählungspunkt-Listing, ein kurzer Fließtext.';
+    const c=journeyCatalog();
+    const first3=journey.slice(0,3).map(id=>c[id]&&c[id].title).filter(Boolean).join(', ');
+    const msg='Ein Nutzer hat gerade den Einstiegstest gemacht. Profil: Ziel='+p.goal+', wichtigster Lebensbereich='+(LIFE_LABEL[p.goalArea]||p.goalArea)+', Vision-Klarheit='+p.visionClarity+', größte Blockade='+p.blocker+', Energie='+p.energyBaseline+', Zeit/Tag='+p.timePerDay+', Konsistenz='+p.consistency+'. Seine ersten Schritte sind: '+first3+'. Begrüße ihn kurz, erkenne an wo er steht und erkläre warum genau dieser Weg für ihn sinnvoll ist. Sprich ihn mit "du" an.';
+    const intro=await callAI([{role:'user',content:msg}],sys,400);
+    if(intro){D.vision.onboarding.aiIntro=intro;try{await saveProfile();}catch(e){}}
+  }catch(e){console.error('onboarding AI',e);}
+  document.getElementById('onboardmod').style.display='none';
+  renderJourney();
+  showTab('journey',document.getElementById('tbtn-journey'));
+  toast('🧭 Dein persönlicher Weg ist bereit!');
+}
+function renderJourney(){
+  const el=document.getElementById('journey-content');if(!el)return;
+  const ob=D.vision&&D.vision.onboarding;
+  if(!ob||!ob.done){
+    el.innerHTML='<div class="sec"><div class="shdr"><div class="stitle">🧭 Mein Weg</div></div><p class="sdesc">Mach den kurzen Einstiegstest, damit FocusFlow deinen persönlichen Weg zum Ziel erstellen kann.</p><button class="addbtn" onclick="startOnboarding()">🧭 Einstiegstest starten</button></div>';
+    return;
+  }
+  const p=ob.profile||{};
+  const cat=journeyCatalog();
+  const completed=computePathStats();
+  const journey=(ob.journey||[]).filter(id=>cat[id]);
+  const total=journey.length;
+  const doneN=journey.filter(id=>completed[id]).length;
+  const pct=total?Math.round((doneN/total)*100):0;
+  const nextId=journey.find(id=>!completed[id]);
+  const bi=BLOCKER_INFO[p.blocker]||{t:p.blocker,s:''};
+  let html='';
+  html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
+    <div class="shdr"><div class="stitle">🧭 Dein persönlicher Weg</div>
+      <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="pill-tag on" style="background:var(--p)">🎯 Fokus: ${LIFE_LABEL[p.goalArea]||p.goalArea}</span>
+      <span class="pill-tag on" style="background:var(--ac)">🧱 ${bi.t}</span>
+    </div>`;
+  if(ob.aiIntro){
+    html+=`<div style="background:var(--card);border:1.5px solid var(--bo);border-radius:var(--r2);padding:13px 15px;font-size:.88rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.3rem;flex-shrink:0">🤖</div><div>${ob.aiIntro.replace(/\n/g,'<br>')}</div></div>`;
+  }else{
+    html+=`<div style="font-size:.86rem;color:var(--txt);line-height:1.6">${bi.s}</div>`;
+  }
+  html+=`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:.76rem;font-weight:700;color:var(--mu);margin-bottom:5px"><span>Fortschritt auf deinem Weg</span><span>${doneN}/${total} · ${pct}%</span></div>
+    <div style="height:9px;background:var(--bo);border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div></div></div>`;
+  if(nextId){
+    const s=cat[nextId];
+    html+=`<div class="sec">
+      <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein nächster Schritt</div>
+      <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${s.title}</div>
+      <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">${s.why}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
+        <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
+      </div>
+      <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
+    </div>`;
+  }else{
+    html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast deinen ganzen Weg gemeistert!</div><div style="font-size:.85rem;color:var(--mu)">Außergewöhnlich. Zeit für den Quartals-Review – oder mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
+  }
+  html+=`<div class="sec"><div class="shdr"><div class="stitle">Deine Strecke</div></div>`;
+  journey.forEach((id,i)=>{
+    const s=cat[id];const done=!!completed[id];const cur=id===nextId;
+    html+=`<div class="jstep${done?' done':cur?' current':''}">
+      <div class="jstep-num">${done?'✓':i+1}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.92rem;font-weight:700">${s.icon} ${s.title}</div>
+        <div style="font-size:.78rem;color:var(--mu);margin-top:2px;line-height:1.45">${s.why}</div>
+        <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
+          ${done?'<span class="badge b-2min">✓ Erledigt</span>':`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button><button onclick="markPathStep('${id}')" style="padding:6px 10px;border:1.5px solid var(--ok);background:none;color:var(--ok);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">✓ Erledigt</button>`}
+          <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${s.time}</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+  el.innerHTML=html;
+}
+function journeyGo(stepId){
+  const cat=journeyCatalog();const s=cat[stepId];if(!s)return;
+  try{(new Function(s.action))();}catch(e){console.error('journeyGo action',e);}
+  if(s.tab)closePathAndGo(s.tab);
+}
+async function journeyAI(stepId){
+  const box=document.getElementById('journey-ai-box');if(!box)return;
+  const cat=journeyCatalog();const s=cat[stepId];if(!s)return;
+  const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
+  box.style.display='block';
+  box.innerHTML='<div style="font-size:.85rem;color:var(--mu);font-style:italic">✨ FocusAI denkt nach…</div>';
+  const sys='Du bist FocusAI, ein konkreter, motivierender Coach. Antworte auf Deutsch, max 130 Wörter, mit 2–4 sehr konkreten ersten Mini-Schritten. Direkt und warmherzig.';
+  const msg='Der Nutzer steht bei diesem Schritt seines Weges: "'+s.title+'" ('+s.why+'). Sein Profil: Ziel='+p.goal+', Fokus-Bereich='+(LIFE_LABEL[p.goalArea]||p.goalArea)+', Blockade='+p.blocker+', Energie='+p.energyBaseline+', Zeit/Tag='+p.timePerDay+'. Wie fängt er am besten an? Gib konkrete, sofort umsetzbare erste Schritte – zugeschnitten auf seine Blockade und verfügbare Zeit.';
+  const reply=await callAI([{role:'user',content:msg}],sys,500);
+  if(reply){box.innerHTML='<div style="background:var(--bg);border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px;font-size:.86rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.2rem;flex-shrink:0">🤖</div><div>'+reply.replace(/\n/g,'<br>')+'</div></div>';}
+  else{box.innerHTML='<div class="info-box info-orange" style="margin-top:0">⚠️ FocusAI ist gerade nicht erreichbar. Tipp: Starte mit dem allerkleinsten möglichen Schritt – 2 Minuten genügen.</div>';}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2814,6 +3140,7 @@ function showTab(name,btn){
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+name).classList.add('on');btn.classList.add('on');
+  if(name==='journey')renderJourney();
   if(name==='path')renderPath();
   if(name==='mit')renderMIT();
   if(name==='vision')renderVision();
@@ -2842,6 +3169,7 @@ function renderAll(){
   try{showMorningSummary();}catch(e){console.error('showMorningSummary',e);}
   try{checkEveningPrompt();}catch(e){console.error('checkEveningPrompt',e);}
   try{renderPath();}catch(e){console.error('renderPath',e);}
+  try{renderJourney();}catch(e){console.error('renderJourney',e);}
 }
 
 function checkEveningPrompt(){
