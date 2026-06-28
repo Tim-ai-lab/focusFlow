@@ -1098,6 +1098,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- GEFÜHRTE REFLEXION (Quartals-Review / Glaubenssätze) -->
+<div class="modal-bg" id="reflectmod">
+  <div class="modal-card">
+    <div class="modal-title" id="reflect-title">Reflexion</div>
+    <div id="reflect-step-content"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="modal-close" style="flex:1" onclick="prevReflect()">‹ Zurück</button>
+      <button class="addbtn" style="flex:2" id="reflect-next-btn" onclick="nextReflect()">Weiter ›</button>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('reflectmod').style.display='none'">Abbrechen</button>
+  </div>
+</div>
+
 <!-- ONBOARDING / EINGANGSTEST (obligatorisch) -->
 <div id="onboardmod" style="position:fixed;inset:0;background:linear-gradient(135deg,#EEF2FF,#F4F6FB,#FFF5EE);display:none;z-index:400;overflow-y:auto;padding:20px">
   <div style="max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center">
@@ -1926,8 +1939,8 @@ const PATH_STAGES=[
     why:'Ab hier wird die App zu deinem persönlichsten Werkzeug. KI-Coach, Quartals-Review und tiefe Muster-Arbeit.',
     steps:[
       {id:'ai_coach_used',title:'FocusAI für tiefe Reflexion genutzt',why:'Der KI-Coach kennt deine Vision, Glaubenssätze und Muster. Tiefe Gespräche bringen Erkenntnisse die alleine schwer erreichbar sind.',time:'10-20 Min',tab:'ai',action:'showTab("ai",document.querySelectorAll(".tbtn")[9])'},
-      {id:'quarterly_review',title:'Ersten Quartals-Review durchgeführt',why:'Alle 90 Tage: Stimmt meine Vision noch? Was hat sich verändert? Dieser Review verhindert dass man fleißig in die falsche Richtung läuft.',time:'30 Min',tab:'review',action:'showTab("review",document.querySelectorAll(".tbtn")[7])'},
-      {id:'beliefs_revisited',title:'Glaubenssätze nach 30 Tagen überprüft',why:'Glaubenssätze verändern sich durch Erfahrung. Nach 30 Tagen zeigen sich neue Schichten – und neue Möglichkeiten zur Transformation.',time:'20 Min',tab:'vision',action:'startVisionProcess(3)'},
+      {id:'quarterly_review',title:'Ersten Quartals-Review durchgeführt',why:'Alle 90 Tage: Stimmt meine Vision noch? Was hat sich verändert? Dieser Review verhindert dass man fleißig in die falsche Richtung läuft.',time:'30 Min',tab:'journey',action:"openReflection('quarterly_review')"},
+      {id:'beliefs_revisited',title:'Glaubenssätze nach 30 Tagen überprüft',why:'Glaubenssätze verändern sich durch Erfahrung. Nach 30 Tagen zeigen sich neue Schichten – und neue Möglichkeiten zur Transformation.',time:'20 Min',tab:'journey',action:"openReflection('beliefs_revisited')"},
     ]
   }
 ];
@@ -2005,6 +2018,61 @@ function computePathStats(){
   Object.keys(STEP_CFG).forEach(id=>{if(stepStatus(id).done)c[id]=true;});
   return c;
 }
+
+// ── Geführte Reflexionen (eigene "Fertig"-Sequenzen) ──
+const REFLECTIONS={
+  quarterly_review:{stepId:'quarterly_review',title:'🔄 Quartals-Review',accent:'#6DC98A',steps:[
+    {key:'vision_still',q:'Stimmt deine Vision noch?',ph:'Fühlt sich deine 1/3/5-Jahres-Vision noch richtig an? Was hat sich verändert?'},
+    {key:'progress',q:'Was hast du in den letzten ~90 Tagen erreicht?',ph:'Konkrete Fortschritte, Erfolge, Erkenntnisse...'},
+    {key:'obstacles',q:'Was hat dich am meisten aufgehalten?',ph:'Wiederkehrende Muster, Hindernisse, Blockaden...'},
+    {key:'adjust',q:'Was passt du fürs nächste Quartal an?',ph:'Was lässt du weg? Was nimmst du dir neu vor?'},
+    {key:'focus90',q:'Dein wichtigstes Ziel für die nächsten 90 Tage?',ph:'Das eine Ergebnis, das den größten Unterschied macht...'}
+  ]},
+  beliefs_revisited:{stepId:'beliefs_revisited',title:'🧠 Glaubenssätze überprüfen',accent:'#B08EE8',steps:[
+    {key:'old',q:'Welche limitierenden Glaubenssätze hattest du?',ph:'Die Sätze, die dich vor einiger Zeit gebremst haben...'},
+    {key:'changed',q:'Was hat sich daran verändert?',ph:'Welcher Satz hat an Kraft verloren? Was glaubst du heute?'},
+    {key:'new',q:'Welche neuen Glaubenssätze zeigen sich?',ph:'Manchmal tauchen tiefere Schichten auf...'},
+    {key:'empower',q:'Dein ermächtigender Gegen-Satz',ph:'Formuliere einen kraftvollen, wahren Satz in Gegenwartsform...'}
+  ]}
+};
+let reflectKey=null,reflectStep=0,reflectData={};
+function openReflection(key){
+  const def=REFLECTIONS[key];if(!def)return;
+  reflectKey=key;reflectStep=0;reflectData={};
+  document.getElementById('reflect-title').textContent=def.title;
+  renderReflectStep();
+  document.getElementById('reflectmod').style.display='flex';
+}
+function renderReflectStep(){
+  const def=REFLECTIONS[reflectKey];const step=def.steps[reflectStep];const isLast=reflectStep===def.steps.length-1;
+  document.getElementById('reflect-next-btn').textContent=isLast?'✓ Abschließen':'Weiter ›';
+  document.getElementById('reflect-step-content').innerHTML=`
+    <div style="font-size:.73rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${reflectStep+1} von ${def.steps.length}</div>
+    <div style="font-size:1rem;font-weight:800;margin-bottom:12px">${step.q}</div>
+    <textarea class="ta" id="reflect-input" placeholder="${step.ph}">${esc(reflectData[step.key]||'')}</textarea>
+    <div style="display:flex;gap:4px;margin-top:10px">${def.steps.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=reflectStep?def.accent:'var(--bo)'}"></div>`).join('')}</div>`;
+}
+function nextReflect(){
+  const def=REFLECTIONS[reflectKey];const step=def.steps[reflectStep];
+  reflectData[step.key]=document.getElementById('reflect-input').value.trim();
+  if(reflectStep<def.steps.length-1){reflectStep++;renderReflectStep();}
+  else finishReflection();
+}
+function prevReflect(){
+  if(reflectStep>0){const step=REFLECTIONS[reflectKey].steps[reflectStep];reflectData[step.key]=document.getElementById('reflect-input').value.trim();reflectStep--;renderReflectStep();}
+}
+async function finishReflection(){
+  const def=REFLECTIONS[reflectKey];if(!def)return;
+  if(!D.vision)D.vision={};
+  if(!D.vision.reflections)D.vision.reflections={};
+  if(!D.vision.reflections[def.stepId])D.vision.reflections[def.stepId]=[];
+  D.vision.reflections[def.stepId].push({date:new Date().toISOString(),data:{...reflectData}});
+  await saveProfile();
+  logStep(def.stepId);
+  document.getElementById('reflectmod').style.display='none';
+  try{renderJourney();}catch(e){}
+  toast('✅ '+def.title+' abgeschlossen!');
+}
 function renderPath(){
   if(!UID||!D)return;
   const completed=computePathStats();
@@ -2059,7 +2127,7 @@ function renderPath(){
             <div class="path-step-why">${step.why}</div>
           </div>
           <span class="path-step-time">⏱ ${step.time}</span>
-          ${!done?`<button class="path-step-action" onclick="${step.action};closePathAndGo('${step.tab}')">Starten →</button>`:`<button onclick="markPathStep('${step.id}')" style="padding:6px 10px;border:2px solid var(--ok);background:none;border-radius:var(--r3);color:var(--ok);cursor:pointer;font-size:.75rem;font-weight:700;white-space:nowrap">✓ Erledigt</button>`}
+          ${!done?`<button class="path-step-action" onclick="${step.action};closePathAndGo('${step.tab}')">Starten →</button>`:`<span style="padding:6px 10px;border:2px solid var(--ok);border-radius:var(--r3);color:var(--ok);font-size:.75rem;font-weight:700;white-space:nowrap">✓ Erledigt</span>`}
         </div>`;
       }).join('')}
     </div>`;
