@@ -1177,6 +1177,8 @@ function setErr(m){document.getElementById('aerr').textContent=m;document.getEle
 function setOk(m){document.getElementById('aok').textContent=m;document.getElementById('aerr').textContent='';}
 function fmtDate(d){if(!d)return '';return new Date(d+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'short'});}
 function fmtTime(t){if(!t)return '';return t.slice(0,5);}
+// Schützt Nutzereingaben (Aufgaben, Journal, Notizen …) vor HTML-Injection/Layout-Bruch.
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function getWeekNum(d){const dt=new Date(d);const start=new Date(dt.getFullYear(),0,1);return Math.ceil(((dt-start)/864e5+start.getDay()+1)/7);}
 
 // ═══════════════════════════════════════════════════════════════
@@ -1195,7 +1197,7 @@ async function fetchWithTimeout(url, opts={}, ms=FETCH_TIMEOUT){
   }
 }
 
-async function sbFetch(path,opts={}){
+async function sbFetch(path,opts={},_retried){
   try{
     const res=await fetchWithTimeout(SB_URL+path,{
       ...opts,
@@ -1207,6 +1209,10 @@ async function sbFetch(path,opts={}){
         ...(opts.headers||{})
       }
     });
+    // Abgelaufenes Token? Einmal automatisch erneuern und Anfrage wiederholen.
+    if(res.status===401&&!_retried&&SESSION){
+      if(await refreshSession())return sbFetch(path,opts,true);
+    }
     const text=await res.text();
     try{return{ok:res.ok,status:res.status,data:text?JSON.parse(text):null};}
     catch{return{ok:res.ok,status:res.status,data:null};}
@@ -1258,10 +1264,10 @@ function togglePw(id,btn){
 let recoveryToken=null;
 function checkRecovery(){
   const hash=window.location.hash||'';
-  if(hash.indexOf('type=recovery')===-1)return;
+  if(hash.indexOf('type=recovery')===-1)return false;
   const params=new URLSearchParams(hash.replace(/^#/,''));
   const tok=params.get('access_token');
-  if(!tok)return;
+  if(!tok)return false;
   recoveryToken=tok;
   document.getElementById('lf').style.display='none';
   document.getElementById('rf').style.display='none';
@@ -1272,6 +1278,7 @@ function checkRecovery(){
   document.getElementById('app').style.display='none';
   // Token aus der Adresszeile/Historie entfernen
   try{history.replaceState(null,'',window.location.pathname+window.location.search);}catch(e){}
+  return true;
 }
 async function updatePassword(){
   const p1=gv('np1'),p2=gv('np2');
@@ -1331,6 +1338,27 @@ function authErrorMessage(r){
     return 'Zu viele Versuche. Bitte warte einen Moment und versuche es erneut.';
   return raw||'Anmeldung fehlgeschlagen.';
 }
+// ── Session-Persistenz (eingeloggt bleiben über Reloads + Token-Refresh) ──
+function saveSession(s){try{if(s&&s.refresh_token)localStorage.setItem('ff_session',JSON.stringify({refresh_token:s.refresh_token}));}catch(e){}}
+function clearSession(){try{localStorage.removeItem('ff_session');}catch(e){}}
+async function refreshSession(){
+  let stored=null;try{stored=JSON.parse(localStorage.getItem('ff_session')||'null');}catch(e){}
+  const rt=(SESSION&&SESSION.refresh_token)||(stored&&stored.refresh_token);
+  if(!rt)return false;
+  const r=await sbAuth('/token?grant_type=refresh_token',{refresh_token:rt});
+  if(r&&r.access_token){SESSION=r;UID=r.user.id;saveSession(r);return true;}
+  // Refresh-Token ungültig (z. B. abgemeldet) → verwerfen
+  clearSession();
+  return false;
+}
+async function tryRestoreSession(){
+  let stored=null;try{stored=JSON.parse(localStorage.getItem('ff_session')||'null');}catch(e){}
+  if(!stored||!stored.refresh_token)return;
+  loading(true);
+  const r=await sbAuth('/token?grant_type=refresh_token',{refresh_token:stored.refresh_token});
+  if(r&&r.access_token){SESSION=r;UID=r.user.id;saveSession(r);await loadAndShow(r.user);}
+  else{clearSession();loading(false);}
+}
 async function login(){
   const e=gv('le'),p=gv('lp');
   if(!e||!p){setErr('Bitte E-Mail und Passwort eingeben.');return;}
@@ -1338,12 +1366,12 @@ async function login(){
   const r=await sbAuth('/token?grant_type=password',{email:e,password:p});
   btn.disabled=false;btn.textContent='Anmelden';
   if(!r||!r.access_token){setErr(authErrorMessage(r));return;}
-  SESSION=r;UID=r.user.id;await loadAndShow(r.user);
+  SESSION=r;UID=r.user.id;saveSession(r);await loadAndShow(r.user);
 }
 async function logout(){
   stopPomo();if(nowLineInterval)clearInterval(nowLineInterval);
   await sbFetch('/auth/v1/logout',{method:'POST'});
-  SESSION=null;UID=null;
+  SESSION=null;UID=null;clearSession();
   document.getElementById('app').style.display='none';
   document.getElementById('auth').style.display='flex';
   document.getElementById('le').value='';document.getElementById('lp').value='';
@@ -1529,10 +1557,10 @@ function showMorningSummary(){
   document.getElementById('morning-summary').style.display='block';
   document.getElementById('morning-btn').textContent='🌅 Routine ✓';
   document.getElementById('morning-summary-content').innerHTML=
-    (m.intention?`<div><strong>🌟 Intention:</strong> ${m.intention}</div>`:'')
-    +(m.focus?`<div><strong>🎯 Fokus:</strong> ${m.focus}</div>`:'')
-    +(m.gratitude?`<div><strong>🙏 Dankbar für:</strong> ${m.gratitude}</div>`:'')
-    +(m.affirmation?`<div style="margin-top:6px;font-style:italic;opacity:.85">💫 ${m.affirmation}</div>`:'');
+    (m.intention?`<div><strong>🌟 Intention:</strong> ${esc(m.intention)}</div>`:'')
+    +(m.focus?`<div><strong>🎯 Fokus:</strong> ${esc(m.focus)}</div>`:'')
+    +(m.gratitude?`<div><strong>🙏 Dankbar für:</strong> ${esc(m.gratitude)}</div>`:'')
+    +(m.affirmation?`<div style="margin-top:6px;font-style:italic;opacity:.85">💫 ${esc(m.affirmation)}</div>`:'');
 }
 
 // EVENING
@@ -2672,7 +2700,7 @@ function isOverdue(t){if(!t.end||t.done)return false;return new Date(t.end)<new 
 function updateDepSelect(){
   const sel=document.getElementById('tdep');const cur=sel.value;
   sel.innerHTML='<option value="">Keine</option>';
-  D.tasks.forEach(t=>sel.innerHTML+=`<option value="${t.id}">${t.name.slice(0,28)}</option>`);
+  D.tasks.forEach(t=>sel.innerHTML+=`<option value="${t.id}">${esc(t.name.slice(0,28))}</option>`);
   sel.value=cur;
 }
 function renderTasks(){
@@ -2691,9 +2719,9 @@ function renderTasks(){
     return `<div class="titem${t.done?' done':''}${t.special==='frog'?' frog':''}${ov?' overdue':''}${isRec?' recurring':''}">
       <div class="tcb${t.done?' on':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
       <div style="flex:1;min-width:0">
-        <div class="tname">${t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'')}${ov?' <span style="color:var(--err);font-size:.7rem">⚠️ Überfällig</span>':''}</div>
+        <div class="tname">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}${ov?' <span style="color:var(--err);font-size:.7rem">⚠️ Überfällig</span>':''}</div>
         ${dateTxt?`<div class="tmeta">📅 ${dateTxt}</div>`:''}
-        ${depT?`<div class="tmeta">🔗 Benötigt: ${depT.name.slice(0,22)}</div>`:''}
+        ${depT?`<div class="tmeta">🔗 Benötigt: ${esc(depT.name.slice(0,22))}</div>`:''}
         <div class="badges">
           <span class="badge b-${t.prio}">${t.prio==='high'?'🔴 Hoch':t.prio==='low'?'⚪ Niedrig':'🔵 Normal'}</span>
           <span class="badge b-${t.diff}">${t.diff==='easy'?'😊 Leicht':t.diff==='hard'?'😰 Schwer':'😐 Mittel'}</span>
@@ -2719,7 +2747,7 @@ function renderMIT(){
     return `<div class="mitslot${v?' filled':''}${done?' done':''}">
       <div class="mitcb${done?' on':''}" onclick="togMIT(${i})">${done?'✓':''}</div>
       <span>${n}</span>
-      <input value="${v}" placeholder="Wichtigste Aufgabe ${i+1}..." oninput="D.mitTasks[${i}]=this.value" onblur="saveMIT()">
+      <input value="${esc(v)}" placeholder="Wichtigste Aufgabe ${i+1}..." oninput="D.mitTasks[${i}]=this.value" onblur="saveMIT()">
     </div>`;
   }).join('');
 }
@@ -2778,7 +2806,7 @@ function renderCal(){
     const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
     const el=document.createElement('div');
     el.className='cal-day'+(isToday?' today':'')+(dayTasks.length?' has-tasks':'');
-    el.innerHTML=`<div class="cal-dn">${d}</div>`+dayTasks.slice(0,3).map(t=>`<div class="cal-task-chip ${t.done?'chip-done':'chip-'+t.prio}">${t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,10)}</div>`).join('')+(dayTasks.length>3?`<div style="font-size:.6rem;color:var(--mu);font-weight:700">+${dayTasks.length-3}</div>`:'');
+    el.innerHTML=`<div class="cal-dn">${d}</div>`+dayTasks.slice(0,3).map(t=>`<div class="cal-task-chip ${t.done?'chip-done':'chip-'+t.prio}">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,10))}</div>`).join('')+(dayTasks.length>3?`<div style="font-size:.6rem;color:var(--mu);font-weight:700">+${dayTasks.length-3}</div>`:'');
     el.onclick=()=>openDayModalForDate(ds);grid.appendChild(el);
   }
 }
@@ -2798,7 +2826,7 @@ function renderDayView(){
     const ev=document.createElement('div');
     ev.className='day-event '+(t.done?'ev-done':t.prio==='high'?'ev-high':t.prio==='low'?'ev-low':'ev-normal');
     ev.style.top=sm+'px';ev.style.height=Math.max(22,em-sm)+'px';
-    ev.innerHTML=`<div class="day-event-name">${t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'')}</div><div class="day-event-time">${t.startTime?fmtTime(t.startTime):''}${t.endTime?' – '+fmtTime(t.endTime):''}</div>`;
+    ev.innerHTML=`<div class="day-event-name">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}</div><div class="day-event-time">${t.startTime?fmtTime(t.startTime):''}${t.endTime?' – '+fmtTime(t.endTime):''}</div>`;
     ev.onclick=()=>openDayModalForDate(dayViewDate);eventsEl.appendChild(ev);
   });
   const isToday=dayViewDate===new Date().toISOString().split('T')[0];
@@ -2823,7 +2851,7 @@ function renderDayTasks(tasks){
   if(!tasks.length){el.innerHTML='<div style="text-align:center;color:var(--mu);padding:10px;font-size:.86rem">Keine Aufgaben – füge unten eine hinzu!</div>';return;}
   el.innerHTML=tasks.map(t=>`<div class="daytask">
     <div class="tcb${t.done?' on':''}" onclick="toggleTaskCal(${t.id})">${t.done?'✓':''}</div>
-    <div style="flex:1"><div style="font-size:.87rem;font-weight:700;${t.done?'text-decoration:line-through;opacity:.6':''}">${t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'')}</div>
+    <div style="flex:1"><div style="font-size:.87rem;font-weight:700;${t.done?'text-decoration:line-through;opacity:.6':''}">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}</div>
     <div style="font-size:.73rem;color:var(--mu)">${t.startTime||t.endTime?(fmtTime(t.startTime)||'')+(t.endTime?' – '+fmtTime(t.endTime):''):'Kein Zeitraum definiert'}</div></div>
     <span class="badge b-${t.prio}">${t.prio==='high'?'🔴':t.prio==='low'?'⚪':'🔵'}</span>
     <button class="delbtn" onclick="delTaskCal(${t.id})">🗑</button>
@@ -2863,8 +2891,8 @@ function renderGantt(){
     const ts=new Date(t.start);ts.setHours(0,0,0,0);const te=new Date(t.end);te.setHours(0,0,0,0);
     const bc=t.done?'gbar-done':t.prio==='high'?'gbar-high':t.prio==='low'?'gbar-low':'gbar-normal';
     let cells='';
-    for(let i=0;i<days;i++){const d=new Date(startD);d.setDate(d.getDate()+i);const isT=d.toDateString()===today.toDateString();const isS=d.toDateString()===ts.toDateString();cells+=`<td class="gbar-cell" style="${isT?'background:rgba(244,169,106,.07)':''}">${isS?`<div class="gbar ${bc}" style="width:${Math.max(1,Math.round((te-ts)/864e5)+1)*CELL-4}px;left:2px">${t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,12)}</div>`:''} ${isT?'<div class="gantt-today-line"></div>':''}</td>`;}
-    return `<tr><td class="gtask-name" title="${t.name}">${t.done?'✅ ':''}${LA_BADGE[t.lifeArea]||''} ${t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'')}<div style="font-size:.67rem;color:var(--mu);font-weight:600;margin-top:1px">${fmtDate(t.start)} – ${fmtDate(t.end)}</div></td>${cells}</tr>`;
+    for(let i=0;i<days;i++){const d=new Date(startD);d.setDate(d.getDate()+i);const isT=d.toDateString()===today.toDateString();const isS=d.toDateString()===ts.toDateString();cells+=`<td class="gbar-cell" style="${isT?'background:rgba(244,169,106,.07)':''}">${isS?`<div class="gbar ${bc}" style="width:${Math.max(1,Math.round((te-ts)/864e5)+1)*CELL-4}px;left:2px">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,12))}</div>`:''} ${isT?'<div class="gantt-today-line"></div>':''}</td>`;}
+    return `<tr><td class="gtask-name" title="${esc(t.name)}">${t.done?'✅ ':''}${LA_BADGE[t.lifeArea]||''} ${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}<div style="font-size:.67rem;color:var(--mu);font-weight:600;margin-top:1px">${fmtDate(t.start)} – ${fmtDate(t.end)}</div></td>${cells}</tr>`;
   }).join('');
   wrap.innerHTML=`<table class="gantt-table"><thead>${hdr}</thead><tbody>${rows}</tbody></table>`;
 }
@@ -2889,7 +2917,7 @@ function renderWellbeing(){
       <span style="font-size:.78rem;font-weight:700">😰 ${e.stress}/10</span>
       <span style="font-size:.78rem;font-weight:700">🏃 ${e.move}min</span>
     </div>
-    ${e.note?`<div style="font-size:.78rem;color:var(--mu);font-style:italic;width:100%">${e.note}</div>`:''}
+    ${e.note?`<div style="font-size:.78rem;color:var(--mu);font-style:italic;width:100%">${esc(e.note)}</div>`:''}
   </div>`).join('');
 }
 
@@ -2908,8 +2936,8 @@ function renderReviews(){
   if(!D.reviews.length){el.innerHTML='<div class="empty">Noch keine Rückblicke.</div>';return;}
   el.innerHTML=D.reviews.slice(0,5).map(r=>`<div style="border:1.5px solid var(--bo);border-radius:var(--r2);padding:14px;margin-bottom:10px;background:var(--bg)">
     <div style="font-size:.78rem;font-weight:700;color:var(--p);margin-bottom:8px">KW ${getWeekNum(r.date)} – ${new Date(r.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'})}</div>
-    ${r.good?`<div style="font-size:.82rem;margin-bottom:5px"><strong>🏆 Gut:</strong> ${r.good}</div>`:''}
-    ${r.next?`<div style="font-size:.82rem;color:#065F46;background:#DCFCE7;border-radius:6px;padding:6px 9px;margin-top:6px"><strong>🎯 Nächste Woche:</strong> ${r.next}</div>`:''}
+    ${r.good?`<div style="font-size:.82rem;margin-bottom:5px"><strong>🏆 Gut:</strong> ${esc(r.good)}</div>`:''}
+    ${r.next?`<div style="font-size:.82rem;color:#065F46;background:#DCFCE7;border-radius:6px;padding:6px 9px;margin-top:6px"><strong>🎯 Nächste Woche:</strong> ${esc(r.next)}</div>`:''}
   </div>`).join('');
 }
 // ═══════════════════════════════════════════════════════════════
@@ -3004,10 +3032,10 @@ async function renderJournal(){
   if(entry.morning&&entry.morning.gratitude){
     html+=`<div style="border:1.5px solid #FDE68A;border-radius:var(--r2);padding:14px;background:#FFFBEB">
       <div style="font-size:.78rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">🌅 Morgenroutine</div>
-      ${entry.morning.gratitude?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🙏 Dankbarkeit</div><div style="font-size:.87rem;margin-top:2px">${entry.morning.gratitude}</div></div>`:''}
-      ${entry.morning.intention?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🌟 Intention</div><div style="font-size:.87rem;margin-top:2px">${entry.morning.intention}</div></div>`:''}
-      ${entry.morning.focus?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🎯 Fokus-Aufgabe</div><div style="font-size:.87rem;margin-top:2px">${entry.morning.focus}</div></div>`:''}
-      ${entry.morning.affirmation?`<div style="font-style:italic;font-size:.84rem;color:#92400E;background:rgba(251,191,36,.2);border-radius:8px;padding:7px 10px;margin-top:4px">💫 ${entry.morning.affirmation}</div>`:''}
+      ${entry.morning.gratitude?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🙏 Dankbarkeit</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.morning.gratitude)}</div></div>`:''}
+      ${entry.morning.intention?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🌟 Intention</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.morning.intention)}</div></div>`:''}
+      ${entry.morning.focus?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#92400E;font-weight:700">🎯 Fokus-Aufgabe</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.morning.focus)}</div></div>`:''}
+      ${entry.morning.affirmation?`<div style="font-style:italic;font-size:.84rem;color:#92400E;background:rgba(251,191,36,.2);border-radius:8px;padding:7px 10px;margin-top:4px">💫 ${esc(entry.morning.affirmation)}</div>`:''}
     </div>`;
   }
 
@@ -3022,7 +3050,7 @@ async function renderJournal(){
         <span style="font-size:.87rem;font-weight:700">😰 Stress: ${wb.stress}/10</span>
         <span style="font-size:.87rem;font-weight:700">🏃 ${wb.move}min Bewegung</span>
       </div>
-      ${wb.note?`<div style="font-size:.84rem;color:var(--mu);margin-top:8px;font-style:italic">${wb.note}</div>`:''}
+      ${wb.note?`<div style="font-size:.84rem;color:var(--mu);margin-top:8px;font-style:italic">${esc(wb.note)}</div>`:''}
     </div>`;
   }
 
@@ -3033,7 +3061,7 @@ async function renderJournal(){
       <div style="display:flex;flex-direction:column;gap:5px">
         ${entry.tasks_done.map(t=>`<div style="display:flex;align-items:center;gap:8px;font-size:.86rem">
           <span style="color:var(--ok);font-weight:700">✓</span>
-          <span style="flex:1">${t.name}</span>
+          <span style="flex:1">${esc(t.name)}</span>
           ${t.lifeArea?`<span style="font-size:.72rem">${LA2[t.lifeArea]||''}</span>`:''}
           <span style="font-size:.72rem;font-weight:700;color:var(--ok)">+${t.pts}Pkt</span>
         </div>`).join('')}
@@ -3047,9 +3075,9 @@ async function renderJournal(){
       <div style="font-size:.78rem;font-weight:700;color:#991B1B;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">😬 Schlechte Angewohnheiten & Gegenstrategien</div>
       ${entry.habits.map(h=>`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #FEE2E2;last-child:border-0">
         <div style="font-size:.73rem;font-weight:700;color:#991B1B;background:#FEE2E2;display:inline-block;padding:2px 7px;border-radius:20px;margin-bottom:5px">${CATLBLS2[h.cat]||h.cat}</div>
-        <div style="font-size:.86rem;margin-bottom:3px"><strong>😔</strong> ${h.habit}</div>
-        ${h.trigger?`<div style="font-size:.82rem;color:var(--mu);font-style:italic;margin-bottom:3px">⚡ ${h.trigger}</div>`:''}
-        <div style="font-size:.86rem;color:#065F46;background:#DCFCE7;border-radius:6px;padding:6px 9px;margin-top:4px">✅ ${h.strategy}</div>
+        <div style="font-size:.86rem;margin-bottom:3px"><strong>😔</strong> ${esc(h.habit)}</div>
+        ${h.trigger?`<div style="font-size:.82rem;color:var(--mu);font-style:italic;margin-bottom:3px">⚡ ${esc(h.trigger)}</div>`:''}
+        <div style="font-size:.86rem;color:#065F46;background:#DCFCE7;border-radius:6px;padding:6px 9px;margin-top:4px">✅ ${esc(h.strategy)}</div>
       </div>`).join('')}
     </div>`;
   }
@@ -3058,11 +3086,11 @@ async function renderJournal(){
   if(entry.evening&&entry.evening.wins){
     html+=`<div style="border:1.5px solid #EDE9FE;border-radius:var(--r2);padding:14px;background:#FAF5FF">
       <div style="font-size:.78rem;font-weight:700;color:#6D28D9;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px">🌙 Abendreflexion</div>
-      ${entry.evening.wins?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">🏆 Erfolge</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.wins}</div></div>`:''}
-      ${entry.evening.learnings?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">📚 Lernmomente</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.learnings}</div></div>`:''}
-      ${entry.evening.procr?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">😬 Prokrastination</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.procr}</div></div>`:''}
-      ${entry.evening.gratitude_eve?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">🙏 Dankbarkeit</div><div style="font-size:.87rem;margin-top:2px">${entry.evening.gratitude_eve}</div></div>`:''}
-      ${entry.evening.tomorrow?`<div style="font-style:italic;font-size:.84rem;color:#6D28D9;background:rgba(139,92,246,.1);border-radius:8px;padding:7px 10px;margin-top:4px">🌙 Morgen: ${entry.evening.tomorrow}</div>`:''}
+      ${entry.evening.wins?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">🏆 Erfolge</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.evening.wins)}</div></div>`:''}
+      ${entry.evening.learnings?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">📚 Lernmomente</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.evening.learnings)}</div></div>`:''}
+      ${entry.evening.procr?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">😬 Prokrastination</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.evening.procr)}</div></div>`:''}
+      ${entry.evening.gratitude_eve?`<div style="margin-bottom:7px"><div style="font-size:.73rem;color:#6D28D9;font-weight:700">🙏 Dankbarkeit</div><div style="font-size:.87rem;margin-top:2px">${esc(entry.evening.gratitude_eve)}</div></div>`:''}
+      ${entry.evening.tomorrow?`<div style="font-style:italic;font-size:.84rem;color:#6D28D9;background:rgba(139,92,246,.1);border-radius:8px;padding:7px 10px;margin-top:4px">🌙 Morgen: ${esc(entry.evening.tomorrow)}</div>`:''}
     </div>`;
   }
 
@@ -3070,7 +3098,7 @@ async function renderJournal(){
   if(entry.free_note){
     html+=`<div style="border:1.5px solid var(--bo);border-radius:var(--r2);padding:14px;background:var(--bg)">
       <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">📝 Notizen</div>
-      <div style="font-size:.87rem;line-height:1.6;white-space:pre-wrap">${entry.free_note}</div>
+      <div style="font-size:.87rem;line-height:1.6;white-space:pre-wrap">${esc(entry.free_note)}</div>
     </div>`;
   }
 
@@ -3263,7 +3291,12 @@ function checkEveningPrompt(){
 }
 
 // ── INIT ──
-try{checkRecovery();}catch(e){console.error('checkRecovery',e);}
+(async()=>{
+  let recovery=false;
+  try{recovery=checkRecovery();}catch(e){console.error('checkRecovery',e);}
+  if(recovery)return; // Passwort-Reset hat Vorrang
+  try{await tryRestoreSession();}catch(e){console.error('restoreSession',e);loading(false);}
+})();
 </script>
 </body>
 </html>
