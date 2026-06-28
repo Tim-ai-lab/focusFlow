@@ -1551,6 +1551,7 @@ function saveMorningData(){
   D.dailyLog[today].mood=D.currentMood||'';
   showMorningSummary();
   saveProfile();
+  logStep('morning_done');
   try{renderJourney();}catch(e){}
 }
 function showMorningSummary(){
@@ -1620,6 +1621,7 @@ async function saveEveningData(){
   document.getElementById('evening-btn').style.background='rgba(176,142,232,.4)';
   await saveProfile();
   renderDiary();
+  logStep('evening_done');
   try{renderJourney();}catch(e){}
   toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
 }
@@ -1930,51 +1932,78 @@ const PATH_STAGES=[
   }
 ];
 
-function getPathProgress(){
-  if(!UID)return{};
-  try{return JSON.parse(localStorage.getItem('ff_path_'+UID)||'{}');}catch(e){return{};}
+// ── Strecken-Fortschritt: explizit & geloggt ──
+// Ein Schritt wird erst durch aktives Abschließen erledigt; jeder Abschluss landet
+// mit Datum im Log (D.vision.pathLog). Tägliche Routinen gelten nur für heute,
+// Zähl-Schritte (z. B. "3 Tage") summieren ihre Log-Tage.
+const STEP_CFG={
+  vision_process:{mode:'once'},life_areas:{mode:'once'},beliefs_done:{mode:'once'},
+  first_tasks:{mode:'once'},cal_used:{mode:'once'},first_review:{mode:'once'},
+  analytics_checked:{mode:'once'},ai_coach_used:{mode:'once'},quarterly_review:{mode:'once'},
+  beliefs_revisited:{mode:'once'},
+  morning_done:{mode:'daily'},evening_done:{mode:'daily'},
+  mit_used:{mode:'count',target:3,unit:'Tage'},
+  wellbeing_tracked:{mode:'count',target:3,unit:'Tage'},
+  journal_7days:{mode:'count',target:7,unit:'Tage'},
+  pomodoro_used:{mode:'count',target:3,unit:'Sitzungen'}
+};
+function pathLogArr(id){return (D.vision&&D.vision.pathLog&&D.vision.pathLog[id])||[];}
+function stepStatus(id){
+  const cfg=STEP_CFG[id]||{mode:'once'};
+  const arr=pathLogArr(id);
+  const today=new Date().toISOString().slice(0,10);
+  const days=new Set(arr.map(ts=>String(ts).slice(0,10)));
+  if(cfg.mode==='daily'){
+    const doneToday=arr.some(ts=>String(ts).slice(0,10)===today);
+    return {mode:'daily',done:doneToday,doneToday,total:days.size};
+  }
+  if(cfg.mode==='count'){
+    const count=cfg.unit==='Sitzungen'?arr.length:days.size;
+    return {mode:'count',done:count>=cfg.target,count,target:cfg.target,unit:cfg.unit};
+  }
+  return {mode:'once',done:arr.length>0};
 }
-function markPathStep(stepId){
-  if(!UID)return;
-  const completed=getPathProgress();
-  const nowDone=!completed[stepId];
-  if(nowDone)completed[stepId]=new Date().toISOString();else delete completed[stepId];
-  try{localStorage.setItem('ff_path_'+UID,JSON.stringify(completed));}catch(e){}
-  try{renderPath();}catch(e){}
+function logStep(id){
+  if(!UID)return false;
+  const cfg=STEP_CFG[id]||{mode:'once'};
+  if(!D.vision)D.vision={};
+  if(!D.vision.pathLog)D.vision.pathLog={};
+  const arr=D.vision.pathLog[id]||(D.vision.pathLog[id]=[]);
+  const today=new Date().toISOString().slice(0,10);
+  if(cfg.mode==='once'&&arr.length)return false;
+  if((cfg.mode==='daily'||(cfg.mode==='count'&&cfg.unit!=='Sitzungen'))&&arr.some(ts=>String(ts).slice(0,10)===today))return false;
+  arr.push(new Date().toISOString());
+  saveProfile();
+  return true;
+}
+// Aktiver Abschluss eines Schritts (Button oder echtes Sequenz-Ende)
+function completeStep(id){
+  const added=logStep(id);
   try{renderJourney();}catch(e){}
-  toast(nowDone?'✅ Schritt abgehakt! Weiter so! 🚀':'↩ Markierung entfernt');
-}
-// Entfernt ALLE manuellen Markierungen; automatisch erkannte (echt erledigte) bleiben.
-function resetPathProgress(){
-  if(!UID)return;
-  try{localStorage.removeItem('ff_path_'+UID);}catch(e){}
   try{renderPath();}catch(e){}
+  toast(added?'✅ Abgeschlossen – im Log gespeichert!':'Schon erledigt ✓');
+}
+// Letzten (bzw. heutigen) Log-Eintrag wieder entfernen
+function undoStep(id){
+  const arr=D.vision&&D.vision.pathLog&&D.vision.pathLog[id];
+  if(!arr||!arr.length)return;
+  const cfg=STEP_CFG[id]||{mode:'once'};
+  const today=new Date().toISOString().slice(0,10);
+  if(cfg.mode==='daily'||(cfg.mode==='count'&&cfg.unit!=='Sitzungen')){
+    for(let i=arr.length-1;i>=0;i--){if(String(arr[i]).slice(0,10)===today){arr.splice(i,1);break;}}
+  }else{arr.pop();}
+  saveProfile();
   try{renderJourney();}catch(e){}
-  toast('↺ Manuelle Markierungen zurückgesetzt');
+  try{renderPath();}catch(e){}
+  toast('↩ Rückgängig gemacht');
 }
-// Nur die aus echten App-Daten automatisch erkannten Schritte (ohne manuelle Marks)
-function computeAutoSteps(){
-  const a={};
-  if(!UID||!D)return a;
-  // Nur als "gemacht" werten, wenn wirklich Inhalt vorhanden ist (kein leeres Objekt)
-  const hasContent=o=>o&&typeof o==='object'&&Object.values(o).some(v=>v&&String(v).trim());
-  if(D.vision?.stepData&&Object.keys(D.vision.stepData).length>=6)a['vision_process']='auto';
-  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.vision&&x.vision.trim()))a['life_areas']='auto';
-  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.beliefs&&x.beliefs.trim()))a['beliefs_done']='auto';
-  if(D.tasks&&D.tasks.some(t=>t.lifeArea))a['first_tasks']='auto';
-  if(D.mitDone&&D.mitDone.some(Boolean))a['mit_used']='auto';
-  if(D.pomoSess>0)a['pomodoro_used']='auto';
-  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>hasContent(d.morning)))a['morning_done']='auto';
-  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>hasContent(d.evening)))a['evening_done']='auto';
-  if(D.wellbeing&&D.wellbeing.length>=3)a['wellbeing_tracked']='auto';
-  if(D.reviews&&D.reviews.length>0)a['first_review']='auto';
-  if(journalCache&&Object.keys(journalCache).length>=7)a['journal_7days']='auto';
-  return a;
-}
+// Kompatibilität: Pfad-Tab ruft weiterhin markPathStep auf
+function markPathStep(stepId){completeStep(stepId);}
 function computePathStats(){
   if(!UID||!D)return{};
-  // Manuelle Markierungen + automatisch erkannte Schritte zusammenführen
-  return {...getPathProgress(),...computeAutoSteps()};
+  const c={};
+  Object.keys(STEP_CFG).forEach(id=>{if(stepStatus(id).done)c[id]=true;});
+  return c;
 }
 function renderPath(){
   if(!UID||!D)return;
@@ -2303,22 +2332,17 @@ function renderJourney(){
   const p=ob.profile||{};
   const cat=journeyCatalog();
   const completed=computePathStats();
-  const rawProg=getPathProgress();
-  const autoSet=computeAutoSteps();
   const journey=(ob.journey||[]).filter(id=>cat[id]);
   const total=journey.length;
   const doneN=journey.filter(id=>completed[id]).length;
   const pct=total?Math.round((doneN/total)*100):0;
-  const nextId=journey.find(id=>!completed[id]);
+  const nextId=journey.find(id=>!stepStatus(id).done);
   const bi=BLOCKER_INFO[p.blocker]||{t:p.blocker,s:''};
   let html='';
   html+=renderNextActionCard();
   html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
     <div class="shdr"><div class="stitle">🧭 Dein persönlicher Weg</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button onclick="resetPathProgress()" title="Entfernt alle manuell gesetzten Haken; wirklich erledigte Schritte bleiben" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↺ Status zurücksetzen</button>
-        <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button>
-      </div></div>
+      <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <span class="pill-tag on" style="background:var(--p)">🎯 Fokus: ${LIFE_LABEL[p.goalArea]||p.goalArea}</span>
       <span class="pill-tag on" style="background:var(--ac)">🧱 ${bi.t}</span>
@@ -2338,23 +2362,35 @@ function renderJourney(){
       <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">${s.why}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
+        <button onclick="completeStep('${s.id}')" style="padding:10px 16px;border:2px solid var(--ok);background:#fff;border-radius:var(--r2);color:var(--ok);font-weight:700;cursor:pointer;font-size:.86rem">✓ Abschließen</button>
         <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
       </div>
       <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
     </div>`;
   }else{
-    html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast deinen ganzen Weg gemeistert!</div><div style="font-size:.85rem;color:var(--mu)">Außergewöhnlich. Zeit für den Quartals-Review – oder mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
+    html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast für jetzt alles erledigt!</div><div style="font-size:.85rem;color:var(--mu)">Tägliche Routinen erscheinen morgen wieder. Mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
   }
-  html+=`<div class="sec"><div class="shdr"><div class="stitle">Deine Strecke</div></div>`;
+  html+=`<div class="sec"><div class="shdr"><div class="stitle">Deine Strecke</div><span style="font-size:.72rem;color:var(--mu);font-weight:700">🔁 = täglich</span></div>`;
   journey.forEach((id,i)=>{
-    const s=cat[id];const done=!!completed[id];const cur=id===nextId;const manual=!!rawProg[id]&&!autoSet[id];
+    const s=cat[id];const st=stepStatus(id);const done=st.done;const cur=id===nextId;
+    let progress='';
+    if(st.mode==='count')progress=`<span style="font-size:.72rem;color:${done?'var(--ok)':'var(--mu)'};font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`;
+    else if(st.mode==='daily')progress=`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">🔁 täglich</span>`;
+    let actions;
+    if(done){
+      const label=st.mode==='daily'?'✓ Heute erledigt':st.mode==='count'?`✓ Erledigt (${st.count}/${st.target})`:'✓ Erledigt';
+      actions=`<span class="badge b-2min">${label}</span><button onclick="undoStep('${id}')" style="padding:5px 9px;border:1.5px solid var(--bo);background:none;color:var(--mu);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.72rem">↩ rückgängig</button>`;
+    }else{
+      actions=`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button><button onclick="completeStep('${id}')" style="padding:6px 10px;border:1.5px solid var(--ok);background:none;color:var(--ok);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">✓ Abschließen</button>`;
+    }
     html+=`<div class="jstep${done?' done':cur?' current':''}">
       <div class="jstep-num">${done?'✓':i+1}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:.92rem;font-weight:700">${s.icon} ${stepLabel(s.id,s)}</div>
         <div style="font-size:.78rem;color:var(--mu);margin-top:2px;line-height:1.45">${s.why}</div>
         <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
-          ${done?`<span class="badge b-2min">✓ Erledigt</span>${manual?`<button onclick="markPathStep('${id}')" style="padding:5px 9px;border:1.5px solid var(--bo);background:none;color:var(--mu);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.72rem">↩ rückgängig</button>`:''}`:`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button><button onclick="markPathStep('${id}')" style="padding:6px 10px;border:1.5px solid var(--ok);background:none;color:var(--ok);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">✓ Erledigt</button>`}
+          ${actions}
+          ${progress}
           <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${s.time}</span>
         </div>
       </div>
@@ -2629,7 +2665,7 @@ async function saveVisionStepAndContinue(){
   await saveProfile();
   toast('✅ Schritt gespeichert!');
   if(visionStep<VISION_STEPS.length-1){visionStep++;openVisionStep(visionStep);}
-  else{closeVisionProcess();toast('🌟 Vision-Prozess abgeschlossen!');showVisionSummary();}
+  else{closeVisionProcess();toast('🌟 Vision-Prozess abgeschlossen!');showVisionSummary();logStep('vision_process');}
   updateVisionStepsOverview();
   try{renderJourney();}catch(e){}
 }
@@ -2696,6 +2732,8 @@ function selectLifeArea(id){
 async function saveLifeArea(){
   if(!selectedLifeArea)return;
   D.lifeAreas[selectedLifeArea]={vision:gv('life-vision-input'),beliefs:gv('life-beliefs-input')};
+  if(gv('life-vision-input'))logStep('life_areas');
+  if(gv('life-beliefs-input'))logStep('beliefs_done');
   await saveProfile();toast('✅ Lebensbereich gespeichert!');renderLifeGrid();try{renderJourney();}catch(e){}
 }
 
@@ -2713,6 +2751,8 @@ async function addTask(){
   btn.disabled=false;
   if(!r.ok){toast('❌ Fehler beim Speichern.');return;}
   if(task.special==='2min')toast('⚡ 2-Minuten-Regel: Starte JETZT!');
+  if(task.lifeArea)logStep('first_tasks');
+  if(start||end)logStep('cal_used');
   D.tasks.unshift(task);document.getElementById('tn').value='';
   renderTasks();renderStats();updateDepSelect();renderLifeGrid();
 }
@@ -2799,7 +2839,7 @@ function renderMIT(){
     </div>`;
   }).join('');
 }
-async function togMIT(i){D.mitDone[i]=!D.mitDone[i];if(D.mitDone[i]){D.todayScore+=25;toast('🎯 Hauptaufgabe erledigt! +25 Punkte');saveStats();}await saveMIT();renderMIT();renderStats();}
+async function togMIT(i){D.mitDone[i]=!D.mitDone[i];if(D.mitDone[i]){D.todayScore+=25;toast('🎯 Hauptaufgabe erledigt! +25 Punkte');saveStats();logStep('mit_used');}await saveMIT();renderMIT();renderStats();}
 
 // ═══════════════════════════════════════════════════════════════
 // ── ROUTINES (Pomodoro) ──  Timer, Fokus-Modus
@@ -2814,7 +2854,7 @@ function startPomo(){
   pTmr=setInterval(async()=>{
     pSec--;updPomo();
     if(document.getElementById('focmod').style.display==='flex')document.getElementById('ftime').textContent=fmt(pSec);
-    if(pSec<=0){clearInterval(pTmr);pRun=false;if(!pBrk){D.pomoSess++;D.todayScore+=15;await saveStats();renderStats();toast('🍅 Pomodoro fertig! Verdiente Pause!');pBrk=true;pSec=D.pomoSess%4===0?gLn():gSh();pTot=pSec;}else{pBrk=false;pSec=gW();pTot=gW();toast('⏰ Pause vorbei! Weiter!');}updPomo();}
+    if(pSec<=0){clearInterval(pTmr);pRun=false;if(!pBrk){D.pomoSess++;D.todayScore+=15;await saveStats();logStep('pomodoro_used');renderStats();toast('🍅 Pomodoro fertig! Verdiente Pause!');pBrk=true;pSec=D.pomoSess%4===0?gLn():gSh();pTot=pSec;}else{pBrk=false;pSec=gW();pTot=gW();toast('⏰ Pause vorbei! Weiter!');}updPomo();}
   },1000);
 }
 function stopPomo(){clearInterval(pTmr);pRun=false;}
@@ -2918,7 +2958,7 @@ async function addTaskFromCal(){
   const r=await sbFetch('/rest/v1/tasks',{method:'POST',body:JSON.stringify({id,user_id:UID,name,prio:task.prio,diff:task.diff,special:'',life_area:null,recurring:null,start_date:activeDayStr,end_date:activeDayStr,start_time:startTime||null,end_time:endTime||null,dep:null,done:false})});
   if(!r.ok){toast('❌ Fehler.');return;}
   D.tasks.unshift(task);document.getElementById('day-new-task').value='';
-  toast('✅ Aufgabe hinzugefügt!');refreshCalDay();renderTasks();renderStats();updateDepSelect();
+  logStep('cal_used');toast('✅ Aufgabe hinzugefügt!');refreshCalDay();renderTasks();renderStats();updateDepSelect();
 }
 
 // ─── Gantt ───
@@ -2952,7 +2992,7 @@ async function saveWellbeing(){
   D.wellbeing=D.wellbeing.filter(e=>e.date!==entry.date);
   D.wellbeing.unshift(entry);
   D.wellbeing=D.wellbeing.slice(0,30);
-  await saveProfile();btn.disabled=false;toast('🧘 Wohlbefinden gespeichert!');renderWellbeing();try{renderJourney();}catch(e){}
+  await saveProfile();btn.disabled=false;toast('🧘 Wohlbefinden gespeichert!');logStep('wellbeing_tracked');renderWellbeing();try{renderJourney();}catch(e){}
 }
 function renderWellbeing(){
   const el=document.getElementById('wb-history');
@@ -2976,7 +3016,7 @@ async function saveReview(){
   const entry={date:new Date().toISOString().split('T')[0],good:gv('rev-good'),learn:gv('rev-learn'),vision:gv('rev-vision'),procr:gv('rev-procr'),next:gv('rev-next')};
   if(!entry.good&&!entry.learn){toast('Bitte mindestens eine Frage beantworten.');return;}
   D.reviews=D.reviews.filter(r=>r.date!==entry.date);D.reviews.unshift(entry);D.reviews=D.reviews.slice(0,12);
-  await saveProfile();toast('🔄 Wochenrückblick gespeichert! Großartige Reflexion!');renderReviews();try{renderJourney();}catch(e){}
+  await saveProfile();toast('🔄 Wochenrückblick gespeichert! Großartige Reflexion!');logStep('first_review');renderReviews();try{renderJourney();}catch(e){}
   ['rev-good','rev-learn','rev-vision','rev-procr','rev-next'].forEach(id=>document.getElementById(id).value='');
 }
 function renderReviews(){
@@ -3010,7 +3050,7 @@ async function saveJournalEntry(){
   const id=existing?.id||(UID+'_'+today);
   const payload={id,user_id:UID,date:today,...entry,updated_at:new Date().toISOString()};
   const r=await sbFetch('/rest/v1/journal?id=eq.'+id,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(payload)});
-  if(r.ok){journalCache[today]={...payload};toast('📓 Tageseintrag gespeichert!');renderJournal();}
+  if(r.ok){journalCache[today]={...payload};logStep('journal_7days');toast('📓 Tageseintrag gespeichert!');renderJournal();}
   else toast('❌ Fehler beim Speichern.');
 }
 async function autoSaveJournal(){
@@ -3221,10 +3261,11 @@ async function sendAI(){
   const input=document.getElementById('ai-input');const msg=input.value.trim();if(!msg)return;
   const btn=document.getElementById('ai-send-btn');btn.disabled=true;input.value='';
   const msgs=document.getElementById('ai-messages');
-  msgs.innerHTML+=`<div class="ai-msg user">${msg}</div>`;
+  msgs.innerHTML+=`<div class="ai-msg user">${esc(msg)}</div>`;
   const thinking=document.createElement('div');thinking.className='ai-msg bot thinking';thinking.textContent='✨ Denke nach...';msgs.appendChild(thinking);
   msgs.scrollTop=msgs.scrollHeight;
   aiConversation.push({role:'user',content:msg});
+  logStep('ai_coach_used');
   const reply=await callAI(aiConversation,getContext(),1000);
   aiConversation.push({role:'assistant',content:reply||'Entschuldigung, ich konnte keine Antwort generieren.'});
   if(aiConversation.length>20)aiConversation=aiConversation.slice(-20);
@@ -3295,7 +3336,7 @@ function showTab(name,btn){
   if(name==='wellbeing')renderWellbeing();
   if(name==='review')renderReviews();
   if(name==='diary'){journalDate=new Date().toISOString().split('T')[0];renderJournal();}
-  if(name==='analytics')renderAnalytics();
+  if(name==='analytics'){renderAnalytics();logStep('analytics_checked');}
 }
 
 let tTO;
