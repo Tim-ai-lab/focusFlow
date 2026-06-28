@@ -1551,6 +1551,7 @@ function saveMorningData(){
   D.dailyLog[today].mood=D.currentMood||'';
   showMorningSummary();
   saveProfile();
+  try{renderJourney();}catch(e){}
 }
 function showMorningSummary(){
   const today=new Date().toISOString().split('T')[0];
@@ -1619,6 +1620,7 @@ async function saveEveningData(){
   document.getElementById('evening-btn').style.background='rgba(176,142,232,.4)';
   await saveProfile();
   renderDiary();
+  try{renderJourney();}catch(e){}
   toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
 }
 
@@ -1942,22 +1944,27 @@ function markPathStep(stepId){
   try{renderJourney();}catch(e){}
   toast(nowDone?'✅ Schritt abgehakt! Weiter so! 🚀':'↩ Markierung entfernt');
 }
+// Nur die aus echten App-Daten automatisch erkannten Schritte (ohne manuelle Marks)
+function computeAutoSteps(){
+  const a={};
+  if(!UID||!D)return a;
+  if(D.vision?.stepData&&Object.keys(D.vision.stepData).length>=6)a['vision_process']='auto';
+  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.vision))a['life_areas']='auto';
+  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.beliefs))a['beliefs_done']='auto';
+  if(D.tasks&&D.tasks.some(t=>t.lifeArea))a['first_tasks']='auto';
+  if(D.mitDone&&D.mitDone.some(Boolean))a['mit_used']='auto';
+  if(D.pomoSess>0)a['pomodoro_used']='auto';
+  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.morning))a['morning_done']='auto';
+  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.evening))a['evening_done']='auto';
+  if(D.wellbeing&&D.wellbeing.length>=3)a['wellbeing_tracked']='auto';
+  if(D.reviews&&D.reviews.length>0)a['first_review']='auto';
+  if(journalCache&&Object.keys(journalCache).length>=7)a['journal_7days']='auto';
+  return a;
+}
 function computePathStats(){
   if(!UID||!D)return{};
-  const completed=getPathProgress();
-  // Auto-detect completed steps from app data
-  if(D.vision?.stepData&&Object.keys(D.vision.stepData).length>=6)completed['vision_process']=completed['vision_process']||'auto';
-  if(D.lifeAreas&&Object.values(D.lifeAreas).some(a=>a.vision))completed['life_areas']=completed['life_areas']||'auto';
-  if(D.lifeAreas&&Object.values(D.lifeAreas).some(a=>a.beliefs))completed['beliefs_done']=completed['beliefs_done']||'auto';
-  if(D.tasks&&D.tasks.some(t=>t.lifeArea))completed['first_tasks']=completed['first_tasks']||'auto';
-  if(D.mitDone&&D.mitDone.some(Boolean))completed['mit_used']=completed['mit_used']||'auto';
-  if(D.pomoSess>0)completed['pomodoro_used']=completed['pomodoro_used']||'auto';
-  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.morning))completed['morning_done']=completed['morning_done']||'auto';
-  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.evening))completed['evening_done']=completed['evening_done']||'auto';
-  if(D.wellbeing&&D.wellbeing.length>=3)completed['wellbeing_tracked']=completed['wellbeing_tracked']||'auto';
-  if(D.reviews&&D.reviews.length>0)completed['first_review']=completed['first_review']||'auto';
-  if(journalCache&&Object.keys(journalCache).length>=7)completed['journal_7days']=completed['journal_7days']||'auto';
-  return completed;
+  // Manuelle Markierungen + automatisch erkannte Schritte zusammenführen
+  return {...getPathProgress(),...computeAutoSteps()};
 }
 function renderPath(){
   if(!UID||!D)return;
@@ -2287,6 +2294,7 @@ function renderJourney(){
   const cat=journeyCatalog();
   const completed=computePathStats();
   const rawProg=getPathProgress();
+  const autoSet=computeAutoSteps();
   const journey=(ob.journey||[]).filter(id=>cat[id]);
   const total=journey.length;
   const doneN=journey.filter(id=>completed[id]).length;
@@ -2326,7 +2334,7 @@ function renderJourney(){
   }
   html+=`<div class="sec"><div class="shdr"><div class="stitle">Deine Strecke</div></div>`;
   journey.forEach((id,i)=>{
-    const s=cat[id];const done=!!completed[id];const cur=id===nextId;const manual=!!rawProg[id];
+    const s=cat[id];const done=!!completed[id];const cur=id===nextId;const manual=!!rawProg[id]&&!autoSet[id];
     html+=`<div class="jstep${done?' done':cur?' current':''}">
       <div class="jstep-num">${done?'✓':i+1}</div>
       <div style="flex:1;min-width:0">
@@ -2610,6 +2618,7 @@ async function saveVisionStepAndContinue(){
   if(visionStep<VISION_STEPS.length-1){visionStep++;openVisionStep(visionStep);}
   else{closeVisionProcess();toast('🌟 Vision-Prozess abgeschlossen!');showVisionSummary();}
   updateVisionStepsOverview();
+  try{renderJourney();}catch(e){}
 }
 function updateVisionStepsOverview(){
   VISION_STEPS.forEach((step,i)=>{
@@ -2674,7 +2683,7 @@ function selectLifeArea(id){
 async function saveLifeArea(){
   if(!selectedLifeArea)return;
   D.lifeAreas[selectedLifeArea]={vision:gv('life-vision-input'),beliefs:gv('life-beliefs-input')};
-  await saveProfile();toast('✅ Lebensbereich gespeichert!');renderLifeGrid();
+  await saveProfile();toast('✅ Lebensbereich gespeichert!');renderLifeGrid();try{renderJourney();}catch(e){}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2930,7 +2939,7 @@ async function saveWellbeing(){
   D.wellbeing=D.wellbeing.filter(e=>e.date!==entry.date);
   D.wellbeing.unshift(entry);
   D.wellbeing=D.wellbeing.slice(0,30);
-  await saveProfile();btn.disabled=false;toast('🧘 Wohlbefinden gespeichert!');renderWellbeing();
+  await saveProfile();btn.disabled=false;toast('🧘 Wohlbefinden gespeichert!');renderWellbeing();try{renderJourney();}catch(e){}
 }
 function renderWellbeing(){
   const el=document.getElementById('wb-history');
@@ -2954,7 +2963,7 @@ async function saveReview(){
   const entry={date:new Date().toISOString().split('T')[0],good:gv('rev-good'),learn:gv('rev-learn'),vision:gv('rev-vision'),procr:gv('rev-procr'),next:gv('rev-next')};
   if(!entry.good&&!entry.learn){toast('Bitte mindestens eine Frage beantworten.');return;}
   D.reviews=D.reviews.filter(r=>r.date!==entry.date);D.reviews.unshift(entry);D.reviews=D.reviews.slice(0,12);
-  await saveProfile();toast('🔄 Wochenrückblick gespeichert! Großartige Reflexion!');renderReviews();
+  await saveProfile();toast('🔄 Wochenrückblick gespeichert! Großartige Reflexion!');renderReviews();try{renderJourney();}catch(e){}
   ['rev-good','rev-learn','rev-vision','rev-procr','rev-next'].forEach(id=>document.getElementById(id).value='');
 }
 function renderReviews(){
@@ -3256,6 +3265,8 @@ function renderStats(){
   document.getElementById('st1').textContent=D.streak+'🔥';
   document.getElementById('st2').textContent=D.todayScore;
   document.getElementById('st3').textContent=D.pomoSess;
+  // Strecken-Status live mitziehen (Aufgaben, MIT, Pomodoro …)
+  try{renderJourney();}catch(e){}
 }
 
 function showTab(name,btn){
