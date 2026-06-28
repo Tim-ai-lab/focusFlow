@@ -1465,7 +1465,9 @@ function checkStreak(){
   const y=new Date();y.setDate(y.getDate()-1);
   D.streak=D.lastDate===y.toDateString()?(D.streak||0)+1:0;
   D.lastDate=today;D.todayDone=0;D.todayScore=0;D.pomoSess=0;D.weekDone[new Date().getDay()]=0;
-  saveStats();
+  // Tägliche Tagesziele (MIT) für den neuen Tag zurücksetzen – gestrige Haken verschwinden
+  D.mitTasks=['','',''];D.mitDone=[false,false,false];
+  saveStats();saveMIT();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1933,10 +1935,12 @@ function getPathProgress(){
 function markPathStep(stepId){
   if(!UID)return;
   const completed=getPathProgress();
-  completed[stepId]=new Date().toISOString();
+  const nowDone=!completed[stepId];
+  if(nowDone)completed[stepId]=new Date().toISOString();else delete completed[stepId];
   try{localStorage.setItem('ff_path_'+UID,JSON.stringify(completed));}catch(e){}
-  renderPath();
-  toast('✅ Schritt abgehakt! Weiter so! 🚀');
+  try{renderPath();}catch(e){}
+  try{renderJourney();}catch(e){}
+  toast(nowDone?'✅ Schritt abgehakt! Weiter so! 🚀':'↩ Markierung entfernt');
 }
 function computePathStats(){
   if(!UID||!D)return{};
@@ -2148,6 +2152,27 @@ const BLOCKER_INFO={
   procrastination:{t:'Aufschieben',s:'Mit der 2-Minuten-Regel und Pomodoro überwinden wir den Startwiderstand.'}
 };
 
+// Imperative Schritt-Bezeichnungen (Handlung statt "schon erledigt"-Formulierung)
+const STEP_DO={
+  vision_process:'Vision-Prozess durchführen',
+  life_areas:'Lebensbereiche definieren',
+  beliefs_done:'Glaubenssätze notieren',
+  first_tasks:'Erste Aufgaben mit Lebensbereich anlegen',
+  mit_used:'MIT-Methode anwenden (an 3 Tagen)',
+  cal_used:'Aufgaben im Kalender einplanen',
+  morning_done:'Morgenroutine machen',
+  pomodoro_used:'Pomodoro 3× nutzen',
+  evening_done:'Abendreflexion machen',
+  wellbeing_tracked:'Wohlbefinden 3 Tage tracken',
+  first_review:'Wochenrückblick durchführen',
+  journal_7days:'Journal 7 Tage führen',
+  analytics_checked:'Analytics ansehen',
+  ai_coach_used:'FocusAI für Reflexion nutzen',
+  quarterly_review:'Quartals-Review durchführen',
+  beliefs_revisited:'Glaubenssätze nach 30 Tagen prüfen'
+};
+function stepLabel(id,s){return STEP_DO[id]||(s&&s.title)||id;}
+
 function maybeStartOnboarding(){
   if(!UID)return;
   if(D.vision&&D.vision.onboarding&&D.vision.onboarding.done)return;
@@ -2261,6 +2286,7 @@ function renderJourney(){
   const p=ob.profile||{};
   const cat=journeyCatalog();
   const completed=computePathStats();
+  const rawProg=getPathProgress();
   const journey=(ob.journey||[]).filter(id=>cat[id]);
   const total=journey.length;
   const doneN=journey.filter(id=>completed[id]).length;
@@ -2287,7 +2313,7 @@ function renderJourney(){
     const s=cat[nextId];
     html+=`<div class="sec">
       <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein nächster Schritt</div>
-      <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${s.title}</div>
+      <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${stepLabel(s.id,s)}</div>
       <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">${s.why}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
@@ -2300,14 +2326,14 @@ function renderJourney(){
   }
   html+=`<div class="sec"><div class="shdr"><div class="stitle">Deine Strecke</div></div>`;
   journey.forEach((id,i)=>{
-    const s=cat[id];const done=!!completed[id];const cur=id===nextId;
+    const s=cat[id];const done=!!completed[id];const cur=id===nextId;const manual=!!rawProg[id];
     html+=`<div class="jstep${done?' done':cur?' current':''}">
       <div class="jstep-num">${done?'✓':i+1}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:.92rem;font-weight:700">${s.icon} ${s.title}</div>
+        <div style="font-size:.92rem;font-weight:700">${s.icon} ${stepLabel(s.id,s)}</div>
         <div style="font-size:.78rem;color:var(--mu);margin-top:2px;line-height:1.45">${s.why}</div>
         <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
-          ${done?'<span class="badge b-2min">✓ Erledigt</span>':`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button><button onclick="markPathStep('${id}')" style="padding:6px 10px;border:1.5px solid var(--ok);background:none;color:var(--ok);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">✓ Erledigt</button>`}
+          ${done?`<span class="badge b-2min">✓ Erledigt</span>${manual?`<button onclick="markPathStep('${id}')" style="padding:5px 9px;border:1.5px solid var(--bo);background:none;color:var(--mu);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.72rem">↩ rückgängig</button>`:''}`:`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button><button onclick="markPathStep('${id}')" style="padding:6px 10px;border:1.5px solid var(--ok);background:none;color:var(--ok);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">✓ Erledigt</button>`}
           <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${s.time}</span>
         </div>
       </div>
@@ -2359,7 +2385,7 @@ function computeNextAction(){
   acts.mitDo = (mitFirstUndone>=0) ? A('🎯','Erledige deine Hauptaufgabe: „'+D.mitTasks[mitFirstUndone].slice(0,40)+'"','Diese Aufgabe trägt heute am meisten zu deinem Ziel bei – sie zuerst.','Zu den Tageszielen →',()=>closePathAndGo('mit'),'MIT-Aufgabe „'+D.mitTasks[mitFirstUndone]+'" erledigen') : null;
   acts.topTask = open.length ? (()=>{const top=open.slice().sort((a,b)=>{const pr={high:0,normal:1,low:2};return pr[a.prio]-pr[b.prio];})[0];return A('▶️','Starte mit „'+clean(top.name).slice(0,40)+'"','Deine wichtigste offene Aufgabe – 25 Minuten Pomodoro bringen dich ins Tun.','▶ Pomodoro starten',()=>{closePathAndGo('pomo');startPomo();},'Aufgabe „'+clean(top.name)+'" mit Pomodoro starten');})() : null;
   acts.evening = (hour>=17 && !hasEvening) ? A('🌙','Schließe den Tag mit der Abendreflexion ab','Was nicht reflektiert wird, wiederholt sich. 8 Minuten für Lernen & Vorbereitung auf morgen.','Abendreflexion starten →',()=>openEveningRoutine(),'Abendreflexion durchführen') : null;
-  acts.journey = (()=>{const ob=D.vision&&D.vision.onboarding;if(!(ob&&ob.done&&ob.journey))return null;const cat=journeyCatalog();const completed=computePathStats();const nid=ob.journey.find(id=>cat[id]&&!completed[id]);if(!nid)return null;const s=cat[nid];return A(s.icon,s.title,s.why,'Jetzt starten →',()=>journeyGo(nid),s.title+' angehen');})();
+  acts.journey = (()=>{const ob=D.vision&&D.vision.onboarding;if(!(ob&&ob.done&&ob.journey))return null;const cat=journeyCatalog();const completed=computePathStats();const nid=ob.journey.find(id=>cat[id]&&!completed[id]);if(!nid)return null;const s=cat[nid];return A(s.icon,stepLabel(nid,s),s.why,'Jetzt starten →',()=>journeyGo(nid),stepLabel(nid,s)+' angehen');})();
   acts.firstTask = A('➕','Lege deine erste Aufgabe an','Jede große Veränderung beginnt mit einer konkreten ersten Aufgabe.','Aufgabe anlegen →',()=>closePathAndGo('tasks'),'die erste Aufgabe anlegen');
   // Reihenfolge – je nach Haupt-Blockade leicht angepasst
   let order=['frog','overdue','energy','morning','mitSet','mitDo','topTask','evening','journey','firstTask'];
