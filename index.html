@@ -2362,7 +2362,6 @@ function renderJourney(){
       <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">${s.why}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
-        <button onclick="completeStep('${s.id}')" style="padding:10px 16px;border:2px solid var(--ok);background:#fff;border-radius:var(--r2);color:var(--ok);font-weight:700;cursor:pointer;font-size:.86rem">✓ Abschließen</button>
         <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
       </div>
       <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
@@ -2381,7 +2380,7 @@ function renderJourney(){
       const label=st.mode==='daily'?'✓ Heute erledigt':st.mode==='count'?`✓ Erledigt (${st.count}/${st.target})`:'✓ Erledigt';
       actions=`<span class="badge b-2min">${label}</span><button onclick="undoStep('${id}')" style="padding:5px 9px;border:1.5px solid var(--bo);background:none;color:var(--mu);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.72rem">↩ rückgängig</button>`;
     }else{
-      actions=`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button><button onclick="completeStep('${id}')" style="padding:6px 10px;border:1.5px solid var(--ok);background:none;color:var(--ok);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">✓ Abschließen</button>`;
+      actions=`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button>`;
     }
     html+=`<div class="jstep${done?' done':cur?' current':''}">
       <div class="jstep-num">${done?'✓':i+1}</div>
