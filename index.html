@@ -1944,18 +1944,28 @@ function markPathStep(stepId){
   try{renderJourney();}catch(e){}
   toast(nowDone?'✅ Schritt abgehakt! Weiter so! 🚀':'↩ Markierung entfernt');
 }
+// Entfernt ALLE manuellen Markierungen; automatisch erkannte (echt erledigte) bleiben.
+function resetPathProgress(){
+  if(!UID)return;
+  try{localStorage.removeItem('ff_path_'+UID);}catch(e){}
+  try{renderPath();}catch(e){}
+  try{renderJourney();}catch(e){}
+  toast('↺ Manuelle Markierungen zurückgesetzt');
+}
 // Nur die aus echten App-Daten automatisch erkannten Schritte (ohne manuelle Marks)
 function computeAutoSteps(){
   const a={};
   if(!UID||!D)return a;
+  // Nur als "gemacht" werten, wenn wirklich Inhalt vorhanden ist (kein leeres Objekt)
+  const hasContent=o=>o&&typeof o==='object'&&Object.values(o).some(v=>v&&String(v).trim());
   if(D.vision?.stepData&&Object.keys(D.vision.stepData).length>=6)a['vision_process']='auto';
-  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.vision))a['life_areas']='auto';
-  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.beliefs))a['beliefs_done']='auto';
+  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.vision&&x.vision.trim()))a['life_areas']='auto';
+  if(D.lifeAreas&&Object.values(D.lifeAreas).some(x=>x.beliefs&&x.beliefs.trim()))a['beliefs_done']='auto';
   if(D.tasks&&D.tasks.some(t=>t.lifeArea))a['first_tasks']='auto';
   if(D.mitDone&&D.mitDone.some(Boolean))a['mit_used']='auto';
   if(D.pomoSess>0)a['pomodoro_used']='auto';
-  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.morning))a['morning_done']='auto';
-  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>d.evening))a['evening_done']='auto';
+  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>hasContent(d.morning)))a['morning_done']='auto';
+  if(D.dailyLog&&Object.values(D.dailyLog).some(d=>hasContent(d.evening)))a['evening_done']='auto';
   if(D.wellbeing&&D.wellbeing.length>=3)a['wellbeing_tracked']='auto';
   if(D.reviews&&D.reviews.length>0)a['first_review']='auto';
   if(journalCache&&Object.keys(journalCache).length>=7)a['journal_7days']='auto';
@@ -2305,7 +2315,10 @@ function renderJourney(){
   html+=renderNextActionCard();
   html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
     <div class="shdr"><div class="stitle">🧭 Dein persönlicher Weg</div>
-      <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="resetPathProgress()" title="Entfernt alle manuell gesetzten Haken; wirklich erledigte Schritte bleiben" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↺ Status zurücksetzen</button>
+        <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button>
+      </div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <span class="pill-tag on" style="background:var(--p)">🎯 Fokus: ${LIFE_LABEL[p.goalArea]||p.goalArea}</span>
       <span class="pill-tag on" style="background:var(--ac)">🧱 ${bi.t}</span>
