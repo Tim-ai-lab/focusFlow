@@ -1425,7 +1425,7 @@ async function login(){
   SESSION=r;UID=r.user.id;saveSession(r);await loadAndShow(r.user);
 }
 async function logout(){
-  stopPomo();if(nowLineInterval)clearInterval(nowLineInterval);
+  stopPomo();if(nowLineInterval)clearInterval(nowLineInterval);if(reminderTimer)clearInterval(reminderTimer);
   await sbFetch('/auth/v1/logout',{method:'POST'});
   SESSION=null;UID=null;clearSession();
   document.getElementById('app').style.display='none';
@@ -1442,6 +1442,7 @@ async function loadAndShow(user){
   try{await loadAllData();}catch(e){console.error('loadAllData',e);}
   loading(false);
   try{startAppIntro();}catch(e){console.error('appintro',e);}
+  try{startReminderLoop();}catch(e){console.error('reminders',e);}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2627,6 +2628,20 @@ function renderMyBereich(){
     });
     html+=`</div>`;
   }
+  // Erinnerungen
+  const rem=getReminders();
+  const notifState=('Notification'in window)?Notification.permission:'unsupported';
+  html+=`<div class="sec"><div class="shdr"><div class="stitle">🔔 Erinnerungen</div></div>
+    <p class="sdesc">Sanfte Erinnerungen an deine Routinen – solange FocusFlow im Browser geöffnet ist.</p>
+    <label style="display:flex;align-items:center;gap:9px;margin-bottom:13px;cursor:pointer"><input type="checkbox" ${rem.enabled?'checked':''} onchange="toggleReminders(this.checked)" style="width:18px;height:18px;accent-color:var(--p)"><span style="font-weight:700;font-size:.9rem">Erinnerungen aktivieren</span></label>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <label style="font-size:.8rem;font-weight:700;color:var(--mu);display:flex;flex-direction:column;gap:4px">🌅 Morgenroutine<input type="time" class="sel" value="${rem.morning||'08:00'}" onchange="setReminderTime('morning',this.value)"></label>
+      <label style="font-size:.8rem;font-weight:700;color:var(--mu);display:flex;flex-direction:column;gap:4px">🌙 Abendreflexion<input type="time" class="sel" value="${rem.evening||'20:00'}" onchange="setReminderTime('evening',this.value)"></label>
+    </div>
+    <button onclick="testReminder()" style="margin-top:13px;padding:8px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">🔔 Test-Benachrichtigung</button>
+    ${notifState==='denied'?'<div class="info-box info-orange" style="margin-top:12px">⚠️ Benachrichtigungen sind im Browser blockiert. Du bekommst Erinnerungen dann nur als Hinweis in der App. In den Browser-Einstellungen kannst du sie erlauben.</div>':''}
+    <div class="info-box info-blue" style="margin-top:12px">💡 Für Erinnerungen auch bei <strong>geschlossener</strong> App wäre E-Mail nötig (Supabase-Cron + Mailversand). Sag Bescheid, wenn du das einrichten willst.</div>
+  </div>`;
   // Verlauf: erledigte Schritte inkl. Inhalte
   html+=renderStepTimeline();
   el.innerHTML=html;
@@ -2728,6 +2743,42 @@ async function delMilestone(goalId,mId){
   g.milestones=(g.milestones||[]).filter(x=>x.id!==mId);
   g.done=g.milestones.length>0&&g.milestones.every(x=>x.done);
   await saveProfile();renderGoals();
+}
+// ── Erinnerungen (Browser-/In-App-Benachrichtigungen, solange App offen) ──
+function getReminders(){return (D.vision&&D.vision.reminders)||{enabled:false,morning:'08:00',evening:'20:00'};}
+async function toggleReminders(on){
+  if(!D.vision)D.vision={};
+  const r=getReminders();r.enabled=on;
+  if(on&&'Notification'in window&&Notification.permission==='default'){try{await Notification.requestPermission();}catch(e){}}
+  D.vision.reminders=r;saveProfile();startReminderLoop();
+  toast(on?'🔔 Erinnerungen aktiviert':'Erinnerungen aus');
+}
+function setReminderTime(slot,val){if(!D.vision)D.vision={};const r=getReminders();r[slot]=val;D.vision.reminders=r;saveProfile();}
+function fireNotification(title,body){
+  try{if('Notification'in window&&Notification.permission==='granted'){new Notification(title,{body});return;}}catch(e){}
+  toast(title+' – '+body);
+}
+function testReminder(){fireNotification('FocusFlow','🔔 So sehen deine Erinnerungen aus!');}
+let reminderTimer=null;
+function startReminderLoop(){
+  if(reminderTimer){clearInterval(reminderTimer);reminderTimer=null;}
+  if(!getReminders().enabled)return;
+  reminderTimer=setInterval(checkReminders,60000);checkReminders();
+}
+function checkReminders(){
+  const r=getReminders();if(!r.enabled||!UID)return;
+  const now=new Date();
+  const hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const today=now.toISOString().split('T')[0];
+  const dl=(D.dailyLog&&D.dailyLog[today])||{};
+  const check=(slot,time,done,title,body)=>{
+    if(!time||hm<time||done)return;
+    const key='ff_rem_'+UID+'_'+today+'_'+slot;
+    try{if(localStorage.getItem(key))return;localStorage.setItem(key,'1');}catch(e){}
+    fireNotification(title,body);
+  };
+  check('morning',r.morning,!!dl.morning,'🌅 Morgenroutine','Starte deinen Tag mit Intention & Fokus.');
+  check('evening',r.evening,!!dl.evening,'🌙 Abendreflexion','Zeit, deinen Tag zu reflektieren.');
 }
 let journeyExpanded=false;
 function toggleFullJourney(){journeyExpanded=!journeyExpanded;try{renderJourney();}catch(e){}}
