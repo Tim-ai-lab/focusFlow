@@ -2483,6 +2483,39 @@ function viewAnalysis(i){
   if(w){w.document.write(buildAnalysisDoc(a));w.document.close();}
   else toast('Bitte Pop-ups erlauben, um die Analyse zu öffnen.');
 }
+// ── Wiederkehrender Test + Fortschrittsvergleich ──
+function retestInfo(){
+  const ob=D.vision&&D.vision.onboarding;
+  if(!ob||!ob.done)return null;
+  const arr=(D.vision&&D.vision.analyses)||[];
+  const lastDate=(arr[0]&&arr[0].date)||ob.date;
+  const days=Math.floor((Date.now()-new Date(lastDate).getTime())/864e5);
+  const weeks=D.vision.retestWeeks||6;
+  return {days,weeks,due:days>=weeks*7,nextInDays:Math.max(0,weeks*7-days)};
+}
+function setRetestWeeks(v){
+  if(!D.vision)D.vision={};
+  D.vision.retestWeeks=+v||6;
+  saveProfile();renderMyBereich();try{renderJourney();}catch(e){}
+  toast('🔄 Rhythmus: alle '+(+v||6)+' Wochen');
+}
+const LEVEL={low:1,mid:2,high:3};
+function profileDelta(prev,cur){
+  const dims=[
+    {key:'visionClarity',label:'Vision-Klarheit',better:'up'},
+    {key:'energyBaseline',label:'Energie',better:'up'},
+    {key:'consistency',label:'Konsistenz',better:'up'},
+    {key:'reflection',label:'Reflexion',better:'up'},
+    {key:'selfdoubt',label:'Selbstzweifel',better:'down'}
+  ];
+  const lbl={1:'niedrig',2:'mittel',3:'hoch'};
+  return dims.map(d=>{
+    const a=LEVEL[prev&&prev[d.key]]||null,b=LEVEL[cur&&cur[d.key]]||null;
+    let dir='→',color='var(--mu)';
+    if(a!=null&&b!=null&&b!==a){const better=(b>a)===(d.better==='up');dir=b>a?'↑':'↓';color=better?'var(--ok)':'var(--err)';}
+    return {label:d.label,from:lbl[a]||'?',to:lbl[b]||'?',dir,color,changed:a!==b};
+  });
+}
 function renderMyBereich(){
   const el=document.getElementById('me-content');if(!el)return;
   const arr=(D.vision&&D.vision.analyses)||[];
@@ -2492,7 +2525,25 @@ function renderMyBereich(){
     html+=`<div class="empty">Noch keine Analyse vorhanden.<br>Sie entsteht automatisch nach dem Eingangstest.<br><button class="addbtn" style="margin-top:12px" onclick="startOnboarding()">🧭 Test starten</button></div></div>`;
     el.innerHTML=html;return;
   }
-  html+=`</div>`;
+  const rt=retestInfo();
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px">
+    <button class="addbtn" onclick="startOnboarding()">🔄 Standort-Check erneut</button>
+    <label style="font-size:.8rem;color:var(--mu);font-weight:700;display:flex;align-items:center;gap:6px">Rhythmus
+      <select class="sel" onchange="setRetestWeeks(this.value)">${[4,6,8,12].map(w=>`<option value="${w}"${(D.vision.retestWeeks||6)===w?' selected':''}>alle ${w} Wo.</option>`).join('')}</select>
+    </label>
+    ${rt?`<span style="font-size:.78rem;color:${rt.due?'var(--ac)':'var(--mu)'};font-weight:700">${rt.due?'⏰ jetzt fällig':'nächster in '+rt.nextInDays+' Tagen'}</span>`:''}
+  </div></div>`;
+  if(arr.length>=2){
+    const deltas=profileDelta(arr[1].profile,arr[0].profile);
+    const cur=arr[0].profile||{},prev=arr[1].profile||{};
+    html+=`<div class="sec"><div class="shdr"><div class="stitle">📈 Deine Entwicklung</div></div>
+      <div style="font-size:.8rem;color:var(--mu);margin-bottom:12px">Vergleich: ${esc(fmtDateTime(arr[1].date))} → ${esc(fmtDateTime(arr[0].date))}</div>`;
+    deltas.forEach(d=>{html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--bo)"><div style="flex:1;font-size:.85rem;font-weight:700">${d.label}</div><div style="font-size:.8rem;color:var(--mu)">${d.from} → ${d.to}</div><div style="font-size:1.1rem;font-weight:800;color:${d.color};width:22px;text-align:center">${d.dir}</div></div>`;});
+    const biP=BLOCKER_INFO[prev.blocker],biC=BLOCKER_INFO[cur.blocker];
+    if(prev.blocker!==cur.blocker)html+=`<div style="margin-top:10px;font-size:.84rem"><strong>🧱 Blockade:</strong> ${esc(biP?biP.t:prev.blocker||'?')} → ${esc(biC?biC.t:cur.blocker||'?')}</div>`;
+    if(prev.goalArea!==cur.goalArea)html+=`<div style="margin-top:6px;font-size:.84rem"><strong>🎯 Fokus:</strong> ${esc(LIFE_LABEL[prev.goalArea]||prev.goalArea||'?')} → ${esc(LIFE_LABEL[cur.goalArea]||cur.goalArea||'?')}</div>`;
+    html+=`</div>`;
+  }
   const latest=arr[0];
   html+=`<div class="sec"><div class="shdr"><div class="stitle">✨ Aktuelle Analyse</div>
       <button onclick="downloadAnalysis(0)" style="padding:7px 13px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.8rem">⬇ Als Dokument</button></div>
@@ -2532,6 +2583,13 @@ function renderJourney(){
   const nextId=journey.find(id=>!stepStatus(id).done);
   const bi=BLOCKER_INFO[p.blocker]||{t:p.blocker,s:''};
   let html='';
+  const rtj=retestInfo();
+  if(rtj&&rtj.due){
+    html+=`<div class="sec" style="background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1.5px solid #FED7AA;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px"><strong>🔄 Zeit für deinen Standort-Check</strong><div style="font-size:.83rem;color:#92400E;margin-top:3px">Dein letzter Check ist ${Math.round(rtj.days/7)} Wochen her. Ein kurzer neuer Test macht deinen Fortschritt sichtbar und passt deinen Plan an.</div></div>
+      <button class="addbtn" style="background:linear-gradient(135deg,var(--ac),#E87E3A)" onclick="startOnboarding()">Jetzt neu machen →</button>
+    </div>`;
+  }
   html+=renderNextActionCard();
   html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
     <div class="shdr"><div class="stitle">🧭 Dein persönlicher Weg</div>
