@@ -1139,6 +1139,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- TUTORIAL (erster Login + jederzeit) -->
+<div id="tutmod" style="position:fixed;inset:0;background:linear-gradient(135deg,#EEF2FF,#F4F6FB,#FFF5EE);display:none;z-index:400;overflow-y:auto;padding:20px">
+  <div style="max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center">
+    <div style="background:var(--card);border-radius:24px;padding:32px 28px;box-shadow:0 8px 40px rgba(124,158,232,.15)">
+      <div id="tut-content"></div>
+      <div style="display:flex;gap:4px;margin:18px 0" id="tut-dots"></div>
+      <div style="display:flex;gap:8px">
+        <button class="modal-close" style="flex:1;margin-top:0" onclick="prevTut()" id="tut-back">‹ Zurück</button>
+        <button class="btnmain" style="flex:2" id="tut-next" onclick="nextTut()">Weiter ›</button>
+      </div>
+      <button onclick="finishTutorial()" style="width:100%;margin-top:10px;background:none;border:none;color:var(--mu);font-size:.8rem;font-weight:700;cursor:pointer">Überspringen</button>
+    </div>
+  </div>
+</div>
+
 <!-- ONBOARDING / EINGANGSTEST (obligatorisch) -->
 <div id="onboardmod" style="position:fixed;inset:0;background:linear-gradient(135deg,#EEF2FF,#F4F6FB,#FFF5EE);display:none;z-index:400;overflow-y:auto;padding:20px">
   <div style="max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;justify-content:center">
@@ -1426,7 +1441,7 @@ async function loadAndShow(user){
   initAIProvider();
   try{await loadAllData();}catch(e){console.error('loadAllData',e);}
   loading(false);
-  try{maybeStartOnboarding();}catch(e){console.error('onboarding',e);}
+  try{startAppIntro();}catch(e){console.error('appintro',e);}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2315,6 +2330,40 @@ const STEP_DO={
 };
 function stepLabel(id,s){return STEP_DO[id]||(s&&s.title)||id;}
 
+// ── Tutorial (mit Begründungen) ──
+const TUTORIAL_SLIDES=[
+  {icon:'👋',title:'Willkommen bei FocusFlow',text:'Dein persönlicher Begleiter für Life-Design und gegen Prokrastination. FocusFlow führt dich Schritt für Schritt – statt dich mit Funktionen zu erschlagen.',why:'Prokrastination ist meist eine Emotions-Reaktion, kein Zeitmanagement-Problem. Deshalb setzt FocusFlow bei Klarheit, Ausrichtung und Energie an.'},
+  {icon:'🧭',title:'Mein Weg – deine geführte Strecke',text:'Nach einem kurzen Test bekommst du einen individuellen Pfad. Du siehst immer nur <strong>deinen aktuellen Schritt und die nächsten</strong> – klar und fokussiert.',why:'Fokus auf den einen nächsten Schritt schlägt endlose To-do-Listen. Weniger Optionen = weniger Überforderung = mehr Handeln.'},
+  {icon:'🎯',title:'Ziele & Tagesziele',text:'Zerlege große Ziele in <strong>Meilensteine</strong> und wähle täglich max. 3 Hauptaufgaben, die wirklich zählen.',why:'Kleine Etappen und klare Prioritäten schaffen tägliche Erfolgserlebnisse – der stärkste Motor gegen Aufschieben.'},
+  {icon:'⏱️',title:'Routinen & Fokus',text:'Morgen- und Abendroutine, Pomodoro-Timer und Wohlbefinden-Tracking geben deinem Tag Struktur und Energie.',why:'Energie ist keine Ressource, die man einfach hat – sie entsteht täglich durch Rituale und Rhythmus.'},
+  {icon:'🤖',title:'FocusAI & deine Analyse',text:'Der KI-Coach kennt deine Vision und Ziele. Nach dem Test erhältst du eine <strong>psychologisch fundierte Analyse</strong> – gespeichert und herunterladbar in „Mein Bereich".',why:'Selbstkenntnis ist die Basis jeder echten Veränderung – und macht deinen Fortschritt über die Zeit sichtbar.'},
+  {icon:'🚀',title:'So startest du',text:'Gleich machst du einen kurzen Einstiegstest. Daraus baut FocusFlow deinen persönlichen Weg. Dieses Tutorial findest du jederzeit wieder unter „👤 Mein Bereich".',why:''}
+];
+let tutStep=0,tutFirstRun=false;
+function openTutorial(firstRun){tutFirstRun=!!firstRun;tutStep=0;renderTutStep();document.getElementById('tutmod').style.display='block';}
+function renderTutStep(){
+  const s=TUTORIAL_SLIDES[tutStep];const isLast=tutStep===TUTORIAL_SLIDES.length-1;
+  document.getElementById('tut-next').textContent=isLast?"Los geht's! 🚀":'Weiter ›';
+  document.getElementById('tut-back').style.visibility=tutStep>0?'visible':'hidden';
+  document.getElementById('tut-content').innerHTML=`<div style="font-size:3rem;text-align:center;margin-bottom:10px">${s.icon}</div><h2 style="text-align:center;font-size:1.3rem;font-weight:800;margin-bottom:10px">${s.title}</h2><div style="font-size:.92rem;line-height:1.65;color:var(--txt)">${s.text}</div>${s.why?`<div class="info-box info-blue" style="margin-top:14px">💡 <strong>Warum:</strong> ${s.why}</div>`:''}`;
+  document.getElementById('tut-dots').innerHTML=TUTORIAL_SLIDES.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=tutStep?'var(--p)':'var(--bo)'}"></div>`).join('');
+}
+function nextTut(){if(tutStep<TUTORIAL_SLIDES.length-1){tutStep++;renderTutStep();}else finishTutorial();}
+function prevTut(){if(tutStep>0){tutStep--;renderTutStep();}}
+function finishTutorial(){
+  if(!D.vision)D.vision={};
+  D.vision.tutorialSeen=true;try{saveProfile();}catch(e){}
+  document.getElementById('tutmod').style.display='none';
+  if(tutFirstRun&&!(D.vision.onboarding&&D.vision.onboarding.done))startOnboarding();
+}
+// Ersteinstieg: Tutorial (wenn ungesehen) → danach obligatorischer Test
+function startAppIntro(){
+  if(!UID)return;
+  const tutSeen=D.vision&&D.vision.tutorialSeen;
+  const obDone=D.vision&&D.vision.onboarding&&D.vision.onboarding.done;
+  if(!tutSeen){openTutorial(true);return;}
+  if(!obDone)startOnboarding();
+}
 function maybeStartOnboarding(){
   if(!UID)return;
   if(D.vision&&D.vision.onboarding&&D.vision.onboarding.done)return;
@@ -2537,12 +2586,13 @@ function renderMyBereich(){
   let html=`<div class="sec"><div class="shdr"><div class="stitle">👤 Mein Bereich</div></div>
     <p class="sdesc">Deine persönlichen Analysen – dauerhaft in deinem Account gespeichert und jederzeit herunterladbar.</p>`;
   if(!arr.length){
-    html+=`<div class="empty">Noch keine Analyse vorhanden.<br>Sie entsteht automatisch nach dem Eingangstest.<br><button class="addbtn" style="margin-top:12px" onclick="startOnboarding()">🧭 Test starten</button></div></div>`;
+    html+=`<div class="empty">Noch keine Analyse vorhanden.<br>Sie entsteht automatisch nach dem Eingangstest.<br><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px"><button class="addbtn" onclick="startOnboarding()">🧭 Test starten</button><button onclick="openTutorial(false)" style="padding:10px 16px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.88rem">📖 Tutorial</button></div></div></div>`;
     el.innerHTML=html;return;
   }
   const rt=retestInfo();
   html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px">
     <button class="addbtn" onclick="startOnboarding()">🔄 Standort-Check erneut</button>
+    <button onclick="openTutorial(false)" style="padding:9px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">📖 Tutorial</button>
     <label style="font-size:.8rem;color:var(--mu);font-weight:700;display:flex;align-items:center;gap:6px">Rhythmus
       <select class="sel" onchange="setRetestWeeks(this.value)">${[4,6,8,12].map(w=>`<option value="${w}"${(D.vision.retestWeeks||6)===w?' selected':''}>alle ${w} Wo.</option>`).join('')}</select>
     </label>
