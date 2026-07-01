@@ -394,6 +394,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .info-blue{background:#EEF2FF;color:#3730A3;border-color:#C7D2FE}
 .info-orange{background:#FFF7ED;color:#92400E;border-color:#FED7AA}
 .info-green{background:#F0FDF4;color:#065F46;border-color:#BBF7D0}
+/* ANALYSE (Markdown-Darstellung) */
+.md-body h3{font-size:1rem;font-weight:800;color:var(--p);margin:16px 0 6px}
+.md-body h4{font-size:.9rem;font-weight:800;margin:12px 0 4px}
+.md-body p{font-size:.9rem;line-height:1.6;margin:0 0 9px;color:var(--txt)}
+.md-body ul{margin:4px 0 9px 18px;padding:0}
+.md-body li{font-size:.88rem;line-height:1.55;margin-bottom:4px}
+.md-body strong{font-weight:700}
 </style>
 </head>
 <body>
@@ -518,11 +525,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="tbtn" onclick="showTab('ai',this)">🤖 FocusAI</button>
       <button class="tbtn" onclick="showTab('analytics',this)">📈 Analytics</button>
       <button class="tbtn on" id="tbtn-journey" onclick="showTab('journey',this)" style="order:-1">🧭 Mein Weg</button>
+      <button class="tbtn" id="tbtn-me" onclick="showTab('me',this)">👤 Mein Bereich</button>
     </div>
 
     <!-- MEIN WEG (personalisierte Strecke) -->
     <div class="tpanel on" id="tab-journey">
       <div id="journey-content"></div>
+    </div>
+
+    <!-- MEIN BEREICH (Analysen, persönlich) -->
+    <div class="tpanel" id="tab-me">
+      <div id="me-content"></div>
     </div>
 
     <!-- TASKS -->
@@ -2370,25 +2383,135 @@ function journeyCatalog(){
 }
 async function finishOnboarding(){
   document.getElementById('ob-quiz').style.display='none';
-  document.getElementById('ob-result').style.display='block';
+  const el=document.getElementById('ob-result');
+  el.style.display='block';
+  el.innerHTML='<div class="spinner" style="margin:10px auto 16px"></div><div style="font-size:1.05rem;font-weight:800;margin-bottom:6px">Deine Analyse wird erstellt…</div><div style="font-size:.85rem;color:var(--mu)">FocusAI wertet deine Antworten psychologisch aus.</div>';
   const p=computeOnboardingProfile(obAnswers);
   const journey=computeJourney(p);
   if(!D.vision)D.vision={};
   D.vision.onboarding={done:true,date:new Date().toISOString().split('T')[0],answers:{...obAnswers},profile:p,journey,aiIntro:''};
+  // Psychologisch fundierte Analyse (best effort, mit Fallback)
+  let analysisText='';
+  try{analysisText=await generateAnalysis(p,obAnswers);}catch(e){console.error('analysis',e);analysisText=fallbackAnalysis(p);}
+  if(!D.vision.analyses)D.vision.analyses=[];
+  D.vision.analyses.unshift({date:new Date().toISOString(),profile:p,answers:{...obAnswers},text:analysisText});
   try{await saveProfile();}catch(e){console.error('saveProfile onboarding',e);}
-  // KI-Begleittext (best effort – Weg funktioniert auch ohne)
-  try{
-    const sys='Du bist FocusAI, ein warmherziger, motivierender Lebenscoach. Antworte auf Deutsch, max 110 Wörter, persönlich und konkret, nutze 1–2 Emojis. Kein Aufzählungspunkt-Listing, ein kurzer Fließtext.';
-    const c=journeyCatalog();
-    const first3=journey.slice(0,3).map(id=>c[id]&&c[id].title).filter(Boolean).join(', ');
-    const msg='Ein Nutzer hat gerade den Einstiegstest gemacht. Profil: Ziel='+p.goal+', wichtigster Lebensbereich='+(LIFE_LABEL[p.goalArea]||p.goalArea)+', Vision-Klarheit='+p.visionClarity+', größte Blockade='+p.blocker+', Energie='+p.energyBaseline+', Zeit/Tag='+p.timePerDay+', Konsistenz='+p.consistency+'. Seine ersten Schritte sind: '+first3+'. Begrüße ihn kurz, erkenne an wo er steht und erkläre warum genau dieser Weg für ihn sinnvoll ist. Sprich ihn mit "du" an.';
-    const intro=await callAI([{role:'user',content:msg}],sys,400);
-    if(intro){D.vision.onboarding.aiIntro=intro;try{await saveProfile();}catch(e){}}
-  }catch(e){console.error('onboarding AI',e);}
+  presentAnalysisResult(analysisText);
+}
+function presentAnalysisResult(text){
+  const el=document.getElementById('ob-result');
+  el.style.display='block';
+  el.innerHTML=`<div style="text-align:left">
+    <div style="font-size:1.3rem;font-weight:800;text-align:center;margin-bottom:2px">✨ Deine persönliche Analyse</div>
+    <div style="font-size:.82rem;color:var(--mu);text-align:center;margin-bottom:16px">Psychologisch fundiert · aus deinen Antworten</div>
+    <div class="md-body" style="max-height:50vh;overflow-y:auto;background:var(--bg);border:1px solid var(--bo);border-radius:var(--r2);padding:16px 18px">${mdToHtml(text)}</div>
+    <button class="btnmain" style="margin-top:16px" onclick="finishOnboardingToJourney()">Weiter zu meinem Weg →</button>
+    <div style="text-align:center;font-size:.78rem;color:var(--mu);margin-top:8px">Du findest deine Analysen jederzeit unter „👤 Mein Bereich".</div>
+  </div>`;
+}
+function finishOnboardingToJourney(){
   document.getElementById('onboardmod').style.display='none';
-  renderJourney();
+  try{renderJourney();}catch(e){}
   showTab('journey',document.getElementById('tbtn-journey'));
   toast('🧭 Dein persönlicher Weg ist bereit!');
+}
+
+// ── Analyse: Erzeugung, Darstellung, Dokument, Download ──
+async function generateAnalysis(p,answers){
+  const sys=`Du bist FocusAI, ein erfahrener, warmherziger Coach mit fundiertem Wissen in Positiver Psychologie (Seligman), Selbstbestimmungstheorie (Deci & Ryan), ACT (Hayes), CBT und Logotherapie (Frankl). Erstelle eine persönliche, psychologisch fundierte Standortbestimmung. Sprich den Nutzer mit "du" an – warmherzig, konkret, ermutigend, ohne Fachjargon zu überladen. Nutze exakt diese Markdown-Überschriften in dieser Reihenfolge:
+## Dein aktueller Standort
+## Deine Stärken
+## Deine Muster & Blockaden
+## Was dich jetzt weiterbringt
+## Dein Fokus für die nächsten Wochen
+Unter den Überschriften kurze Absätze, wo sinnvoll Stichpunkte mit "- ". Insgesamt ca. 350–450 Wörter. Beziehe dich konkret auf die Antworten, aber wiederhole sie nicht bloß – deute sie psychologisch.`;
+  const msg='Antworten aus dem Eingangstest (Profil + Rohantworten):\n'+JSON.stringify({profil:p,antworten:answers},null,1)+'\n\nErstelle jetzt die Analyse.';
+  const text=await callAI([{role:'user',content:msg}],sys,1600);
+  return text||fallbackAnalysis(p);
+}
+function fallbackAnalysis(p){
+  const area=LIFE_LABEL[p.goalArea]||p.goalArea||'deinem Fokusbereich';
+  const bi=BLOCKER_INFO[p.blocker]||{t:p.blocker,s:''};
+  return `## Dein aktueller Standort
+Dein Fokus liegt gerade auf **${area}**. Deine größte Herausforderung ist **${bi.t}**. ${bi.s}
+
+## Deine Stärken
+Du hast dir bewusst Zeit genommen, deinen Status ehrlich zu reflektieren – Selbstwahrnehmung ist die Grundlage jeder echten Veränderung.
+
+## Deine Muster & Blockaden
+${bi.s} Solche Muster sind erlernt – und damit auch veränderbar.
+
+## Was dich jetzt weiterbringt
+Kleine, konkrete Schritte schlagen große Vorsätze. Beginne mit dem, was heute in wenigen Minuten machbar ist, und baue darauf auf.
+
+## Dein Fokus für die nächsten Wochen
+Bleib bei deinem persönlichen Weg – ein Schritt nach dem anderen. Konsistenz schlägt Intensität.`;
+}
+function fmtInline(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');}
+function mdToHtml(md){
+  const lines=String(md||'').split(/\r?\n/);let out='',inList=false;
+  const cl=()=>{if(inList){out+='</ul>';inList=false;}};
+  for(const raw of lines){const line=raw.trim();
+    if(!line){cl();continue;}
+    if(/^###\s+/.test(line)){cl();out+='<h4>'+fmtInline(line.replace(/^###\s+/,''))+'</h4>';}
+    else if(/^##\s+/.test(line)){cl();out+='<h3>'+fmtInline(line.replace(/^##\s+/,''))+'</h3>';}
+    else if(/^[-*]\s+/.test(line)){if(!inList){out+='<ul>';inList=true;}out+='<li>'+fmtInline(line.replace(/^[-*]\s+/,''))+'</li>';}
+    else{cl();out+='<p>'+fmtInline(line)+'</p>';}
+  }
+  cl();return out;
+}
+function fmtDateTime(iso){try{return new Date(iso).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});}catch(e){return '';}}
+function analysisFilename(a){return 'FocusFlow-Analyse-'+String(a.date||'').slice(0,10)+'.html';}
+function buildAnalysisDoc(a){
+  const area=LIFE_LABEL[a.profile&&a.profile.goalArea]||(a.profile&&a.profile.goalArea)||'';
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FocusFlow Analyse</title>
+<style>body{font-family:'Segoe UI',system-ui,sans-serif;background:#F4F6FB;color:#2D3748;margin:0;padding:24px}.doc{max-width:720px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(124,158,232,.15);overflow:hidden}.hd{background:linear-gradient(135deg,#7C9EE8,#9B8EE8);color:#fff;padding:34px 34px 28px}.hd h1{margin:0;font-size:1.6rem}.hd p{margin:7px 0 0;opacity:.9;font-size:.9rem}.bd{padding:28px 34px}.bd h3{color:#5B7FD4;font-size:1.15rem;margin:24px 0 8px}.bd h3:first-child{margin-top:0}.bd h4{font-size:1rem;margin:16px 0 6px}.bd p{line-height:1.7;font-size:.96rem;margin:0 0 12px}.bd ul{padding-left:20px}.bd li{margin-bottom:7px;line-height:1.6}.bd strong{color:#2D3748}.ft{padding:18px 34px;color:#8A97B0;font-size:.8rem;border-top:1px solid #E4EAF4}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;border-radius:0}}</style></head>
+<body><div class="doc"><div class="hd"><h1>🎯 Deine FocusFlow-Analyse</h1><p>${esc(fmtDateTime(a.date))}${area?' · Fokus: '+esc(area):''}</p></div><div class="bd">${mdToHtml(a.text)}</div><div class="ft">Erstellt mit FocusFlow · psychologisch fundierte Standortbestimmung</div></div></body></html>`;
+}
+function downloadAnalysis(i){
+  const arr=(D.vision&&D.vision.analyses)||[];const a=arr[i];if(!a)return;
+  const blob=new Blob([buildAnalysisDoc(a)],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');link.href=url;link.download=analysisFilename(a);
+  document.body.appendChild(link);link.click();document.body.removeChild(link);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('⬇ Analyse heruntergeladen');
+}
+function viewAnalysis(i){
+  const arr=(D.vision&&D.vision.analyses)||[];const a=arr[i];if(!a)return;
+  const w=window.open('','_blank');
+  if(w){w.document.write(buildAnalysisDoc(a));w.document.close();}
+  else toast('Bitte Pop-ups erlauben, um die Analyse zu öffnen.');
+}
+function renderMyBereich(){
+  const el=document.getElementById('me-content');if(!el)return;
+  const arr=(D.vision&&D.vision.analyses)||[];
+  let html=`<div class="sec"><div class="shdr"><div class="stitle">👤 Mein Bereich</div></div>
+    <p class="sdesc">Deine persönlichen Analysen – dauerhaft in deinem Account gespeichert und jederzeit herunterladbar.</p>`;
+  if(!arr.length){
+    html+=`<div class="empty">Noch keine Analyse vorhanden.<br>Sie entsteht automatisch nach dem Eingangstest.<br><button class="addbtn" style="margin-top:12px" onclick="startOnboarding()">🧭 Test starten</button></div></div>`;
+    el.innerHTML=html;return;
+  }
+  html+=`</div>`;
+  const latest=arr[0];
+  html+=`<div class="sec"><div class="shdr"><div class="stitle">✨ Aktuelle Analyse</div>
+      <button onclick="downloadAnalysis(0)" style="padding:7px 13px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.8rem">⬇ Als Dokument</button></div>
+    <div style="font-size:.76rem;color:var(--mu);margin-bottom:12px">${esc(fmtDateTime(latest.date))}</div>
+    <div class="md-body">${mdToHtml(latest.text)}</div></div>`;
+  if(arr.length>1){
+    html+=`<div class="sec"><div class="shdr"><div class="stitle">Frühere Analysen</div></div>`;
+    arr.slice(1).forEach((a,idx)=>{
+      const i=idx+1;
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--bo)">
+        <div style="font-size:.86rem;font-weight:700">🗓️ ${esc(fmtDateTime(a.date))}</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="viewAnalysis(${i})" style="padding:6px 11px;border:1.5px solid var(--bo);background:none;border-radius:var(--r3);color:var(--txt);font-weight:700;cursor:pointer;font-size:.78rem">Ansehen</button>
+          <button onclick="downloadAnalysis(${i})" style="padding:6px 11px;border:1.5px solid var(--p);background:none;border-radius:var(--r3);color:var(--p);font-weight:700;cursor:pointer;font-size:.78rem">⬇</button>
+        </div></div>`;
+    });
+    html+=`</div>`;
+  }
+  el.innerHTML=html;
 }
 let journeyExpanded=false;
 function toggleFullJourney(){journeyExpanded=!journeyExpanded;try{renderJourney();}catch(e){}}
@@ -3427,6 +3550,7 @@ function showTab(name,btn){
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+name).classList.add('on');btn.classList.add('on');
   if(name==='journey')renderJourney();
+  if(name==='me')renderMyBereich();
   if(name==='path')renderPath();
   if(name==='mit')renderMIT();
   if(name==='vision')renderVision();
@@ -3456,6 +3580,7 @@ function renderAll(){
   try{checkEveningPrompt();}catch(e){console.error('checkEveningPrompt',e);}
   try{renderPath();}catch(e){console.error('renderPath',e);}
   try{renderJourney();}catch(e){console.error('renderJourney',e);}
+  try{renderMyBereich();}catch(e){console.error('renderMyBereich',e);}
 }
 
 function checkEveningPrompt(){
