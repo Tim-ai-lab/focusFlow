@@ -2562,7 +2562,45 @@ function renderMyBereich(){
     });
     html+=`</div>`;
   }
+  // Verlauf: erledigte Schritte inkl. Inhalte
+  html+=renderStepTimeline();
   el.innerHTML=html;
+}
+function stepEventContent(stepId,dateStr){
+  const dl=(D.dailyLog&&D.dailyLog[dateStr])||null;
+  const short=(s,n=160)=>{s=String(s||'').trim();return s.length>n?s.slice(0,n)+'…':s;};
+  const P=[];
+  if(stepId==='morning_done'&&dl&&dl.morning){const m=dl.morning;if(m.intention)P.push('🌟 '+m.intention);if(m.focus)P.push('🎯 '+m.focus);if(m.gratitude)P.push('🙏 '+m.gratitude);}
+  else if(stepId==='evening_done'&&dl&&dl.evening){const e=dl.evening;if(e.wins)P.push('🏆 '+e.wins);if(e.learnings)P.push('📚 '+e.learnings);if(e.tomorrow)P.push('🌙 '+e.tomorrow);}
+  else if(stepId==='wellbeing_tracked'){const w=(D.wellbeing||[]).find(x=>x.date===dateStr);if(w){P.push(`😴 ${w.sleep}h · ⚡ ${w.energy}/10 · 😰 ${w.stress}/10 · 🏃 ${w.move}min`);if(w.note)P.push(w.note);}}
+  else if(stepId==='first_review'){const r=(D.reviews||[]).find(x=>x.date===dateStr);if(r){if(r.good)P.push('🏆 '+r.good);if(r.next)P.push('🎯 '+r.next);}}
+  else if((stepId==='quarterly_review'||stepId==='beliefs_revisited')&&D.vision&&D.vision.reflections&&D.vision.reflections[stepId]){
+    const ref=D.vision.reflections[stepId].find(x=>String(x.date).slice(0,10)===dateStr)||D.vision.reflections[stepId].slice(-1)[0];
+    if(ref&&ref.data)Object.values(ref.data).filter(Boolean).slice(0,3).forEach(v=>P.push(v));
+  }
+  else if(stepId==='vision_process'&&D.vision&&D.vision.stepData){const v=Object.values(D.vision.stepData).filter(Boolean)[0];if(v)P.push(v);}
+  return P.map(x=>esc(short(x))).join('<br>');
+}
+function renderStepTimeline(){
+  const log=(D.vision&&D.vision.pathLog)||{};
+  const cat=journeyCatalog();
+  const events=[];
+  Object.keys(log).forEach(stepId=>{(log[stepId]||[]).forEach(ts=>events.push({ts,stepId}));});
+  events.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  let h=`<div class="sec"><div class="shdr"><div class="stitle">🗂️ Verlauf – erledigte Schritte</div><span style="font-size:.74rem;color:var(--mu);font-weight:700">${events.length}</span></div>`;
+  if(!events.length){h+=`<div class="empty">Noch keine abgeschlossenen Schritte. Sobald du Sequenzen abschließt, erscheinen sie hier mit ihren Inhalten.</div></div>`;return h;}
+  events.slice(0,40).forEach(ev=>{
+    const s=cat[ev.stepId]||{icon:'✓'};const content=stepEventContent(ev.stepId,String(ev.ts).slice(0,10));
+    h+=`<div style="display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--bo)">
+      <div style="font-size:1.3rem;flex-shrink:0">${s.icon||'✓'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:.88rem;font-weight:700">${stepLabel(ev.stepId,s)}</div><div style="font-size:.74rem;color:var(--mu);white-space:nowrap">${esc(fmtDateTime(ev.ts))}</div></div>
+        ${content?`<div style="font-size:.8rem;color:var(--mu);line-height:1.5;margin-top:4px">${content}</div>`:''}
+      </div>
+    </div>`;
+  });
+  if(events.length>40)h+=`<div style="text-align:center;font-size:.76rem;color:var(--mu);margin-top:10px">… und ${events.length-40} weitere</div>`;
+  h+=`</div>`;return h;
 }
 let journeyExpanded=false;
 function toggleFullJourney(){journeyExpanded=!journeyExpanded;try{renderJourney();}catch(e){}}
