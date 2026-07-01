@@ -2390,6 +2390,8 @@ async function finishOnboarding(){
   showTab('journey',document.getElementById('tbtn-journey'));
   toast('🧭 Dein persönlicher Weg ist bereit!');
 }
+let journeyExpanded=false;
+function toggleFullJourney(){journeyExpanded=!journeyExpanded;try{renderJourney();}catch(e){}}
 function renderJourney(){
   const el=document.getElementById('journey-content');if(!el)return;
   const ob=D.vision&&D.vision.onboarding;
@@ -2422,27 +2424,57 @@ function renderJourney(){
   }
   html+=`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:.76rem;font-weight:700;color:var(--mu);margin-bottom:5px"><span>Fortschritt auf deinem Weg</span><span>${doneN}/${total} · ${pct}%</span></div>
     <div style="height:9px;background:var(--bo);border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div></div></div>`;
-  if(nextId){
-    const s=cat[nextId];
+  // ── Fokussierte Führung: nur aktueller Schritt + max. 2 Alternativen ──
+  const openSteps=journey.filter(id=>!stepStatus(id).done);
+  const focusId=openSteps[0];
+  const altIds=openSteps.slice(1,3);
+  const stBadge=(st)=>st.mode==='count'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:st.mode==='daily'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">🔁 täglich</span>`:'';
+  if(focusId){
+    const s=cat[focusId];
     html+=`<div class="sec">
-      <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein nächster Schritt</div>
+      <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein Fokus jetzt</div>
       <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${stepLabel(s.id,s)}</div>
       <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">${s.why}</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
         <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
+        ${stBadge(stepStatus(focusId))}
       </div>
       <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
     </div>`;
+    if(altIds.length){
+      html+=`<div class="sec">
+        <div class="shdr"><div class="stitle">Alternativen für jetzt</div></div>
+        <div style="font-size:.8rem;color:var(--mu);margin-bottom:11px">Passt der Fokus gerade nicht? Starte stattdessen mit einem davon:</div>`;
+      altIds.forEach(id=>{
+        const a=cat[id];const st=stepStatus(id);
+        html+=`<div class="jstep">
+          <div class="jstep-num">→</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.9rem;font-weight:700">${a.icon} ${stepLabel(id,a)}</div>
+            <div style="font-size:.76rem;color:var(--mu);margin-top:2px;line-height:1.4">${a.why}</div>
+            <div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap">
+              <button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button>
+              ${stBadge(st)}
+              <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${a.time}</span>
+            </div>
+          </div>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
   }else{
     html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast für jetzt alles erledigt!</div><div style="font-size:.85rem;color:var(--mu)">Tägliche Routinen erscheinen morgen wieder. Mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
   }
-  html+=`<div class="sec"><div class="shdr"><div class="stitle">Deine Strecke</div><span style="font-size:.72rem;color:var(--mu);font-weight:700">🔁 = täglich</span></div>`;
+  // ── Einklappbare Gesamtstrecke (standardmäßig zu, um nicht zu erschlagen) ──
+  html+=`<div class="sec">
+    <button onclick="toggleFullJourney()" style="width:100%;background:none;border:none;cursor:pointer;font-weight:800;font-size:.95rem;color:var(--txt);display:flex;justify-content:space-between;align-items:center;padding:0">
+      <span>${journeyExpanded?'▾':'▸'} Ganze Strecke ${journeyExpanded?'ausblenden':'anzeigen'}</span>
+      <span style="font-size:.74rem;color:var(--mu);font-weight:700">${doneN}/${total} · 🔁 = täglich</span>
+    </button>
+    <div id="journey-full" style="display:${journeyExpanded?'block':'none'};margin-top:12px">`;
   journey.forEach((id,i)=>{
-    const s=cat[id];const st=stepStatus(id);const done=st.done;const cur=id===nextId;
-    let progress='';
-    if(st.mode==='count')progress=`<span style="font-size:.72rem;color:${done?'var(--ok)':'var(--mu)'};font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`;
-    else if(st.mode==='daily')progress=`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">🔁 täglich</span>`;
+    const s=cat[id];const st=stepStatus(id);const done=st.done;const cur=id===focusId;
     let actions;
     if(done){
       const label=st.mode==='daily'?'✓ Heute erledigt':st.mode==='count'?`✓ Erledigt (${st.count}/${st.target})`:'✓ Erledigt';
@@ -2457,13 +2489,13 @@ function renderJourney(){
         <div style="font-size:.78rem;color:var(--mu);margin-top:2px;line-height:1.45">${s.why}</div>
         <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
           ${actions}
-          ${progress}
+          ${st.mode==='count'?`<span style="font-size:.72rem;color:${done?'var(--ok)':'var(--mu)'};font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:''}
           <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${s.time}</span>
         </div>
       </div>
     </div>`;
   });
-  html+=`</div>`;
+  html+=`</div></div>`;
   el.innerHTML=html;
 }
 function journeyGo(stepId){
