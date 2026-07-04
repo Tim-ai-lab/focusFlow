@@ -2304,7 +2304,23 @@ const ONBOARD_QUESTIONS=[
    {v:'mid',label:'⛅ Mittel'},
    {v:'low',label:'☀️ Eher gering'}]}
 ];
-let obStep=0,obAnswers={};
+let obStep=0,obAnswers={},obQuestions=[],obFollowupsAdded=false;
+// Adaptive Folgefragen: werden nur gestellt, wenn sie den Weg präziser machen.
+const ADAPTIVE_FOLLOWUPS=[
+  {id:'approach',when:a=>a.visionClarity==='low'&&a.goal!=='vision',q:'Deine Vision ist noch nicht ganz klar. Was ist dir jetzt wichtiger?',o:[
+    {v:'clarity',label:'🌟 Zuerst Klarheit über meine Richtung gewinnen'},
+    {v:'action',label:'🚀 Direkt ins Handeln kommen, Klarheit wächst dabei'}]},
+  {id:'overwhelm_type',when:a=>a.blocker==='overwhelm',q:'Was überfordert dich mehr?',o:[
+    {v:'toomany',label:'📋 Zu viele Aufgaben gleichzeitig'},
+    {v:'unclear',label:'🤔 Unklar, was wirklich Priorität hat'}]},
+  {id:'energy_cause',when:a=>a.energy==='low'||a.blocker==='lowenergy',q:'Woran liegt deine niedrige Energie am ehesten?',o:[
+    {v:'sleep',label:'😴 Schlaf & Erholung'},
+    {v:'stress',label:'😰 Stress & Anspannung'},
+    {v:'body',label:'🏃 Bewegung & Körper'}]},
+  {id:'time_style',when:a=>a.time==='low',q:'Bei wenig Zeit: was passt besser zu dir?',o:[
+    {v:'micro',label:'⚡ Eine winzige tägliche Gewohnheit'},
+    {v:'block',label:'⏱️ Ein kurzer fokussierter Block'}]}
+];
 const LIFE_LABEL={career:'💼 Karriere',health:'💪 Gesundheit',relations:'❤️ Beziehungen',finance:'💰 Finanzen',personal:'🧠 Persönlichkeit',meaning:'✨ Sinn & Zweck'};
 const BLOCKER_INFO={
   overwhelm:{t:'Überforderung',s:'Wir zerlegen alles in kleine, machbare Schritte. Weniger, dafür das Richtige.'},
@@ -2386,11 +2402,12 @@ function beginOnboarding(){
   document.getElementById('ob-intro').style.display='none';
   document.getElementById('ob-result').style.display='none';
   document.getElementById('ob-quiz').style.display='block';
+  obQuestions=ONBOARD_QUESTIONS.slice();obFollowupsAdded=false;
   renderObStep();
 }
 function renderObStep(){
-  const q=ONBOARD_QUESTIONS[obStep];const n=ONBOARD_QUESTIONS.length;
-  document.getElementById('ob-counter').textContent='Frage '+(obStep+1)+' / '+n;
+  const q=obQuestions[obStep];const n=obQuestions.length;
+  document.getElementById('ob-counter').textContent='Frage '+(obStep+1)+(obFollowupsAdded?' (Vertiefung)':'')+' / '+n;
   const pct=Math.round(((obStep+1)/n)*100);
   document.getElementById('ob-pct').textContent=pct+'%';
   document.getElementById('ob-bar').style.width=pct+'%';
@@ -2403,8 +2420,14 @@ function renderObStep(){
 function selectOb(qid,v){
   obAnswers[qid]=v;renderObStep();
   setTimeout(()=>{
-    if(obStep<ONBOARD_QUESTIONS.length-1){obStep++;renderObStep();}
-    else finishOnboarding();
+    if(obStep<obQuestions.length-1){obStep++;renderObStep();return;}
+    // Ende der aktuellen Fragen erreicht: ggf. gezielte Vertiefungsfragen anhängen
+    if(!obFollowupsAdded){
+      obFollowupsAdded=true;
+      const extra=ADAPTIVE_FOLLOWUPS.filter(f=>f.when(obAnswers)&&!(f.id in obAnswers));
+      if(extra.length){obQuestions=obQuestions.concat(extra);obStep++;renderObStep();return;}
+    }
+    finishOnboarding();
   },180);
 }
 function prevOb(){if(obStep>0){obStep--;renderObStep();}}
@@ -2420,7 +2443,11 @@ function computeOnboardingProfile(a){
     consistency:a.consistency||'mid',
     reflection:a.reflection||'low',
     motivation:a.motivation||'growth',
-    selfdoubt:a.selfdoubt||'mid'
+    selfdoubt:a.selfdoubt||'mid',
+    approach:a.approach||'',
+    overwhelmType:a.overwhelm_type||'',
+    energyCause:a.energy_cause||'',
+    timeStyle:a.time_style||''
   };
 }
 function computeJourney(p){
@@ -2443,6 +2470,16 @@ function computeJourney(p){
   if(p.energyBaseline==='low')add('wellbeing_tracked',3);
   if(p.consistency==='low'){add('morning_done',3);add('evening_done',2);}
   if(p.selfdoubt==='high')add('beliefs_done',3);
+  // Adaptive Vertiefungsfragen verfeinern die Reihenfolge weiter
+  if(p.approach==='clarity')add('vision_process',5);
+  if(p.approach==='action'){add('first_tasks',5);add('mit_used',4);add('vision_process',-3);}
+  if(p.overwhelmType==='toomany'){add('pomodoro_used',4);add('mit_used',2);}
+  if(p.overwhelmType==='unclear'){add('mit_used',4);add('first_tasks',3);}
+  if(p.timeStyle==='micro')add('morning_done',3);
+  if(p.timeStyle==='block')add('pomodoro_used',3);
+  if(p.energyCause==='sleep')add('wellbeing_tracked',3);
+  if(p.energyCause==='stress'){add('wellbeing_tracked',2);add('evening_done',2);}
+  if(p.energyCause==='body')add('wellbeing_tracked',2);
   return base.map((id,i)=>({id,score:i-boost[id]})).sort((x,y)=>x.score-y.score).map(x=>x.id);
 }
 // Flacher Katalog aus den bestehenden PATH_STAGES (Titel/Aktion/Tab/Zeit + Stufen-Icon)
