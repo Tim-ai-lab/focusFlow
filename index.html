@@ -2628,6 +2628,29 @@ function profileDelta(prev,cur){
     return {label:d.label,from:lbl[a]||'?',to:lbl[b]||'?',dir,color,changed:a!==b};
   });
 }
+// ── Wochen-Insight: KI-Auswertung der letzten 7 Tage ──
+function currentWeekKey(){const d=new Date();return d.getFullYear()+'-W'+getWeekNum(d.toISOString().split('T')[0]);}
+async function generateWeeklyInsight(){
+  const btn=document.getElementById('wi-btn');if(btn){btn.disabled=true;btn.textContent='✨ Erstelle…';}
+  if(!D.vision)D.vision={};
+  const wb=(D.wellbeing||[]).slice(0,7);
+  const log=D.dailyLog||{};
+  const days7=Object.keys(log).sort().slice(-7).map(d=>({date:d,morgenroutine:!!(log[d]&&log[d].morning),abendreflexion:!!(log[d]&&log[d].evening),stimmung:(log[d]&&log[d].mood)||''}));
+  const pl=(D.vision.pathLog)||{};
+  const steps7=Object.keys(pl).reduce((s,k)=>s+(pl[k]||[]).filter(ts=>(Date.now()-new Date(ts).getTime())/864e5<=7).length,0);
+  const sys='Du bist FocusAI, ein warmherziger, psychologisch fundierter Coach. Schreibe einen Wochen-Insight auf Deutsch in du-Form, 120–170 Wörter, ohne Überschriften: 1) Was in den Daten auffällt, 2) welches Muster dahinterstecken könnte (vorsichtig deuten, nicht behaupten), 3) EIN konkreter, kleiner Impuls für die nächste Woche. Warm, konkret, keine Floskeln. Du darfst **fett** für 1–2 Kernstellen nutzen.';
+  const msg='Meine Daten der letzten 7 Tage:\nWohlbefinden: '+JSON.stringify(wb)+'\nRoutinen/Stimmung: '+JSON.stringify(days7)+'\nAufgaben erledigt gesamt: '+(D.tasks||[]).filter(t=>t.done).length+', offen: '+(D.tasks||[]).filter(t=>!t.done).length+'\nWochen-Verteilung erledigter Aufgaben (So–Sa): '+JSON.stringify(D.weekDone)+'\nWeg-Schritte in 7 Tagen: '+steps7+'\nProfil: '+JSON.stringify((D.vision.onboarding&&D.vision.onboarding.profile)||{});
+  const text=await callAI([{role:'user',content:msg}],sys,700);
+  if(text){
+    if(!D.vision.weeklyInsights)D.vision.weeklyInsights={};
+    D.vision.weeklyInsights[currentWeekKey()]={date:new Date().toISOString(),text};
+    try{await saveProfile();}catch(e){}
+    renderMyBereich();toast('🧠 Wochen-Insight erstellt!');
+  }else{
+    if(btn){btn.disabled=false;btn.textContent='🧠 Insight erstellen';}
+    toast('⚠️ FocusAI gerade nicht erreichbar – versuch es gleich nochmal.');
+  }
+}
 function renderMyBereich(){
   const el=document.getElementById('me-content');if(!el)return;
   const arr=(D.vision&&D.vision.analyses)||[];
@@ -2641,6 +2664,7 @@ function renderMyBereich(){
   html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px">
     <button class="addbtn" onclick="startOnboarding()">🔄 Standort-Check erneut</button>
     <button onclick="openTutorial(false)" style="padding:9px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">📖 Tutorial</button>
+    <button onclick="exportAllData()" title="Alle deine Daten als JSON-Backup herunterladen" style="padding:9px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">⬇ Daten-Backup</button>
     <label style="font-size:.8rem;color:var(--mu);font-weight:700;display:flex;align-items:center;gap:6px">Rhythmus
       <select class="sel" onchange="setRetestWeeks(this.value)">${[4,6,8,12].map(w=>`<option value="${w}"${(D.vision.retestWeeks||6)===w?' selected':''}>alle ${w} Wo.</option>`).join('')}</select>
     </label>
@@ -2675,6 +2699,18 @@ function renderMyBereich(){
     });
     html+=`</div>`;
   }
+  // Wochen-Insight
+  const wk=currentWeekKey();
+  const wi=(D.vision.weeklyInsights||{})[wk];
+  const wiPrev=Object.keys(D.vision.weeklyInsights||{}).filter(k=>k!==wk).sort().reverse()[0];
+  html+=`<div class="sec"><div class="shdr"><div class="stitle">🧠 Wochen-Insight</div><span style="font-size:.72rem;color:var(--mu);font-weight:700">${esc(wk)}</span></div>`;
+  if(wi){
+    html+=`<div class="md-body">${mdToHtml(wi.text)}</div><div style="font-size:.72rem;color:var(--mu);margin-top:8px">Erstellt am ${esc(fmtDateTime(wi.date))} · nächster Insight ab nächster Woche</div>`;
+  }else{
+    html+=`<p class="sdesc">FocusAI wertet deine letzten 7 Tage aus (Wohlbefinden, Routinen, Aufgaben) und gibt dir einen konkreten Impuls für die nächste Woche.</p><button class="addbtn" id="wi-btn" onclick="generateWeeklyInsight()">🧠 Insight erstellen</button>`;
+    if(wiPrev)html+=`<div style="margin-top:14px;border-top:1px solid var(--bo);padding-top:12px"><div style="font-size:.72rem;font-weight:700;color:var(--mu);margin-bottom:6px">Letzter Insight (${esc(wiPrev)})</div><div class="md-body" style="opacity:.75">${mdToHtml(D.vision.weeklyInsights[wiPrev].text)}</div></div>`;
+  }
+  html+=`</div>`;
   // Erinnerungen
   const rem=getReminders();
   const notifState=('Notification'in window)?Notification.permission:'unsupported';
@@ -3345,6 +3381,26 @@ async function delTask(id){
   await sbFetch('/rest/v1/tasks?id=eq.'+id,{method:'DELETE'});
   renderTasks();updateDepSelect();renderLifeGrid();
 }
+async function editTask(id){
+  const t=D.tasks.find(x=>x.id===id);if(!t)return;
+  const cur=t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'');
+  const name=window.prompt('Aufgabe umbenennen:',cur);
+  if(name===null)return;
+  const nn=name.trim();if(!nn||nn===cur)return;
+  t.name=nn;
+  await sbFetch('/rest/v1/tasks?id=eq.'+id,{method:'PATCH',body:JSON.stringify({name:nn})});
+  renderTasks();updateDepSelect();renderLifeGrid();toast('✏️ Aufgabe aktualisiert');
+}
+// Komplettes Daten-Backup als JSON (Datenhoheit des Nutzers)
+function exportAllData(){
+  const data={app:'FocusFlow',exportedAt:new Date().toISOString(),tasks:D.tasks,mitTasks:D.mitTasks,mitDone:D.mitDone,diary:D.diary,vision:D.vision,lifeAreas:D.lifeAreas,wellbeing:D.wellbeing,reviews:D.reviews,dailyLog:D.dailyLog,stats:{streak:D.streak,pomoSess:D.pomoSess,todayDone:D.todayDone,todayScore:D.todayScore,weekDone:D.weekDone}};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='FocusFlow-Backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast('⬇ Backup heruntergeladen');
+}
 function isOverdue(t){if(!t.end||t.done)return false;return new Date(t.end)<new Date(new Date().toDateString());}
 function updateDepSelect(){
   const sel=document.getElementById('tdep');const cur=sel.value;
@@ -3382,6 +3438,7 @@ function renderTasks(){
         </div>
       </div>
       <button class="delbtn" onclick="openEmotionCheck(${t.id})" title="Emotions-Check" style="color:var(--p)">⚡</button>
+      <button class="delbtn" onclick="editTask(${t.id})" title="Umbenennen">✏️</button>
       <button class="delbtn" onclick="delTask(${t.id})">🗑</button>
     </div>`;
   }).join('');
