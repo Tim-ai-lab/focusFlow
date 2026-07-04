@@ -456,8 +456,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="tlogo">🎯 FocusFlow</div>
+    <div class="tlogo" onclick="goHome()" style="cursor:pointer" title="Zu Mein Weg">🎯 FocusFlow</div>
+    <div id="top-progress-wrap" style="flex:1;max-width:300px;margin:0 14px;display:none">
+      <div style="display:flex;justify-content:space-between;font-size:.62rem;font-weight:700;color:var(--mu);margin-bottom:2px"><span>Dein Fortschritt</span><span id="top-progress-pct">0%</span></div>
+      <div style="height:6px;background:var(--bo);border-radius:3px;overflow:hidden"><div id="top-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:3px;transition:width .5s"></div></div>
+    </div>
     <div class="tright">
+      <button class="lbtn" onclick="toggleNav()" id="nav-toggle-btn" title="Alle Bereiche ein-/ausblenden">☰</button>
       <div class="upill" id="upill">👤</div>
       <button class="lbtn" onclick="logout()">Abmelden</button>
     </div>
@@ -510,8 +515,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="scard"><div class="sval" id="st3">0</div><div class="slbl">Pomodoros</div></div>
     </div>
 
-    <!-- TABS -->
-    <div class="tnav">
+    <!-- TABS (standardmäßig ausgeblendet – Fokus auf den nächsten Schritt) -->
+    <div class="tnav" id="tnav" style="display:none">
       <button class="tbtn" onclick="showTab('tasks',this)">📋 Aufgaben</button>
       <button class="tbtn" onclick="showTab('mit',this)">🎯 Tagesziele</button>
       <button class="tbtn" onclick="showTab('path',this)">🗺️ Mein Pfad</button>
@@ -2782,6 +2787,8 @@ function checkReminders(){
 }
 let journeyExpanded=false;
 function toggleFullJourney(){journeyExpanded=!journeyExpanded;try{renderJourney();}catch(e){}}
+let altOpen=false;
+function toggleAlt(){altOpen=!altOpen;try{renderJourney();}catch(e){}}
 function renderJourney(){
   const el=document.getElementById('journey-content');if(!el)return;
   const ob=D.vision&&D.vision.onboarding;
@@ -2841,8 +2848,10 @@ function renderJourney(){
     </div>`;
     if(altIds.length){
       html+=`<div class="sec">
-        <div class="shdr"><div class="stitle">Alternativen für jetzt</div></div>
-        <div style="font-size:.8rem;color:var(--mu);margin-bottom:11px">Passt der Fokus gerade nicht? Starte stattdessen mit einem davon:</div>`;
+        <button onclick="toggleAlt()" style="width:100%;background:none;border:none;cursor:pointer;font-weight:800;font-size:.9rem;color:var(--txt);display:flex;justify-content:space-between;align-items:center;padding:0">
+          <span>${altOpen?'▾':'▸'} Andere Möglichkeiten für jetzt</span><span style="font-size:.74rem;color:var(--mu);font-weight:700">${altIds.length}</span>
+        </button>
+        <div style="display:${altOpen?'block':'none'};margin-top:11px">`;
       altIds.forEach(id=>{
         const a=cat[id];const st=stepStatus(id);
         html+=`<div class="jstep">
@@ -2858,7 +2867,7 @@ function renderJourney(){
           </div>
         </div>`;
       });
-      html+=`</div>`;
+      html+=`</div></div>`;
     }
   }else{
     html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast für jetzt alles erledigt!</div><div style="font-size:.85rem;color:var(--mu)">Tägliche Routinen erscheinen morgen wieder. Mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
@@ -2894,6 +2903,7 @@ function renderJourney(){
   });
   html+=`</div></div>`;
   el.innerHTML=html;
+  try{updateTopProgress();}catch(e){}
 }
 function journeyGo(stepId){
   const cat=journeyCatalog();const s=cat[stepId];if(!s)return;
@@ -3817,8 +3827,22 @@ function renderStats(){
   document.getElementById('st3').textContent=D.pomoSess;
   // Strecken-Status live mitziehen (Aufgaben, MIT, Pomodoro …)
   try{renderJourney();}catch(e){}
+  try{updateTopProgress();}catch(e){}
 }
 
+function goHome(){const b=document.getElementById('tbtn-journey');if(b)showTab('journey',b);}
+function toggleNav(){const n=document.getElementById('tnav');if(!n)return;n.style.display=(n.style.display==='none'||!n.style.display)?'flex':'none';}
+function updateTopProgress(){
+  const wrap=document.getElementById('top-progress-wrap');if(!wrap)return;
+  const ob=D.vision&&D.vision.onboarding;
+  if(!ob||!ob.done){wrap.style.display='none';return;}
+  const cat=journeyCatalog();const journey=(ob.journey||[]).filter(id=>cat[id]);
+  const total=journey.length;const done=journey.filter(id=>stepStatus(id).done).length;
+  const pct=total?Math.round(done/total*100):0;
+  wrap.style.display='block';
+  document.getElementById('top-progress-pct').textContent=done+'/'+total+' · '+pct+'%';
+  document.getElementById('top-progress-bar').style.width=pct+'%';
+}
 function showTab(name,btn){
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
