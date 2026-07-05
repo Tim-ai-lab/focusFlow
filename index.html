@@ -1159,6 +1159,23 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- KRISEN-HINWEIS (Coaching ersetzt keine Therapie) -->
+<div class="modal-bg" id="crisismod" style="z-index:450">
+  <div class="modal-card" style="max-width:450px">
+    <div class="modal-title">💙 Das klingt nach einer schweren Last</div>
+    <div style="font-size:.9rem;line-height:1.7;color:var(--txt)">
+      FocusFlow ist ein Coaching-Werkzeug – <strong>keine Therapie und keine Krisenhilfe</strong>. Wenn es dir gerade sehr schlecht geht oder du daran denkst, dir etwas anzutun, sprich bitte jetzt mit Menschen, die genau dafür da sind:
+      <div style="background:var(--bg);border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px;margin-top:12px;font-size:.88rem;line-height:1.9">
+        📞 <strong>Telefonseelsorge:</strong> 0800 111 0 111 oder 0800 111 0 222<br>
+        <span style="color:var(--mu);font-size:.8rem">kostenlos, anonym, rund um die Uhr · auch als Chat: online.telefonseelsorge.de</span><br>
+        🚨 <strong>In akuter Gefahr:</strong> Notruf 112
+      </div>
+      <div style="margin-top:12px;font-size:.85rem;color:var(--mu)">Du bist damit nicht allein – sich Hilfe zu holen ist ein Zeichen von Stärke.</div>
+    </div>
+    <button class="modal-close" onclick="document.getElementById('crisismod').style.display='none'">Verstanden</button>
+  </div>
+</div>
+
 <!-- VISION-BOOST (Reaktivierung bei Tiefpunkten) -->
 <div class="modal-bg" id="vboostmod">
   <div class="modal-card" style="max-width:430px">
@@ -1193,7 +1210,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <h2 style="text-align:center;font-size:1.4rem;font-weight:800;margin-bottom:8px">Dein persönlicher Weg</h2>
         <p style="text-align:center;color:var(--mu);font-size:.9rem;line-height:1.6;margin-bottom:22px">Bevor du startest, lernen wir dich kennen. In ~16 kurzen Fragen findet FocusFlow heraus, wo du stehst und was dich wirklich weiterbringt – und erstellt daraus deine individuelle Strecke zum Ziel.</p>
         <div id="ob-vision-line" style="display:none;font-size:.85rem;font-style:italic;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--r2);padding:10px 13px;margin-bottom:14px;line-height:1.55"></div>
-        <div class="info-box info-blue" style="margin-bottom:22px">🔒 Deine Antworten bleiben privat und bestimmen nur deinen persönlichen Weg in der App.</div>
+        <div class="info-box info-blue" style="margin-bottom:22px">🔒 Deine Antworten bleiben privat und bestimmen nur deinen persönlichen Weg in der App. FocusFlow ist ein Coaching-Werkzeug und ersetzt keine Psychotherapie oder ärztliche Behandlung.</div>
         <button class="btnmain" onclick="beginOnboarding()">Los geht's →</button>
       </div>
       <div id="ob-quiz" style="display:none">
@@ -1654,6 +1671,7 @@ function saveMorningData(){
   showMorningSummary();
   saveProfile();
   logStep('morning_done');
+  try{if(checkCrisis(Object.values(morningData||{}).join(' ')))showCrisisInfo();}catch(err){}
   try{renderJourney();}catch(e){}
 }
 function showMorningSummary(){
@@ -1776,6 +1794,7 @@ async function saveEveningData(){
     D.vision.skipLog=D.vision.skipLog.slice(0,60);
     try{recalibrateFromSkips();}catch(err){console.error('recalibrate',err);}
   }
+  try{if(checkCrisis([e.wins,e.learnings,e.tomorrow,e.gratitude_eve].join(' ')))showCrisisInfo();}catch(err2){}
 
   // Auto-create diary entry from full day
   const m=D.dailyLog[today]?.morning||{};
@@ -2533,7 +2552,7 @@ const TUTORIAL_SLIDES=[
   {icon:'🧭',title:'Mein Weg – deine geführte Strecke',text:'Nach einem kurzen Test bekommst du einen individuellen Pfad. Du siehst immer nur <strong>deinen aktuellen Schritt und die nächsten</strong> – klar und fokussiert.',why:'Fokus auf den einen nächsten Schritt schlägt endlose To-do-Listen. Weniger Optionen = weniger Überforderung = mehr Handeln.'},
   {icon:'🎯',title:'Ziele & Tagesziele',text:'Zerlege große Ziele in <strong>Meilensteine</strong> und wähle täglich max. 3 Hauptaufgaben, die wirklich zählen.',why:'Kleine Etappen und klare Prioritäten schaffen tägliche Erfolgserlebnisse – der stärkste Motor gegen Aufschieben.'},
   {icon:'⏱️',title:'Routinen & Fokus',text:'Morgen- und Abendroutine, Pomodoro-Timer und Wohlbefinden-Tracking geben deinem Tag Struktur und Energie.',why:'Energie ist keine Ressource, die man einfach hat – sie entsteht täglich durch Rituale und Rhythmus.'},
-  {icon:'🤖',title:'FocusAI & deine Analyse',text:'Der KI-Coach kennt deine Vision und Ziele. Nach dem Test erhältst du eine <strong>psychologisch fundierte Analyse</strong> – gespeichert und herunterladbar in „Mein Bereich".',why:'Selbstkenntnis ist die Basis jeder echten Veränderung – und macht deinen Fortschritt über die Zeit sichtbar.'},
+  {icon:'🤖',title:'FocusAI & deine Analyse',text:'Der KI-Coach kennt deine Vision und Ziele. Nach dem Test erhältst du eine <strong>psychologisch fundierte Analyse</strong> – gespeichert und herunterladbar in „Mein Bereich".',why:'Selbstkenntnis ist die Basis jeder echten Veränderung – und macht deinen Fortschritt über die Zeit sichtbar. Wichtig: FocusFlow ist ein Coaching-Werkzeug und ersetzt keine Psychotherapie.'},
   {icon:'🚀',title:'So startest du',text:'Gleich machst du einen kurzen Einstiegstest. Daraus baut FocusFlow deinen persönlichen Weg. Dieses Tutorial findest du jederzeit wieder unter „👤 Mein Bereich".',why:''}
 ];
 let tutStep=0,tutFirstRun=false;
@@ -2767,7 +2786,7 @@ function buildAnalysisDoc(a){
   const area=LIFE_LABEL[a.profile&&a.profile.goalArea]||(a.profile&&a.profile.goalArea)||'';
   return `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FocusFlow Analyse</title>
 <style>body{font-family:'Segoe UI',system-ui,sans-serif;background:#F4F6FB;color:#2D3748;margin:0;padding:24px}.doc{max-width:720px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(124,158,232,.15);overflow:hidden}.hd{background:linear-gradient(135deg,#7C9EE8,#9B8EE8);color:#fff;padding:34px 34px 28px}.hd h1{margin:0;font-size:1.6rem}.hd p{margin:7px 0 0;opacity:.9;font-size:.9rem}.bd{padding:28px 34px}.bd h3{color:#5B7FD4;font-size:1.15rem;margin:24px 0 8px}.bd h3:first-child{margin-top:0}.bd h4{font-size:1rem;margin:16px 0 6px}.bd p{line-height:1.7;font-size:.96rem;margin:0 0 12px}.bd ul{padding-left:20px}.bd li{margin-bottom:7px;line-height:1.6}.bd strong{color:#2D3748}.ft{padding:18px 34px;color:#8A97B0;font-size:.8rem;border-top:1px solid #E4EAF4}@media print{body{background:#fff;padding:0}.doc{box-shadow:none;border-radius:0}}</style></head>
-<body><div class="doc"><div class="hd"><h1>🎯 Deine FocusFlow-Analyse</h1><p>${esc(fmtDateTime(a.date))}${area?' · Fokus: '+esc(area):''}</p></div><div class="bd">${mdToHtml(a.text)}</div><div class="ft">Erstellt mit FocusFlow · psychologisch fundierte Standortbestimmung</div></div></body></html>`;
+<body><div class="doc"><div class="hd"><h1>🎯 Deine FocusFlow-Analyse</h1><p>${esc(fmtDateTime(a.date))}${area?' · Fokus: '+esc(area):''}</p></div><div class="bd">${mdToHtml(a.text)}</div><div class="ft">Erstellt mit FocusFlow · psychologisch fundierte Standortbestimmung · Kein Ersatz für Psychotherapie oder ärztliche Behandlung</div></div></body></html>`;
 }
 function downloadAnalysis(i){
   const arr=(D.vision&&D.vision.analyses)||[];const a=arr[i];if(!a)return;
@@ -3502,6 +3521,7 @@ function openVisionStep(idx){
 async function sendVisionMessage(){
   const input=document.getElementById('vision-ai-input');
   const msg=input.value.trim();if(!msg)return;
+  if(checkCrisis(msg)){showCrisisInfo();return;}
   const step=VISION_STEPS[visionStep];
   const btn=document.getElementById('vision-send-btn');btn.disabled=true;input.value='';
   const msgBox=document.getElementById('vision-ai-messages');
@@ -4132,6 +4152,11 @@ async function callAI(messages,system,maxTokens){
   }
 }
 
+// P10: Coaching ≠ Therapie – Krisensignale erkennen und auf echte Hilfe verweisen
+const CRISIS_RE=/suizid|selbstmord|umbring|nicht mehr leben|leben nehmen|leben zu beenden|selbstverletz|ritzen|will sterben|sterben will|keinen ausweg|kein ausweg mehr/i;
+function checkCrisis(text){return CRISIS_RE.test(String(text||''));}
+function showCrisisInfo(){try{document.getElementById('crisismod').style.display='flex';}catch(e){}}
+
 function getContext(){
   const vision=D.vision;
   const tasks=D.tasks.filter(t=>!t.done).slice(0,8).map(t=>t.name).join(', ');
@@ -4155,12 +4180,23 @@ Offene Aufgaben: ${tasks||'Keine'}
 Heutiger Streak: ${D.streak} Tage
 Heute erledigt: ${D.todayDone} Aufgaben
 
+WICHTIG: Du bist ein Coach, kein Therapeut. Bei Anzeichen von akuter Krise, Selbstgefährdung oder schwerer Depression: Verweise einfühlsam auf professionelle Hilfe (Telefonseelsorge 0800 111 0 111, Notruf 112) statt normale Coaching-Aufgaben fortzusetzen.
+
 Antworte einfühlsam, motivierend und konkret. Nutze manchmal Emojis. Halte Antworten fokussiert (max 250 Wörter).`;
 }
 let aiConversation=[];
 function aiSuggest(msg){document.getElementById('ai-input').value=msg;sendAI();}
 async function sendAI(){
   const input=document.getElementById('ai-input');const msg=input.value.trim();if(!msg)return;
+  // Krisensignal: keine normale Coaching-Antwort, sondern Verweis auf echte Hilfe
+  if(checkCrisis(msg)){
+    input.value='';
+    const box=document.getElementById('ai-messages');
+    box.innerHTML+=`<div class="ai-msg user">${esc(msg)}</div><div class="ai-msg bot">💙 Danke, dass du das aussprichst – das braucht Mut. Was du beschreibst, klingt nach einer sehr schweren Last, und die gehört in Hände, die dafür ausgebildet sind. FocusFlow ist ein Coaching-Werkzeug, keine Therapie.<br><br>📞 <strong>Telefonseelsorge: 0800 111 0 111</strong> (kostenlos, anonym, rund um die Uhr)<br>🚨 In akuter Gefahr: <strong>Notruf 112</strong><br><br>Du bist nicht allein.</div>`;
+    box.scrollTop=box.scrollHeight;
+    showCrisisInfo();
+    return;
+  }
   const btn=document.getElementById('ai-send-btn');btn.disabled=true;input.value='';
   const msgs=document.getElementById('ai-messages');
   msgs.innerHTML+=`<div class="ai-msg user">${esc(msg)}</div>`;
