@@ -1644,31 +1644,96 @@ function showMorningSummary(){
 }
 
 // EVENING
+// Adaptive Abendreflexion (P4/P6): wenige, treffende Fragen. Vertieft nur dort,
+// wo heute wirklich etwas offen blieb – und lernt aus den Ursachen.
+const SKIP_CATS=[
+ {v:'energie',label:'🔋 Zu wenig Energie'},
+ {v:'zu_gross',label:'🧱 Aufgabe zu groß'},
+ {v:'emotional',label:'💭 Ziel emotional nicht stark genug'},
+ {v:'angst',label:'😰 Angst / Unsicherheit'},
+ {v:'ablenkung',label:'📱 Ablenkung'},
+ {v:'zeit',label:'⏰ Fehlende Zeit'},
+ {v:'klarheit',label:'🤔 Fehlende Klarheit'},
+ {v:'widerstand',label:'🌊 Innerer Widerstand'},
+ {v:'sozial',label:'👥 Soziale Hürde'},
+ {v:'perfekt',label:'🔍 Perfektionismus'},
+ {v:'nichts',label:'✅ Nichts davon – lief einfach anders'}
+];
+let activeEveningSteps=[];
+function buildEveningSteps(){
+  const today=new Date().toISOString().split('T')[0];
+  const openMIT=(D.mitTasks||[]).some((t,i)=>t&&t.trim()&&!(D.mitDone&&D.mitDone[i]));
+  const hasOverdue=(D.tasks||[]).some(t=>isOverdue(t));
+  const hasMorning=D.dailyLog&&D.dailyLog[today]&&D.dailyLog[today].morning;
+  const steps=[EVENING_STEPS[0]]; // 🏆 Erfolge – immer
+  if(openMIT||hasOverdue)steps.push({title:'🧱 Was hat dich gebremst?',q:'Etwas blieb heute offen. Das ist kein Fehler – es zeigt, woran wir arbeiten. Was hat dich am meisten gebremst?',key:'blocker_cat',type:'choice'});
+  if(new Date().getDay()===0)steps.push(EVENING_STEPS[1]); // 📚 Lernmomente – 1× pro Woche
+  if(!hasMorning)steps.push(EVENING_STEPS[3]); // 🙏 Dankbarkeit nur ohne Morgenroutine
+  steps.push(EVENING_STEPS[4]); // 🌙 Intention für morgen – immer
+  return steps;
+}
 function openEveningRoutine(){
   eveningStep=0;
   const saved=D.dailyLog?.[new Date().toISOString().split('T')[0]]?.evening;
   eveningData=saved?{...saved}:{};
+  activeEveningSteps=buildEveningSteps();
   renderEveningStep();
   document.getElementById('eveningmod').style.display='flex';
 }
 function renderEveningStep(){
-  const step=EVENING_STEPS[eveningStep];
-  const isLast=eveningStep===EVENING_STEPS.length-1;
+  const step=activeEveningSteps[eveningStep];
+  const isLast=eveningStep===activeEveningSteps.length-1;
   document.getElementById('evening-next-btn').textContent=isLast?'✓ Abschließen & ins Tagebuch':'Weiter ›';
+  const body=step.type==='choice'
+    ?`<div style="display:flex;flex-direction:column;gap:7px;max-height:46vh;overflow-y:auto">${SKIP_CATS.map(c=>`<button class="ob-opt${eveningData[step.key]===c.v?' sel':''}" onclick="selectEveningChoice('${step.key}','${c.v}')">${c.label}</button>`).join('')}</div>`
+    :`<textarea class="ta" id="evening-input" placeholder="${step.placeholder}">${esc(eveningData[step.key]||'')}</textarea>`;
   document.getElementById('evening-step-content').innerHTML=`
-    <div style="font-size:.73rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${eveningStep+1} von ${EVENING_STEPS.length}</div>
+    <div style="font-size:.73rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${eveningStep+1} von ${activeEveningSteps.length}</div>
     <div style="font-size:1rem;font-weight:800;margin-bottom:5px">${step.title}</div>
     <div style="font-size:.87rem;color:var(--mu);margin-bottom:12px">${step.q}</div>
-    <textarea class="ta" id="evening-input" placeholder="${step.placeholder}">${eveningData[step.key]||''}</textarea>
-    <div style="display:flex;gap:4px;margin-top:10px">${EVENING_STEPS.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=eveningStep?'#B08EE8':'var(--bo)'}"></div>`).join('')}</div>`;
+    ${body}
+    <div style="display:flex;gap:4px;margin-top:10px">${activeEveningSteps.map((_,i)=>`<div style="flex:1;height:4px;border-radius:2px;background:${i<=eveningStep?'#B08EE8':'var(--bo)'}"></div>`).join('')}</div>`;
+}
+function selectEveningChoice(key,v){eveningData[key]=v;renderEveningStep();}
+function storeEveningInput(){
+  const step=activeEveningSteps[eveningStep];if(!step||step.type==='choice')return;
+  const el=document.getElementById('evening-input');
+  if(el)eveningData[step.key]=el.value.trim();
 }
 function nextEveningStep(){
-  const step=EVENING_STEPS[eveningStep];
-  eveningData[step.key]=document.getElementById('evening-input').value.trim();
-  if(eveningStep<EVENING_STEPS.length-1){eveningStep++;renderEveningStep();}
+  storeEveningInput();
+  if(eveningStep<activeEveningSteps.length-1){eveningStep++;renderEveningStep();}
   else{document.getElementById('eveningmod').style.display='none';saveEveningData();}
 }
-function prevEveningStep(){if(eveningStep>0){eveningData[EVENING_STEPS[eveningStep].key]=document.getElementById('evening-input').value.trim();eveningStep--;renderEveningStep();}}
+function prevEveningStep(){if(eveningStep>0){storeEveningInput();eveningStep--;renderEveningStep();}}
+// P9: Weg-Anpassung aus wiederkehrenden Brems-Ursachen – mit Protokoll
+const CAT2BLOCKER={energie:'lowenergy',zu_gross:'overwhelm',emotional:'unclarity',angst:'fear',ablenkung:'distraction',zeit:'overwhelm',klarheit:'unclarity',widerstand:'procrastination',sozial:'fear',perfekt:'fear'};
+function recalibrateFromSkips(){
+  const ob=D.vision&&D.vision.onboarding;if(!ob||!ob.done||!ob.profile)return;
+  const cutoff=Date.now()-14*864e5;
+  const log=(D.vision.skipLog||[]).filter(x=>new Date(x.date).getTime()>=cutoff);
+  if(log.length<3)return;
+  const counts={};log.forEach(x=>{counts[x.cat]=(counts[x.cat]||0)+1;});
+  const top=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+  if(!top||counts[top]<3)return;
+  const mapped=CAT2BLOCKER[top];
+  if(!mapped||mapped===ob.profile.blocker)return;
+  const oldB=ob.profile.blocker;
+  ob.profile.blocker=mapped;
+  ob.journey=computeJourney(ob.profile);
+  const cat=journeyCatalog();
+  const nextOpen=ob.journey.find(id=>cat[id]&&!stepStatus(id).done);
+  const catLbl=(SKIP_CATS.find(c=>c.v===top)||{}).label||top;
+  if(!D.vision.pathAdjustLog)D.vision.pathAdjustLog=[];
+  D.vision.pathAdjustLog.unshift({
+    date:new Date().toISOString(),
+    trigger:'Abendreflexion: „'+catLbl+'" '+counts[top]+'× in 14 Tagen',
+    oldA:'Größte Hürde: '+((BLOCKER_INFO[oldB]||{}).t||oldB),
+    newA:'Größte Hürde: '+((BLOCKER_INFO[mapped]||{}).t||mapped),
+    focus:nextOpen?stepLabel(nextOpen,cat[nextOpen]):''
+  });
+  toast('🧭 Dein Weg wurde angepasst – warum, siehst du in „Mein Bereich".');
+}
 
 async function saveEveningData(){
   const today=new Date().toISOString().split('T')[0];
@@ -1676,11 +1741,21 @@ async function saveEveningData(){
   if(!D.dailyLog[today])D.dailyLog[today]={};
   D.dailyLog[today].evening=eveningData;
 
+  // Brems-Ursache loggen (Diagnostik, kein Fehler) + Weg ggf. rekalibrieren
+  const e=eveningData;
+  if(e.blocker_cat&&e.blocker_cat!=='nichts'){
+    if(!D.vision)D.vision={};
+    if(!D.vision.skipLog)D.vision.skipLog=[];
+    D.vision.skipLog.unshift({date:today,cat:e.blocker_cat});
+    D.vision.skipLog=D.vision.skipLog.slice(0,60);
+    try{recalibrateFromSkips();}catch(err){console.error('recalibrate',err);}
+  }
+
   // Auto-create diary entry from full day
   const m=D.dailyLog[today]?.morning||{};
-  const e=eveningData;
+  const catL=(SKIP_CATS.find(c=>c.v===e.blocker_cat)||{}).label;
   const doneTasks=D.tasks.filter(t=>t.done&&t.createdAt&&t.createdAt.startsWith(today)).map(t=>t.name).join(', ')||'Keine';
-  const diaryText=`🌅 MORGEN:\n🙏 Dankbar: ${m.gratitude||'-'}\n🌟 Intention: ${m.intention||'-'}\n🎯 Fokus: ${m.focus||'-'}\n\n🌙 ABEND:\n🏆 Erfolge: ${e.wins||'-'}\n📚 Gelernt: ${e.learnings||'-'}\n😬 Aufgeschoben: ${e.procr||'-'}\n🙏 Abend-Dankbarkeit: ${e.gratitude_eve||'-'}\n\n✅ Erledigte Aufgaben: ${doneTasks}\n\n🌙 Morgen nehme ich mir vor: ${e.tomorrow||'-'}`;
+  const diaryText=`🌅 MORGEN:\n🙏 Dankbar: ${m.gratitude||'-'}\n🌟 Intention: ${m.intention||'-'}\n🎯 Fokus: ${m.focus||'-'}\n\n🌙 ABEND:\n🏆 Erfolge: ${e.wins||'-'}\n📚 Gelernt: ${e.learnings||'-'}\n🧱 Gebremst durch: ${catL||e.procr||'-'}\n🙏 Abend-Dankbarkeit: ${e.gratitude_eve||'-'}\n\n✅ Erledigte Aufgaben: ${doneTasks}\n\n🌙 Morgen nehme ich mir vor: ${e.tomorrow||'-'}`;
 
   const id=Date.now();
   const entry={id,habit:'Tagesreflexion',trigger:'',strategy:diaryText,cat:'sonstiges',date:today,isDailyLog:true};
@@ -1696,7 +1771,7 @@ async function saveEveningData(){
   document.getElementById('evening-btn').textContent='🌙 Reflexion ✓';
   document.getElementById('evening-btn').style.background='rgba(176,142,232,.4)';
   await saveProfile();
-  renderDiary();
+  try{renderJournal();}catch(err){console.error('renderJournal',err);}
   logStep('evening_done');
   try{renderJourney();}catch(e){}
   toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
@@ -2533,6 +2608,18 @@ async function finishOnboarding(){
   const p=computeOnboardingProfile(obAnswers);
   const journey=computeJourney(p);
   if(!D.vision)D.vision={};
+  // P9: Re-Test-Anpassung protokollieren, wenn sich Kern-Annahmen ändern
+  const prevOb=D.vision.onboarding;
+  if(prevOb&&prevOb.done&&prevOb.profile&&(prevOb.profile.blocker!==p.blocker||prevOb.profile.goalArea!==p.goalArea)){
+    if(!D.vision.pathAdjustLog)D.vision.pathAdjustLog=[];
+    D.vision.pathAdjustLog.unshift({
+      date:new Date().toISOString(),
+      trigger:'Standort-Check (Re-Test)',
+      oldA:'Hürde: '+((BLOCKER_INFO[prevOb.profile.blocker]||{}).t||prevOb.profile.blocker)+' · Fokus: '+(LIFE_LABEL[prevOb.profile.goalArea]||prevOb.profile.goalArea),
+      newA:'Hürde: '+((BLOCKER_INFO[p.blocker]||{}).t||p.blocker)+' · Fokus: '+(LIFE_LABEL[p.goalArea]||p.goalArea),
+      focus:''
+    });
+  }
   D.vision.onboarding={done:true,date:new Date().toISOString().split('T')[0],answers:{...obAnswers},profile:p,journey,aiIntro:''};
   // Psychologisch fundierte Analyse (best effort, mit Fallback)
   let analysisText='';
@@ -2728,6 +2815,19 @@ function renderMyBereich(){
           <button onclick="viewAnalysis(${i})" style="padding:6px 11px;border:1.5px solid var(--bo);background:none;border-radius:var(--r3);color:var(--txt);font-weight:700;cursor:pointer;font-size:.78rem">Ansehen</button>
           <button onclick="downloadAnalysis(${i})" style="padding:6px 11px;border:1.5px solid var(--p);background:none;border-radius:var(--r3);color:var(--p);font-weight:700;cursor:pointer;font-size:.78rem">⬇</button>
         </div></div>`;
+    });
+    html+=`</div>`;
+  }
+  // Weg-Anpassungsprotokoll (P9): jede Neukalibrierung nachvollziehbar
+  const adj=(D.vision.pathAdjustLog||[]);
+  if(adj.length){
+    html+=`<div class="sec"><div class="shdr"><div class="stitle">🧭 Weg-Anpassungen</div><span style="font-size:.72rem;color:var(--mu);font-weight:700">${adj.length}</span></div>
+      <p class="sdesc">Wenn dein Weg neu kalibriert wird, steht hier warum – nachvollziehbar statt Blackbox.</p>`;
+    adj.slice(0,5).forEach(a2=>{
+      html+=`<div style="border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px;margin-bottom:9px;background:var(--bg)">
+        <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:5px">${esc(fmtDateTime(a2.date))}</div>
+        <div style="font-size:.83rem;line-height:1.65"><strong>Auslöser:</strong> ${esc(a2.trigger||'')}<br><strong>Alte Annahme:</strong> ${esc(a2.oldA||'')}<br><strong>Neue Annahme:</strong> ${esc(a2.newA||'')}${a2.focus?`<br><strong>Neuer Fokus:</strong> ${esc(a2.focus)}`:''}</div>
+      </div>`;
     });
     html+=`</div>`;
   }
