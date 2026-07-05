@@ -2807,6 +2807,47 @@ async function generateWeeklyInsight(){
     toast('⚠️ FocusAI gerade nicht erreichbar – versuch es gleich nochmal.');
   }
 }
+// P3: Hypothesenmodell – prüfbare Annahmen aus Test + Verhalten (keine Diagnosen)
+function computeHypotheses(){
+  const H=[];const ob=D.vision&&D.vision.onboarding;
+  if(!ob||!ob.done)return H;
+  const p=ob.profile||{};
+  const add=(label,evidence)=>H.push({label,evidence});
+  const sc={};(D.vision.skipLog||[]).forEach(s=>{sc[s.cat]=(sc[s.cat]||0)+1;});
+  if(p.blocker)add('Deine größte Hürde ist aktuell „'+((BLOCKER_INFO[p.blocker]||{}).t||p.blocker)+'"','Einstiegstest'+(ob.date?' vom '+ob.date:''));
+  if(p.selfdoubt==='high')add('Ein starker innerer Kritiker könnte dich bremsen (Angst vor Bewertung / Perfektionismus)','Selbstzweifel im Test als „stark" angegeben');
+  if((sc.perfekt||0)>=2)add('Perfektionismus hindert dich möglicherweise am Abschließen',sc.perfekt+'× „Perfektionismus" in Abendreflexionen');
+  if((sc.angst||0)+(sc.sozial||0)>=2)add('Vermeidung aus Unsicherheit könnte ein Muster sein',((sc.angst||0)+(sc.sozial||0))+'× Angst/soziale Hürde in Abendreflexionen');
+  const wb7=(D.wellbeing||[]).slice(0,7);
+  if(wb7.length>=3){
+    const avgS=wb7.reduce((s,w)=>s+(+w.sleep||0),0)/wb7.length;
+    if(avgS<6.5)add('Deine Energie-Engpässe könnten am Schlaf liegen','Ø '+avgS.toFixed(1)+'h Schlaf in den letzten '+wb7.length+' Einträgen');
+    const avgSt=wb7.reduce((s,w)=>s+(+w.stress||0),0)/wb7.length;
+    if(avgSt>=7)add('Dauerstress könnte deine Umsetzungskraft dämpfen','Ø Stress '+avgSt.toFixed(1)+'/10 in den letzten Einträgen');
+  }
+  if((sc.energie||0)>=2)add('Fehlende Energie ist wiederkehrend – eher körperliche Ursache als Willensfrage',sc.energie+'× „zu wenig Energie" in Abendreflexionen');
+  if(p.visionClarity==='low'&&!(D.vision.stepData&&Object.keys(D.vision.stepData).length))add('Eine unklare Vision könnte deine Antriebsbremse sein','Test: Vision unscharf · Vision-Prozess noch offen');
+  if((sc.klarheit||0)>=2)add('Aufgaben scheitern bei dir eher an Unklarheit als an Disziplin',sc.klarheit+'× „fehlende Klarheit" in Abendreflexionen');
+  if((sc.zu_gross||0)>=2)add('Deine Aufgaben sind möglicherweise zu groß geschnitten',sc.zu_gross+'× „Aufgabe zu groß" in Abendreflexionen');
+  return H.slice(0,6);
+}
+// P7: Veränderung nicht nur zeigen, sondern erklären
+async function interpretDevelopment(){
+  const arr=(D.vision&&D.vision.analyses)||[];if(arr.length<2)return;
+  const btn=document.getElementById('dev-int-btn');if(btn){btn.disabled=true;btn.textContent='✨ Analysiere…';}
+  const key=arr[1].date+'→'+arr[0].date;
+  const sys='Du bist FocusAI, ein warmherziger, psychologisch fundierter Coach. Vergleiche zwei Standort-Profile desselben Nutzers. Antworte auf Deutsch in du-Form, 120–160 Wörter, drei kurze Absätze: 1) Was hat sich verändert? 2) Was könnte das bedeuten (vorsichtig deuten, nicht behaupten)? 3) Was heißt das für den weiteren Weg? Warm, konkret, ohne Jargon. **Fett** sparsam einsetzen.';
+  const msg='Vorheriges Profil ('+String(arr[1].date).slice(0,10)+'): '+JSON.stringify(arr[1].profile)+'\nAktuelles Profil ('+String(arr[0].date).slice(0,10)+'): '+JSON.stringify(arr[0].profile);
+  const text=await callAI([{role:'user',content:msg}],sys,600);
+  if(text){
+    D.vision.devInterpret={key,text};
+    try{await saveProfile();}catch(e){}
+    renderMyBereich();
+  }else{
+    if(btn){btn.disabled=false;btn.textContent='🤖 Was bedeutet das für meinen Weg?';}
+    toast('⚠️ FocusAI gerade nicht erreichbar.');
+  }
+}
 function renderMyBereich(){
   const el=document.getElementById('me-content');if(!el)return;
   const arr=(D.vision&&D.vision.analyses)||[];
@@ -2835,6 +2876,14 @@ function renderMyBereich(){
     const biP=BLOCKER_INFO[prev.blocker],biC=BLOCKER_INFO[cur.blocker];
     if(prev.blocker!==cur.blocker)html+=`<div style="margin-top:10px;font-size:.84rem"><strong>🧱 Blockade:</strong> ${esc(biP?biP.t:prev.blocker||'?')} → ${esc(biC?biC.t:cur.blocker||'?')}</div>`;
     if(prev.goalArea!==cur.goalArea)html+=`<div style="margin-top:6px;font-size:.84rem"><strong>🎯 Fokus:</strong> ${esc(LIFE_LABEL[prev.goalArea]||prev.goalArea||'?')} → ${esc(LIFE_LABEL[cur.goalArea]||cur.goalArea||'?')}</div>`;
+    // P7: Interpretation statt bloßer Pfeile
+    const devKey=arr[1].date+'→'+arr[0].date;
+    const devI=D.vision.devInterpret;
+    if(devI&&devI.key===devKey){
+      html+=`<div class="md-body" style="margin-top:12px;background:var(--bg);border:1px solid var(--bo);border-radius:var(--r2);padding:12px 14px">${mdToHtml(devI.text)}</div>`;
+    }else{
+      html+=`<button id="dev-int-btn" onclick="interpretDevelopment()" style="margin-top:12px;padding:9px 15px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.84rem">🤖 Was bedeutet das für meinen Weg?</button>`;
+    }
     html+=`</div>`;
   }
   const latest=arr[0];
@@ -2853,6 +2902,14 @@ function renderMyBereich(){
           <button onclick="downloadAnalysis(${i})" style="padding:6px 11px;border:1.5px solid var(--p);background:none;border-radius:var(--r3);color:var(--p);font-weight:700;cursor:pointer;font-size:.78rem">⬇</button>
         </div></div>`;
     });
+    html+=`</div>`;
+  }
+  // Hypothesen (P3): Annahmen, keine Wahrheiten
+  const hyps=computeHypotheses();
+  if(hyps.length){
+    html+=`<div class="sec"><div class="shdr"><div class="stitle">🔬 Annahmen über deine Muster</div></div>
+      <p class="sdesc">Das sind <strong>prüfbare Annahmen</strong> aus deinem Test und deinem Verhalten – keine Diagnosen und keine Wahrheiten. Sie ändern sich, sobald deine Daten etwas anderes zeigen.</p>`;
+    hyps.forEach(h=>{html+=`<div style="display:flex;gap:9px;padding:9px 0;border-bottom:1px solid var(--bo)"><div style="flex-shrink:0">🔍</div><div style="flex:1"><div style="font-size:.87rem;font-weight:700;line-height:1.45">${esc(h.label)}</div><div style="font-size:.75rem;color:var(--mu);margin-top:2px">Anhaltspunkt: ${esc(h.evidence)}</div></div></div>`;});
     html+=`</div>`;
   }
   // Weg-Anpassungsprotokoll (P9): jede Neukalibrierung nachvollziehbar
