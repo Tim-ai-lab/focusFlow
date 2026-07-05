@@ -2114,6 +2114,30 @@ function stepStatus(id){
   }
   return {mode:'once',done:arr.length>0};
 }
+// Etappen (P5): Schritte gehören zu Kapiteln mit klarem Abschluss-Erlebnis.
+const STAGE_META={self:{icon:'🔍',name:'Selbsterkenntnis'},align:{icon:'🎯',name:'Ausrichtung'},energy:{icon:'⚡',name:'Energie & Rhythmus'},reflect:{icon:'🔄',name:'Reflexion & Muster'},master:{icon:'🌱',name:'Integration'}};
+function stepStageId(stepId){for(const st of PATH_STAGES){if(st.steps.some(s=>s.id===stepId))return st.id;}return null;}
+// "Jemals gemeistert" – tägliche Schritte zählen fürs Kapitel ab dem 1. Abschluss
+function stepEverDone(id){
+  const cfg=STEP_CFG[id]||{mode:'once'};
+  const arr=pathLogArr(id);
+  if(cfg.mode==='count'){
+    const days=new Set(arr.map(ts=>String(ts).slice(0,10)));
+    return (cfg.unit==='Sitzungen'?arr.length:days.size)>=cfg.target;
+  }
+  return arr.length>0;
+}
+function chapterList(journey){
+  return PATH_STAGES.map(st=>{
+    const ids=(journey||[]).filter(id=>stepStageId(id)===st.id);
+    return {id:st.id,icon:STAGE_META[st.id].icon,name:STAGE_META[st.id].name,total:ids.length,done:ids.filter(stepEverDone).length};
+  }).filter(c=>c.total>0);
+}
+function chapterDoneMap(){
+  const ob=D.vision&&D.vision.onboarding;
+  const j=(ob&&ob.journey)||Object.keys(STEP_CFG);
+  const m={};chapterList(j).forEach(c=>{m[c.id]=c.done>=c.total;});return m;
+}
 function logStep(id){
   if(!UID)return false;
   const cfg=STEP_CFG[id]||{mode:'once'};
@@ -2123,8 +2147,21 @@ function logStep(id){
   const today=new Date().toISOString().slice(0,10);
   if(cfg.mode==='once'&&arr.length)return false;
   if((cfg.mode==='daily'||(cfg.mode==='count'&&cfg.unit!=='Sitzungen'))&&arr.some(ts=>String(ts).slice(0,10)===today))return false;
+  const before=chapterDoneMap();
   arr.push(new Date().toISOString());
   saveProfile();
+  // Kapitel-Abschluss feiern (Erfolgserlebnis pro Etappe)
+  try{
+    const after=chapterDoneMap();
+    const newly=Object.keys(after).find(k=>after[k]&&!before[k]);
+    if(newly){
+      const meta=STAGE_META[newly];
+      document.getElementById('rwe').textContent='🏆';
+      document.getElementById('rwt').textContent='Kapitel abgeschlossen!';
+      document.getElementById('rwm').textContent='„'+meta.name+'" ist geschafft – ein echter Meilenstein auf deinem Weg.';
+      document.getElementById('rwmodal').style.display='flex';
+    }
+  }catch(e){}
   return true;
 }
 // Aktiver Abschluss eines Schritts (Button oder echtes Sequenz-Ende)
@@ -3050,7 +3087,17 @@ function renderJourney(){
     html+=`</div>`;
   }
   html+=`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:.76rem;font-weight:700;color:var(--mu);margin-bottom:5px"><span>Fortschritt auf deinem Weg</span><span>${doneN}/${total} · ${pct}%</span></div>
-    <div style="height:9px;background:var(--bo);border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div></div></div>`;
+    <div style="height:9px;background:var(--bo);border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div></div>`;
+  // Etappen-Übersicht (P5): sichtbare Kapitel statt endloser Liste
+  const chapters=chapterList(journey);
+  const chIdx={};chapters.forEach((c,i)=>{chIdx[c.id]=i+1;});
+  if(chapters.length){
+    html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">`+chapters.map((c,i)=>{
+      const doneCh=c.done>=c.total;
+      return `<span style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;border:1.5px solid ${doneCh?'#BBF7D0':'var(--bo)'};background:${doneCh?'#DCFCE7':'#fff'};color:${doneCh?'#15803D':'var(--mu)'}">${doneCh?'✓ ':''}${c.icon} Kapitel ${i+1}: ${c.name} · ${c.done}/${c.total}</span>`;
+    }).join('')+`</div>`;
+  }
+  html+=`</div>`;
   // ── Fokussierte Führung: nur aktueller Schritt + max. 2 Alternativen ──
   const openSteps=journey.filter(id=>!stepStatus(id).done);
   const focusId=openSteps[0];
@@ -3120,6 +3167,7 @@ function renderJourney(){
         <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
           ${actions}
           ${st.mode==='count'?`<span style="font-size:.72rem;color:${done?'var(--ok)':'var(--mu)'};font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:''}
+          ${stepStageId(id)?`<span style="font-size:.7rem;color:var(--mu);font-weight:700;align-self:center;border:1px solid var(--bo);border-radius:20px;padding:2px 8px">${STAGE_META[stepStageId(id)].icon} Kap. ${chIdx[stepStageId(id)]||''}</span>`:''}
           <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${s.time}</span>
         </div>
       </div>
