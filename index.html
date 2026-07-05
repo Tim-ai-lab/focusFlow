@@ -540,6 +540,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <button class="tbtn on" id="tbtn-journey" onclick="showTab('journey',this)" style="order:-1">🧭 Mein Weg</button>
       <button class="tbtn" id="tbtn-goals" onclick="showTab('goals',this)" style="order:-1">🎯 Ziele</button>
       <button class="tbtn" id="tbtn-me" onclick="showTab('me',this)">👤 Mein Bereich</button>
+      <button class="tbtn" id="tbtn-more" onclick="toggleNavAll()" style="order:99;color:var(--mu)">⋯ alle Module</button>
     </div>
 
     <!-- MEIN WEG (personalisierte Strecke) -->
@@ -2364,6 +2365,29 @@ const STEP_DO={
   beliefs_revisited:'Glaubenssätze nach 30 Tagen prüfen'
 };
 function stepLabel(id,s){return STEP_DO[id]||(s&&s.title)||id;}
+// "Warum bekomme ich diese Aufgabe?" – persönliche Begründung aus dem Testprofil
+function personalWhy(stepId,p){
+  p=p||{};const b=p.blocker;
+  const M={
+    vision_process:p.visionClarity==='low'?'Dein Test zeigt: Deine Vision ist noch unscharf – ohne klares Zielbild fehlt deinem Gehirn der Antrieb. Genau hier setzt dieser Schritt an.':'Dieser Schritt stärkt das Fundament, auf dem dein ganzer Weg aufbaut.',
+    life_areas:'Dein Fokus liegt auf '+(LIFE_LABEL[p.goalArea]||'deinem Kernbereich')+' – klar definierte Lebensbereiche geben deinen Aufgaben Sinn und Richtung.',
+    beliefs_done:(p.selfdoubt==='high'||b==='fear')?'Dein Test zeigt einen starken inneren Kritiker – Glaubenssätze zu benennen entzieht ihm die Macht.':'Verborgene Glaubenssätze bremsen leise. Sichtbar gemacht verlieren sie ihre Kraft.',
+    first_tasks:b==='overwhelm'?'Deine größte Hürde ist Überforderung – wenige konkrete, sinnvolle Aufgaben wirken dem direkt entgegen.':'Konkrete Aufgaben übersetzen deine Ziele in Alltag – der Hebel vom Wollen ins Tun.',
+    mit_used:b==='overwhelm'?'Dein Test zeigt Überforderung als größte Hürde – 3 Prioritäten pro Tag reduzieren genau das.':'Drei klare Prioritäten täglich schaffen Erfolgserlebnisse und schützen vor Verzetteln.',
+    cal_used:'Geplantes wird deutlich seltener aufgeschoben – ein fester Zeitblock ist ein Versprechen an dich selbst.',
+    morning_done:(p.energyBaseline==='low'||b==='lowenergy')?'Deine Energie ist laut Test dein Engpass – die Morgenroutine ist dein täglicher Energie-Generator.':'Ein bewusster Start richtet deinen Tag auf das aus, was dir wirklich wichtig ist.',
+    pomodoro_used:b==='distraction'?'Ablenkung ist laut Test deine größte Hürde – 25-Minuten-Sprints schützen deine Aufmerksamkeit.':(b==='procrastination'?'Der Start ist dein kritischer Moment – Pomodoro macht ihn klein genug zum Anfangen.':'Kurze Fokus-Blöcke senken die Einstiegshürde spürbar.'),
+    evening_done:'Die Abendreflexion ist der Lern-Loop deines Weges – hier erkennst du (und die App), was dich wirklich bremst.',
+    wellbeing_tracked:(b==='lowenergy'||p.energyBaseline==='low')?'Dein Test zeigt niedrige Energie – erst die Daten zeigen, woran es liegt: Schlaf, Stress oder Bewegung.':'Wer seine Energie-Muster kennt, legt Schweres in starke Stunden.',
+    first_review:'Der Wochenrückblick macht Muster sichtbar, bevor sie sich verfestigen – dein stärkstes Lernwerkzeug.',
+    journal_7days:'7 Tage Protokoll zeigen dir Zusammenhänge, die im Alltag unsichtbar bleiben.',
+    analytics_checked:'Deine eigenen Daten zeigen dir, wann und wie du am besten funktionierst.',
+    ai_coach_used:(b==='fear'||p.selfdoubt==='high')?'Im geschützten Gespräch mit FocusAI kannst du Zweifel aussprechen und sortieren.':'FocusAI kennt dein Profil und deine Vision – nutze das für tiefere Reflexion.',
+    quarterly_review:'Alle 90 Tage prüfen: Stimmt die Richtung noch? Das verhindert fleißiges Laufen in die falsche Richtung.',
+    beliefs_revisited:'Nach Wochen echter Erfahrung zeigen sich neue Schichten deiner Glaubenssätze – und neue Freiheit.'
+  };
+  return M[stepId]||'';
+}
 
 // ── Tutorial (mit Begründungen) ──
 const TUTORIAL_SLIDES=[
@@ -2937,7 +2961,8 @@ function renderJourney(){
     html+=`<div class="sec">
       <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein Fokus jetzt</div>
       <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${stepLabel(s.id,s)}</div>
-      <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">${s.why}</div>
+      <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:10px">${s.why}</div>
+      ${personalWhy(s.id,p)?`<div style="font-size:.84rem;line-height:1.55;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:var(--r3);padding:9px 12px;margin-bottom:12px;color:#3730A3"><strong>Warum dieser Schritt für dich:</strong> ${personalWhy(s.id,p)}</div>`:''}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
         <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
@@ -3003,6 +3028,7 @@ function renderJourney(){
   html+=`</div></div>`;
   el.innerHTML=html;
   try{updateTopProgress();}catch(e){}
+  try{updateNavVisibility();}catch(e){}
 }
 function journeyGo(stepId){
   const cat=journeyCatalog();const s=cat[stepId];if(!s)return;
@@ -3963,7 +3989,26 @@ function renderStats(){
 }
 
 function goHome(){const b=document.getElementById('tbtn-journey');if(b)showTab('journey',b);}
-function toggleNav(){const n=document.getElementById('tnav');if(!n)return;n.style.display=(n.style.display==='none'||!n.style.display)?'flex':'none';}
+function toggleNav(){const n=document.getElementById('tnav');if(!n)return;const opening=(n.style.display==='none'||!n.style.display);if(opening)updateNavVisibility();n.style.display=opening?'flex':'none';}
+// Kuratierte Navigation: es erscheinen nur Kern-Tabs + Module der noch offenen
+// Weg-Schritte. Keine Feature-Bibliothek – der Rest bleibt hinter "alle Module".
+let navShowAll=false;
+function toggleNavAll(){navShowAll=!navShowAll;updateNavVisibility();}
+function updateNavVisibility(){
+  const nav=document.getElementById('tnav');if(!nav)return;
+  const rel=new Set(['journey','goals','me','tasks']);
+  const ob=D&&D.vision&&D.vision.onboarding;
+  if(ob&&ob.done){
+    const cat=journeyCatalog();
+    (ob.journey||[]).forEach(id=>{const s=cat[id];if(s&&s.tab&&!stepStatus(id).done)rel.add(s.tab);});
+  }
+  nav.querySelectorAll('.tbtn').forEach(b=>{
+    if(b.id==='tbtn-more'){b.textContent=navShowAll?'‹ nur mein Weg':'⋯ alle Module';return;}
+    const m=(b.getAttribute('onclick')||'').match(/showTab\('([^']+)'/);
+    const tab=m?m[1]:'';
+    b.style.display=(navShowAll||rel.has(tab))?'':'none';
+  });
+}
 function updateTopProgress(){
   const wrap=document.getElementById('top-progress-wrap');if(!wrap)return;
   const ob=D.vision&&D.vision.onboarding;
