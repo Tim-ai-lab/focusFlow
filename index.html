@@ -2228,6 +2228,7 @@ function undoStep(id){
   saveProfile();
   try{renderJourney();}catch(e){}
   try{renderPath();}catch(e){}
+  try{renderMyBereich();}catch(e){}
   toast('↩ Rückgängig gemacht');
 }
 // Kompatibilität: Pfad-Tab ruft weiterhin markPathStep auf
@@ -3030,12 +3031,14 @@ function renderStepTimeline(){
   events.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
   let h=`<div class="sec"><div class="shdr"><div class="stitle">🗂️ Verlauf – erledigte Schritte</div><span style="font-size:.74rem;color:var(--mu);font-weight:700">${events.length}</span></div>`;
   if(!events.length){h+=`<div class="empty">Noch keine abgeschlossenen Schritte. Sobald du Sequenzen abschließt, erscheinen sie hier mit ihren Inhalten.</div></div>`;return h;}
+  const todayStr=new Date().toISOString().slice(0,10);
   events.slice(0,40).forEach(ev=>{
     const s=cat[ev.stepId]||{icon:'✓'};const content=stepEventContent(ev.stepId,String(ev.ts).slice(0,10));
+    const isToday=String(ev.ts).slice(0,10)===todayStr;
     h+=`<div style="display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--bo)">
       <div style="font-size:1.3rem;flex-shrink:0">${s.icon||'✓'}</div>
       <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:.88rem;font-weight:700">${stepLabel(ev.stepId,s)}</div><div style="font-size:.74rem;color:var(--mu);white-space:nowrap">${esc(fmtDateTime(ev.ts))}</div></div>
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><div style="font-size:.88rem;font-weight:700">${stepLabel(ev.stepId,s)}</div><div style="display:flex;gap:7px;align-items:center"><span style="font-size:.74rem;color:var(--mu);white-space:nowrap">${esc(fmtDateTime(ev.ts))}</span>${isToday?`<button onclick="undoStep('${ev.stepId}')" title="Heutigen Eintrag zurücknehmen" style="padding:3px 8px;border:1.5px solid var(--bo);background:none;color:var(--mu);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.7rem">↩</button>`:''}</div></div>
         ${content?`<div style="font-size:.8rem;color:var(--mu);line-height:1.5;margin-top:4px">${content}</div>`:''}
       </div>
     </div>`;
@@ -3141,10 +3144,6 @@ function checkReminders(){
   check('morning',r.morning,!!dl.morning,'🌅 Morgenroutine','Starte deinen Tag mit Intention & Fokus.');
   check('evening',r.evening,!!dl.evening,'🌙 Abendreflexion','Zeit, deinen Tag zu reflektieren.');
 }
-let journeyExpanded=false;
-function toggleFullJourney(){journeyExpanded=!journeyExpanded;try{renderJourney();}catch(e){}}
-let altOpen=false;
-function toggleAlt(){altOpen=!altOpen;try{renderJourney();}catch(e){}}
 function renderJourney(){
   const el=document.getElementById('journey-content');if(!el)return;
   const ob=D.vision&&D.vision.onboarding;
@@ -3199,7 +3198,6 @@ function renderJourney(){
     <div style="height:9px;background:var(--bo);border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div></div>`;
   // Etappen-Übersicht (P5): sichtbare Kapitel statt endloser Liste
   const chapters=chapterList(journey);
-  const chIdx={};chapters.forEach((c,i)=>{chIdx[c.id]=i+1;});
   if(chapters.length){
     html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">`+chapters.map((c,i)=>{
       const doneCh=c.done>=c.total;
@@ -3207,10 +3205,11 @@ function renderJourney(){
     }).join('')+`</div>`;
   }
   html+=`</div>`;
-  // ── Fokussierte Führung: nur aktueller Schritt + max. 2 Alternativen ──
+  // ── Fokussierte Führung: NUR der aktuelle Schritt + Vorschau auf den einen
+  //    nächsten. Keine Strecken-Liste, keine Alternativen – die App führt.
   const openSteps=journey.filter(id=>!stepStatus(id).done);
   const focusId=openSteps[0];
-  const altIds=openSteps.slice(1,3);
+  const nextUpId=openSteps[1];
   const stBadge=(st)=>st.mode==='count'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:st.mode==='daily'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">🔁 täglich</span>`:'';
   if(focusId){
     const s=cat[focusId];
@@ -3218,7 +3217,7 @@ function renderJourney(){
       <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein Fokus jetzt</div>
       <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${stepLabel(s.id,s)}</div>
       <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:10px">${s.why}</div>
-      ${personalWhy(s.id,p)?`<div style="font-size:.84rem;line-height:1.55;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:var(--r3);padding:9px 12px;margin-bottom:12px;color:#3730A3"><strong>Warum dieser Schritt für dich:</strong> ${personalWhy(s.id,p)}</div>`:''}
+      <div style="font-size:.84rem;line-height:1.55;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:var(--r3);padding:9px 12px;margin-bottom:12px;color:#3730A3"><strong>Warum dieser Schritt für dich:</strong> ${personalWhy(s.id,p)||s.why}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
         <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
@@ -3226,63 +3225,19 @@ function renderJourney(){
       </div>
       <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
     </div>`;
-    if(altIds.length){
-      html+=`<div class="sec">
-        <button onclick="toggleAlt()" style="width:100%;background:none;border:none;cursor:pointer;font-weight:800;font-size:.9rem;color:var(--txt);display:flex;justify-content:space-between;align-items:center;padding:0">
-          <span>${altOpen?'▾':'▸'} Andere Möglichkeiten für jetzt</span><span style="font-size:.74rem;color:var(--mu);font-weight:700">${altIds.length}</span>
-        </button>
-        <div style="display:${altOpen?'block':'none'};margin-top:11px">`;
-      altIds.forEach(id=>{
-        const a=cat[id];const st=stepStatus(id);
-        html+=`<div class="jstep">
-          <div class="jstep-num">→</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:.9rem;font-weight:700">${a.icon} ${stepLabel(id,a)}</div>
-            <div style="font-size:.76rem;color:var(--mu);margin-top:2px;line-height:1.4">${a.why}</div>
-            <div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap">
-              <button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button>
-              ${stBadge(st)}
-              <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${a.time}</span>
-            </div>
-          </div>
-        </div>`;
-      });
-      html+=`</div></div>`;
+    // Vorschau: nur der EINE nächste Schritt – mit individueller Begründung
+    if(nextUpId){
+      const n=cat[nextUpId];
+      html+=`<div class="sec" style="opacity:.93">
+        <div style="font-size:.72rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">🔜 Danach kommt</div>
+        <div style="font-size:.92rem;font-weight:800;margin-bottom:5px">${n.icon} ${stepLabel(nextUpId,n)}</div>
+        <div style="font-size:.82rem;line-height:1.55;color:var(--mu)"><strong style="color:var(--txt)">Warum das dein nächster Schritt ist:</strong> ${personalWhy(nextUpId,p)||n.why}</div>
+        <div style="font-size:.74rem;color:var(--mu);margin-top:9px">🔒 Wird dein Fokus, sobald der aktuelle Schritt abgeschlossen ist.</div>
+      </div>`;
     }
   }else{
     html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast für jetzt alles erledigt!</div><div style="font-size:.85rem;color:var(--mu)">Tägliche Routinen erscheinen morgen wieder. Mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
   }
-  // ── Einklappbare Gesamtstrecke (standardmäßig zu, um nicht zu erschlagen) ──
-  html+=`<div class="sec">
-    <button onclick="toggleFullJourney()" style="width:100%;background:none;border:none;cursor:pointer;font-weight:800;font-size:.95rem;color:var(--txt);display:flex;justify-content:space-between;align-items:center;padding:0">
-      <span>${journeyExpanded?'▾':'▸'} Ganze Strecke ${journeyExpanded?'ausblenden':'anzeigen'}</span>
-      <span style="font-size:.74rem;color:var(--mu);font-weight:700">${doneN}/${total} · 🔁 = täglich</span>
-    </button>
-    <div id="journey-full" style="display:${journeyExpanded?'block':'none'};margin-top:12px">`;
-  journey.forEach((id,i)=>{
-    const s=cat[id];const st=stepStatus(id);const done=st.done;const cur=id===focusId;
-    let actions;
-    if(done){
-      const label=st.mode==='daily'?'✓ Heute erledigt':st.mode==='count'?`✓ Erledigt (${st.count}/${st.target})`:'✓ Erledigt';
-      actions=`<span class="badge b-2min">${label}</span><button onclick="undoStep('${id}')" style="padding:5px 9px;border:1.5px solid var(--bo);background:none;color:var(--mu);border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.72rem">↩ rückgängig</button>`;
-    }else{
-      actions=`<button onclick="journeyGo('${id}')" style="padding:6px 12px;background:linear-gradient(135deg,var(--p),var(--pd));color:#fff;border:none;border-radius:var(--r3);font-weight:700;cursor:pointer;font-size:.76rem">Start →</button>`;
-    }
-    html+=`<div class="jstep${done?' done':cur?' current':''}">
-      <div class="jstep-num">${done?'✓':i+1}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.92rem;font-weight:700">${s.icon} ${stepLabel(s.id,s)}</div>
-        <div style="font-size:.78rem;color:var(--mu);margin-top:2px;line-height:1.45">${s.why}</div>
-        <div style="margin-top:8px;display:flex;gap:7px;flex-wrap:wrap">
-          ${actions}
-          ${st.mode==='count'?`<span style="font-size:.72rem;color:${done?'var(--ok)':'var(--mu)'};font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:''}
-          ${stepStageId(id)?`<span style="font-size:.7rem;color:var(--mu);font-weight:700;align-self:center;border:1px solid var(--bo);border-radius:20px;padding:2px 8px">${STAGE_META[stepStageId(id)].icon} Kap. ${chIdx[stepStageId(id)]||''}</span>`:''}
-          <span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">⏱ ${s.time}</span>
-        </div>
-      </div>
-    </div>`;
-  });
-  html+=`</div></div>`;
   el.innerHTML=html;
   try{updateTopProgress();}catch(e){}
   try{updateNavVisibility();}catch(e){}
