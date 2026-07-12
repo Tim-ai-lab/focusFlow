@@ -1043,6 +1043,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
           <div class="scbar"><div class="scfill" id="sfill" style="width:0%"></div></div>
         </div>
         <div class="qbox" id="qbox">💡 Lade...</div>
+        <div id="ana-complete" style="margin-top:14px"></div>
       </div>
     </div>
 
@@ -1654,7 +1655,9 @@ function nextMorningStep(){
   morningData[step.key]=document.getElementById('morning-input').value.trim();
   if(morningStep<MORNING_STEPS.length-1){morningStep++;renderMorningStep();}
   else{
-    // Save & show summary
+    // Fertigstellen nur bei echtem Inhalt (Affirmation ist vorbefüllt und zählt nicht)
+    const hasAny=['gratitude','intention','focus'].some(k=>morningData[k]&&morningData[k].trim());
+    if(!hasAny){toast('✍️ Beantworte mindestens eine Frage, um die Routine abzuschließen.');return;}
     document.getElementById('morningmod').style.display='none';
     saveMorningData();
     toast('🌅 Morgenroutine abgeschlossen! Schönen Tag! ✨');
@@ -1747,7 +1750,12 @@ function storeEveningInput(){
 function nextEveningStep(){
   storeEveningInput();
   if(eveningStep<activeEveningSteps.length-1){eveningStep++;renderEveningStep();}
-  else{document.getElementById('eveningmod').style.display='none';saveEveningData();}
+  else{
+    // Abschließen nur mit mindestens einer beantworteten Frage
+    const hasAny=['wins','learnings','gratitude_eve','tomorrow','procr'].some(k=>eveningData[k]&&String(eveningData[k]).trim());
+    if(!hasAny){toast('✍️ Beantworte mindestens eine Frage, um die Reflexion abzuschließen.');return;}
+    document.getElementById('eveningmod').style.display='none';saveEveningData();
+  }
 }
 function prevEveningStep(){if(eveningStep>0){storeEveningInput();eveningStep--;renderEveningStep();}}
 // P9: Weg-Anpassung aus wiederkehrenden Brems-Ursachen – mit Protokoll
@@ -2284,6 +2292,9 @@ function prevReflect(){
 }
 async function finishReflection(){
   const def=REFLECTIONS[reflectKey];if(!def)return;
+  // Abschließen nur mit mindestens einer beantworteten Frage
+  const hasAny=Object.values(reflectData||{}).some(v=>v&&String(v).trim());
+  if(!hasAny){toast('✍️ Beantworte mindestens eine Frage, um abzuschließen.');return;}
   if(!D.vision)D.vision={};
   if(!D.vision.reflections)D.vision.reflections={};
   if(!D.vision.reflections[def.stepId])D.vision.reflections[def.stepId]=[];
@@ -3509,7 +3520,12 @@ async function saveVisionStepAndContinue(){
   await saveProfile();
   toast('✅ Schritt gespeichert!');
   if(visionStep<VISION_STEPS.length-1){visionStep++;openVisionStep(visionStep);}
-  else{closeVisionProcess();toast('🌟 Vision-Prozess abgeschlossen!');showVisionSummary();logStep('vision_process');}
+  else{
+    // Fertigstellen nur, wenn im Prozess wirklich etwas beantwortet wurde
+    const anyContent=Object.values(D.vision.stepData||{}).some(v=>v&&String(v).trim());
+    if(!anyContent){toast('✍️ Beantworte mindestens eine Frage im Prozess, um ihn abzuschließen.');return;}
+    closeVisionProcess();toast('🌟 Vision-Prozess abgeschlossen!');showVisionSummary();logStep('vision_process');
+  }
   updateVisionStepsOverview();
   try{renderJourney();}catch(e){}
 }
@@ -4158,9 +4174,9 @@ async function sendAI(){
   const thinking=document.createElement('div');thinking.className='ai-msg bot thinking';thinking.textContent='✨ Denke nach...';msgs.appendChild(thinking);
   msgs.scrollTop=msgs.scrollHeight;
   aiConversation.push({role:'user',content:msg});
-  logStep('ai_coach_used');
   const reply=await callAI(aiConversation,getContext(),1000);
   aiConversation.push({role:'assistant',content:reply||'Entschuldigung, ich konnte keine Antwort generieren.'});
+  if(reply)logStep('ai_coach_used'); // erst ein echtes Coaching-Gespräch zählt
   if(aiConversation.length>20)aiConversation=aiConversation.slice(-20);
   thinking.remove();
   const text=reply||'⚠️ KI momentan nicht erreichbar. Versuche es in einem Moment erneut.';
@@ -4202,7 +4218,15 @@ function renderAnalytics(){
   document.getElementById('wchart').innerHTML=D.weekDone.map((v,i)=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:.68rem;color:var(--mu);font-weight:700">${v||''}</div><div style="width:100%;height:${Math.max(4,Math.round((v/mx)*66))}px;background:${i===dow?'linear-gradient(180deg,var(--p),var(--pd))':'var(--bo)'};border-radius:5px 5px 0 0;transition:height .4s"></div></div>`).join('');
   document.getElementById('wlbls').innerHTML=days.map((d,i)=>`<div style="flex:1;text-align:center;font-size:.68rem;color:${i===dow?'var(--p)':'var(--mu)'};font-weight:${i===dow?800:600}">${d}</div>`).join('');
   document.getElementById('qbox').textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  // Schritt gilt erst als erledigt, wenn der Nutzer ihn aktiv fertigstellt
+  const ac=document.getElementById('ana-complete');
+  if(ac){
+    ac.innerHTML=stepStatus('analytics_checked').done
+      ?'<span class="badge b-2min">✓ Schritt „Analytics ansehen" erledigt</span>'
+      :'<button class="addbtn" style="width:100%" onclick="completeAnalytics()">✓ Insights angesehen – Schritt fertigstellen</button>';
+  }
 }
+function completeAnalytics(){completeStep('analytics_checked');try{renderAnalytics();}catch(e){}}
 
 // ═══════════════════════════════════════════════════════════════
 // ── UI ──  Tabs, Toast, Modals, Render-Helfer, Stats
@@ -4264,7 +4288,7 @@ function showTab(name,btn){
   if(name==='wellbeing')renderWellbeing();
   if(name==='review')renderReviews();
   if(name==='diary'){journalDate=new Date().toISOString().split('T')[0];renderJournal();}
-  if(name==='analytics'){renderAnalytics();logStep('analytics_checked');}
+  if(name==='analytics')renderAnalytics();
 }
 
 let tTO;
