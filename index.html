@@ -3885,7 +3885,8 @@ async function saveWellbeing(){
   D.wellbeing=D.wellbeing.filter(e=>e.date!==entry.date);
   D.wellbeing.unshift(entry);
   D.wellbeing=D.wellbeing.slice(0,30);
-  await saveProfile();btn.disabled=false;toast('🧘 Wohlbefinden gespeichert!');logStep('wellbeing_tracked');renderWellbeing();try{renderJourney();}catch(e){}
+  await saveProfile();btn.disabled=false;toast('🧘 Wohlbefinden gespeichert – zurück zu deinem Weg.');logStep('wellbeing_tracked');renderWellbeing();try{renderJourney();}catch(e){}
+  routeAfterSave();
 }
 function renderWellbeing(){
   const el=document.getElementById('wb-history');
@@ -3909,8 +3910,9 @@ async function saveReview(){
   const entry={date:new Date().toISOString().split('T')[0],good:gv('rev-good'),learn:gv('rev-learn'),vision:gv('rev-vision'),procr:gv('rev-procr'),next:gv('rev-next')};
   if(!entry.good&&!entry.learn){toast('Bitte mindestens eine Frage beantworten.');return;}
   D.reviews=D.reviews.filter(r=>r.date!==entry.date);D.reviews.unshift(entry);D.reviews=D.reviews.slice(0,12);
-  await saveProfile();toast('🔄 Wochenrückblick gespeichert! Großartige Reflexion!');logStep('first_review');renderReviews();try{renderJourney();}catch(e){}
+  await saveProfile();toast('🔄 Wochenrückblick gespeichert – zurück zu deinem Weg.');logStep('first_review');renderReviews();try{renderJourney();}catch(e){}
   ['rev-good','rev-learn','rev-vision','rev-procr','rev-next'].forEach(id=>document.getElementById(id).value='');
+  routeAfterSave();
 }
 function renderReviews(){
   const el=document.getElementById('review-history');
@@ -4242,6 +4244,9 @@ function renderStats(){
 }
 
 function goHome(){const b=document.getElementById('tbtn-journey');if(b)showTab('journey',b);}
+// Nach einem abgeschlossenen Schritt sanft zurück zu "Mein Weg" (nächster Schritt).
+// Kurze Verzögerung, damit die Speicher-Bestätigung noch wahrgenommen wird.
+function routeAfterSave(){setTimeout(()=>{try{goHome();}catch(e){}},650);}
 function toggleNav(){const n=document.getElementById('tnav');if(!n)return;const opening=(n.style.display==='none'||!n.style.display);if(opening)updateNavVisibility();n.style.display=opening?'flex':'none';}
 // Kuratierte Navigation: es erscheinen nur Kern-Tabs + Module der noch offenen
 // Weg-Schritte. Keine Feature-Bibliothek – der Rest bleibt hinter "alle Module".
