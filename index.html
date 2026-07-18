@@ -1174,6 +1174,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
 </div>
 
+<!-- KOMFORTZONEN-CHALLENGE: passende Mutprobe wählen, annehmen, abschließen -->
+<div class="modal-bg" id="comfortmod">
+  <div class="modal-card">
+    <div class="modal-title">🧗 Komfortzonen-Challenge</div>
+    <div id="comfort-content"></div>
+    <button class="modal-close" onclick="document.getElementById('comfortmod').style.display='none'">Schließen</button>
+  </div>
+</div>
+
 <!-- KRISEN-HINWEIS (Coaching ersetzt keine Therapie) -->
 <div class="modal-bg" id="crisismod" style="z-index:450">
   <div class="modal-card" style="max-width:450px">
@@ -1223,7 +1232,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div id="ob-intro">
         <div style="font-size:2.4rem;text-align:center;margin-bottom:8px">🧭</div>
         <h2 style="text-align:center;font-size:1.4rem;font-weight:800;margin-bottom:8px">Dein persönlicher Weg</h2>
-        <p style="text-align:center;color:var(--mu);font-size:.9rem;line-height:1.6;margin-bottom:22px">Bevor du startest, lernen wir dich kennen. In ~16 kurzen Fragen findet FocusFlow heraus, wo du stehst und was dich wirklich weiterbringt – und erstellt daraus deine individuelle Strecke zum Ziel.</p>
+        <p style="text-align:center;color:var(--mu);font-size:.9rem;line-height:1.6;margin-bottom:22px">Bevor du startest, lernen wir dich kennen. In wenigen kurzen Fragen (ca. 5 Minuten) findet FocusFlow heraus, wo du stehst und was dich wirklich weiterbringt – und erstellt daraus deine individuelle Strecke zum Ziel.</p>
         <div id="ob-vision-line" style="display:none;font-size:.85rem;font-style:italic;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--r2);padding:10px 13px;margin-bottom:14px;line-height:1.55"></div>
         <div class="info-box info-blue" style="margin-bottom:22px">🔒 Deine Antworten bleiben privat und bestimmen nur deinen persönlichen Weg in der App. FocusFlow ist ein Coaching-Werkzeug und ersetzt keine Psychotherapie oder ärztliche Behandlung.</div>
         <button class="btnmain" onclick="beginOnboarding()">Los geht's →</button>
@@ -1728,6 +1737,9 @@ function buildEveningSteps(){
   const hasOverdue=(D.tasks||[]).some(t=>isOverdue(t));
   const hasMorning=D.dailyLog&&D.dailyLog[today]&&D.dailyLog[today].morning;
   const steps=[EVENING_STEPS[0]]; // 🏆 Erfolge – immer
+  // Komfortzonen-Challenge: wenn heute angenommen, abends kurz reflektieren
+  const cch=D.vision&&D.vision.comfort&&D.vision.comfort.current;
+  if(cch&&cch.date===today)steps.push({title:'🧗 Deine Challenge heute',q:'Du hattest dir vorgenommen: „'+esc(cch.text)+'". Wie ist es gelaufen – und was hat es mit dir gemacht? (Als „geschafft" markierst du sie auf „Mein Weg".)',placeholder:'Auch ein Versuch zählt – was hast du über dich gelernt?',key:'comfort_note'});
   if(openMIT||hasOverdue)steps.push({title:'🧱 Was hat dich gebremst?',q:'Etwas blieb heute offen. Das ist kein Fehler – es zeigt, woran wir arbeiten. Was hat dich am meisten gebremst?',key:'blocker_cat',type:'choice'});
   if(new Date().getDay()===0)steps.push(EVENING_STEPS[1]); // 📚 Lernmomente – 1× pro Woche
   if(!hasMorning)steps.push(EVENING_STEPS[3]); // 🙏 Dankbarkeit nur ohne Morgenroutine
@@ -1767,7 +1779,7 @@ function nextEveningStep(){
   if(eveningStep<activeEveningSteps.length-1){eveningStep++;renderEveningStep();}
   else{
     // Abschließen nur mit mindestens einer beantworteten Frage
-    const hasAny=['wins','learnings','gratitude_eve','tomorrow','procr'].some(k=>eveningData[k]&&String(eveningData[k]).trim());
+    const hasAny=['wins','learnings','gratitude_eve','tomorrow','procr','comfort_note'].some(k=>eveningData[k]&&String(eveningData[k]).trim());
     if(!hasAny){toast('✍️ Beantworte mindestens eine Frage, um die Reflexion abzuschließen.');return;}
     document.getElementById('eveningmod').style.display='none';saveEveningData();
   }
@@ -2102,6 +2114,7 @@ const PATH_STAGES=[
       {id:'vision_process',title:'Vision-Prozess durchführen',why:'Der 6-Schritte-Prozess führt dich von der Sterbebett-Frage zur fertigen Affirmation – psychologisch fundiert und KI-begleitet.',time:'60-90 Min',tab:'vision',action:'startVisionProcess()'},
       {id:'life_areas',title:'Lebensbereiche definieren',why:'Ohne klare Lebensbereiche fehlt die Struktur für Ziele. Du brauchst Klarheit in welchen Feldern du wachsen willst.',time:'20-30 Min',tab:'vision',action:'showTab("vision",document.querySelectorAll(".tbtn")[3])'},
       {id:'beliefs_done',title:'Glaubenssätze pro Lebensbereich notiert',why:'Limitierende Glaubenssätze sind die unsichtbare Bremse. Wer sie kennt, kann sie transformieren.',time:'15 Min',tab:'vision',action:'showTab("vision",document.querySelectorAll(".tbtn")[3])'},
+      {id:'comfort_map',title:'Komfortzone kartieren',why:'Wachstum passiert am Rand der Komfortzone. Wer seine Grenzen kennt, kann sie bewusst und sicher erweitern – statt zufällig an ihnen zu scheitern.',time:'10 Min',tab:'journey',action:"openReflection('comfort_map')"},
     ]
   },
   {
@@ -2144,6 +2157,7 @@ const PATH_STAGES=[
     color:'#E87C9B',badge:'Meisterschaft',
     why:'Ab hier wird die App zu deinem persönlichsten Werkzeug. KI-Coach, Quartals-Review und tiefe Muster-Arbeit.',
     steps:[
+      {id:'comfort_challenge',title:'Komfortzone 3× bewusst verlassen',why:'Selbstvertrauen entsteht durch Beweise, nicht durch Nachdenken. Jede gemeisterte Challenge erweitert deine Komfortzone dauerhaft.',time:'5-30 Min',tab:'journey',action:'openComfortChallenge()'},
       {id:'ai_coach_used',title:'FocusAI für tiefe Reflexion genutzt',why:'Der KI-Coach kennt deine Vision, Glaubenssätze und Muster. Tiefe Gespräche bringen Erkenntnisse die alleine schwer erreichbar sind.',time:'10-20 Min',tab:'ai',action:'showTab("ai",document.querySelectorAll(".tbtn")[9])'},
       {id:'quarterly_review',title:'Ersten Quartals-Review durchgeführt',why:'Alle 90 Tage: Stimmt meine Vision noch? Was hat sich verändert? Dieser Review verhindert dass man fleißig in die falsche Richtung läuft.',time:'30 Min',tab:'journey',action:"openReflection('quarterly_review')"},
       {id:'beliefs_revisited',title:'Glaubenssätze nach 30 Tagen überprüft',why:'Glaubenssätze verändern sich durch Erfahrung. Nach 30 Tagen zeigen sich neue Schichten – und neue Möglichkeiten zur Transformation.',time:'20 Min',tab:'journey',action:"openReflection('beliefs_revisited')"},
@@ -2159,7 +2173,8 @@ const STEP_CFG={
   vision_process:{mode:'once'},life_areas:{mode:'once'},beliefs_done:{mode:'once'},
   first_tasks:{mode:'once'},cal_used:{mode:'once'},first_review:{mode:'once'},
   analytics_checked:{mode:'once'},ai_coach_used:{mode:'once'},quarterly_review:{mode:'once'},
-  beliefs_revisited:{mode:'once'},
+  beliefs_revisited:{mode:'once'},comfort_map:{mode:'once'},
+  comfort_challenge:{mode:'count',target:3,unit:'Challenges'},
   morning_done:{mode:'daily'},evening_done:{mode:'daily'},
   mit_used:{mode:'count',target:3,unit:'Tage'},
   wellbeing_tracked:{mode:'count',target:3,unit:'Tage'},
@@ -2277,6 +2292,13 @@ const REFLECTIONS={
     {key:'changed',q:'Was hat sich daran verändert?',ph:'Welcher Satz hat an Kraft verloren? Was glaubst du heute?'},
     {key:'new',q:'Welche neuen Glaubenssätze zeigen sich?',ph:'Manchmal tauchen tiefere Schichten auf...'},
     {key:'empower',q:'Dein ermächtigender Gegen-Satz',ph:'Formuliere einen kraftvollen, wahren Satz in Gegenwartsform...'}
+  ]},
+  comfort_map:{stepId:'comfort_map',title:'🧗 Komfortzone kartieren',accent:'#F4A96A',steps:[
+    {key:'inside',q:'Was gehört zu deiner Komfortzone?',ph:'Situationen, in denen du dich sicher fühlst: vertraute Routinen, bekannte Aufgaben, dein gewohntes Umfeld...'},
+    {key:'avoid',q:'Was vermeidest du, obwohl es dich weiterbringen würde?',ph:'Z. B. präsentieren, Nein sagen, auf Fremde zugehen, um Hilfe bitten, Neues ausprobieren...'},
+    {key:'cost',q:'Was kostet dich dieses Vermeiden?',ph:'Verpasste Chancen, Abhängigkeit von anderen, ein leises Gefühl von Stillstand...'},
+    {key:'gain',q:'Was würde möglich, wenn du diese Grenze erweiterst?',ph:'Beruflich, in Beziehungen, für dein Selbstvertrauen...'},
+    {key:'first',q:'Dein erster kleiner Schritt über die Grenze?',ph:'So klein, dass du ihn diese Woche wirklich machst – Herausforderung ja, Überforderung nein.'}
   ]}
 };
 let reflectKey=null,reflectStep=0,reflectData={};
@@ -2319,6 +2341,105 @@ async function finishReflection(){
   document.getElementById('reflectmod').style.display='none';
   try{renderJourney();}catch(e){}
   toast('✅ '+def.title+' abgeschlossen!');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ── KOMFORTZONE ──  Passende Challenges vorschlagen, annehmen,
+//    abschließen. Nur der "Geschafft"-Button zählt den Schritt.
+// ═══════════════════════════════════════════════════════════════
+const COMFORT_CHALLENGES={
+  visibility:{
+    sanft:['Stelle heute in einer Runde eine Frage, statt still zu bleiben.','Teile eine Meinung, bevor du gefragt wirst.','Sag jemandem vor anderen ein ehrliches Kompliment.','Erzähle heute jemandem von einem Ziel, das dir wichtig ist.'],
+    mutig:['Melde dich für einen kurzen Wortbeitrag oder eine Mini-Präsentation.','Teile einen eigenen Gedanken öffentlich (z. B. Beitrag posten).','Übernimm heute sichtbar die Führung bei einer Sache.']},
+  social:{
+    sanft:['Sprich eine Person kurz an, die du sonst nur grüßt.','Frage eine fremde Person nach einer Empfehlung.','Melde dich bei jemandem, mit dem du lange keinen Kontakt hattest.'],
+    mutig:['Führe heute ein echtes Gespräch mit einer fremden Person.','Lade jemanden konkret auf einen Kaffee ein.','Geh allein an einen Ort, an dem man ins Gespräch kommt.']},
+  conflict:{
+    sanft:['Sag heute einmal freundlich „Nein" – ohne lange Begründung.','Sprich eine kleine Unstimmigkeit ruhig an, statt sie zu schlucken.','Äußere einen Wunsch klar und direkt.'],
+    mutig:['Führe das aufgeschobene schwierige Gespräch – heute.','Verhandle etwas nach (Preis, Deadline, Aufgabenverteilung).','Setze eine Grenze, die du lange aufgeschoben hast.']},
+  newthings:{
+    sanft:['Nimm heute bewusst einen neuen Weg oder probiere etwas Ungewohntes.','Iss oder koche etwas, das du noch nie probiert hast.','Lerne 15 Minuten etwas völlig Neues.'],
+    mutig:['Melde dich für etwas an, das dich nervös macht.','Mache heute etwas zum ersten Mal – allein.','Starte mit einem ersten Schritt das Projekt, für das du dich „noch nicht bereit" fühlst.']},
+  help:{
+    sanft:['Bitte heute jemanden um einen kleinen Gefallen.','Stelle eine Frage, obwohl du denkst, du müsstest es wissen.','Sag jemandem ehrlich, dass dir etwas schwerfällt.'],
+    mutig:['Bitte um Unterstützung bei etwas, das dir wirklich wichtig ist.','Teile mit einer Vertrauensperson eine echte Unsicherheit.','Bitte um ehrliches Feedback zu etwas, das dir am Herzen liegt.']}
+};
+function comfortProfile(){return (D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};}
+function comfortData(){if(!D.vision)D.vision={};if(!D.vision.comfort)D.vision.comfort={current:null,log:[]};return D.vision.comfort;}
+function comfortSuggestions(){
+  const p=comfortProfile();
+  const zone=p.comfortZone&&p.comfortZone!=='none'?p.comfortZone:null;
+  const tier=p.comfortAppetite==='mutig'?'mutig':'sanft';
+  let pool=[];
+  if(zone&&COMFORT_CHALLENGES[zone]){pool=COMFORT_CHALLENGES[zone][tier].map(t=>({text:t,zone}));}
+  else{Object.keys(COMFORT_CHALLENGES).forEach(z=>{COMFORT_CHALLENGES[z][tier].forEach(t=>pool.push({text:t,zone:z}));});}
+  // Täglich rotierende Auswahl von 3 – deterministisch, ohne Zufalls-Flackern
+  const doy=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/864e5);
+  const out=[];for(let i=0;i<Math.min(3,pool.length);i++)out.push(pool[(doy+i*2)%pool.length]);
+  return out;
+}
+function openComfortChallenge(){renderComfortModal();document.getElementById('comfortmod').style.display='flex';}
+function renderComfortModal(){
+  const el=document.getElementById('comfort-content');if(!el)return;
+  const c=comfortData();
+  const today=new Date().toISOString().split('T')[0];
+  const st=stepStatus('comfort_challenge');
+  const prog=`<div style="font-size:.76rem;font-weight:700;color:var(--mu);margin-bottom:10px">${st.count}/${st.target} Challenges gemeistert${st.done?' · ✓ Schritt erledigt':''}</div>`;
+  if(c.current&&c.current.date===today){
+    el.innerHTML=prog+`
+      <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--r2);padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:.74rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">🧗 Deine heutige Challenge</div>
+        <div style="font-size:.95rem;font-weight:800;line-height:1.5">${esc(c.current.text)}</div>
+      </div>
+      <div style="font-size:.8rem;color:var(--mu);margin-bottom:8px">Wie hat es sich angefühlt? (optional)</div>
+      <textarea class="ta" id="comfort-felt" placeholder="Kurz notieren – das macht den Wachstums-Beweis später sichtbar..." style="min-height:60px"></textarea>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="addbtn" style="flex:2" onclick="completeComfortChallenge()">✓ Geschafft!</button>
+        <button class="modal-close" style="flex:1;margin-top:0" onclick="resetComfortChallenge()">🔁 Andere wählen</button>
+      </div>`;
+    return;
+  }
+  const sugg=comfortSuggestions();
+  el.innerHTML=prog+`
+    <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">Wähle EINE Mutprobe für heute – passend zu deinem Profil${comfortProfile().comfortZone&&comfortProfile().comfortZone!=='none'?' („'+(COMFORT_LABEL[comfortProfile().comfortZone]||'')+'")':''}. Herausfordernd, aber sicher und freiwillig – niemals ein Risiko für dich oder andere.</div>
+    <div style="display:flex;flex-direction:column;gap:8px">${sugg.map((s,i)=>`<button class="ob-opt" onclick="chooseComfortChallenge(${i})">${esc(s.text)}</button>`).join('')}</div>
+    <div style="font-size:.78rem;font-weight:700;color:var(--mu);margin:12px 0 6px">Oder deine eigene Challenge:</div>
+    <div style="display:flex;gap:8px">
+      <input class="ti" id="comfort-custom" placeholder="Meine eigene Mutprobe für heute..." maxlength="200">
+      <button class="addbtn" onclick="acceptCustomComfort()">Annehmen</button>
+    </div>`;
+  window._comfortSugg=sugg;
+}
+function chooseComfortChallenge(i){
+  const s=(window._comfortSugg||[])[i];if(!s)return;
+  acceptComfortChallenge(s.text,s.zone);
+}
+function acceptCustomComfort(){
+  const v=(document.getElementById('comfort-custom')||{}).value||'';
+  if(!v.trim()){toast('✍️ Beschreibe kurz deine Challenge.');return;}
+  acceptComfortChallenge(v.trim().slice(0,200),comfortProfile().comfortZone||'none');
+}
+function acceptComfortChallenge(text,zone){
+  const c=comfortData();
+  c.current={date:new Date().toISOString().split('T')[0],text,zone};
+  saveProfile();
+  toast('🧗 Challenge angenommen – du schaffst das!');
+  renderComfortModal();
+  try{renderJourney();}catch(e){}
+}
+function resetComfortChallenge(){const c=comfortData();c.current=null;saveProfile();renderComfortModal();try{renderJourney();}catch(e){}}
+function completeComfortChallenge(){
+  const c=comfortData();if(!c.current)return;
+  const felt=((document.getElementById('comfort-felt')||{}).value||'').trim().slice(0,300);
+  c.log.unshift({date:new Date().toISOString(),text:c.current.text,zone:c.current.zone,felt});
+  c.log=c.log.slice(0,50);
+  c.current=null;
+  logStep('comfort_challenge');
+  saveProfile();
+  document.getElementById('comfortmod').style.display='none';
+  const st=stepStatus('comfort_challenge');
+  toast(st.done?'🏆 3 Challenges gemeistert – deine Komfortzone ist gewachsen!':'💪 Geschafft! Deine Komfortzone ist heute ein Stück größer geworden.');
+  try{renderJourney();}catch(e){}
 }
 function renderPath(){
   if(!UID||!D)return;
@@ -2500,7 +2621,14 @@ const ONBOARD_QUESTIONS=[
  {id:'selfdoubt',q:'Wie stark ist dein innerer Kritiker?',sub:'Selbstzweifel, die dich bremsen.',o:[
    {v:'high',label:'🌧️ Stark'},
    {v:'mid',label:'⛅ Mittel'},
-   {v:'low',label:'☀️ Eher gering'}]}
+   {v:'low',label:'☀️ Eher gering'}]},
+ {id:'comfort',q:'Wo bleibst du am liebsten in deiner Komfortzone?',sub:'Der Bereich, den du meidest, obwohl er dich wachsen ließe.',o:[
+   {v:'visibility',label:'🎤 Sichtbarkeit – präsentieren, im Mittelpunkt stehen'},
+   {v:'social',label:'👥 Auf fremde Menschen zugehen'},
+   {v:'conflict',label:'🗣️ Nein sagen, Konflikte & schwierige Gespräche'},
+   {v:'newthings',label:'🧗 Neues & Ungewisses ausprobieren'},
+   {v:'help',label:'🙋 Um Hilfe bitten, Schwäche zeigen'},
+   {v:'none',label:'🤷 Keiner davon besonders'}]}
 ];
 let obStep=0,obAnswers={},obQuestions=[],obFollowupsAdded=false;
 // Adaptive Folgefragen: werden nur gestellt, wenn sie den Weg präziser machen.
@@ -2517,9 +2645,13 @@ const ADAPTIVE_FOLLOWUPS=[
     {v:'body',label:'🏃 Bewegung & Körper'}]},
   {id:'time_style',when:a=>a.time==='low',q:'Bei wenig Zeit: was passt besser zu dir?',o:[
     {v:'micro',label:'⚡ Eine winzige tägliche Gewohnheit'},
-    {v:'block',label:'⏱️ Ein kurzer fokussierter Block'}]}
+    {v:'block',label:'⏱️ Ein kurzer fokussierter Block'}]},
+  {id:'comfort_appetite',when:a=>a.comfort&&a.comfort!=='none',q:'Wie viel Herausforderung verträgt dein Alltag gerade?',o:[
+    {v:'sanft',label:'🌱 Sanft – kleine Mutproben, die sicher gelingen'},
+    {v:'mutig',label:'🔥 Mutig – ich will spürbar gefordert werden'}]}
 ];
 const LIFE_LABEL={career:'💼 Karriere',health:'💪 Gesundheit',relations:'❤️ Beziehungen',finance:'💰 Finanzen',personal:'🧠 Persönlichkeit',meaning:'✨ Sinn & Zweck'};
+const COMFORT_LABEL={visibility:'🎤 Sichtbarkeit',social:'👥 Auf Menschen zugehen',conflict:'🗣️ Klartext & Nein sagen',newthings:'🧗 Neues wagen',help:'🙋 Um Hilfe bitten',none:'🌀 Gemischt'};
 const BLOCKER_INFO={
   overwhelm:{t:'Überforderung',s:'Wir zerlegen alles in kleine, machbare Schritte. Weniger, dafür das Richtige.'},
   unclarity:{t:'Unklarheit',s:'Zuerst Klarheit schaffen – wenn das Ziel klar ist, kommt die Energie von selbst.'},
@@ -2546,7 +2678,9 @@ const STEP_DO={
   analytics_checked:'Analytics ansehen',
   ai_coach_used:'FocusAI für Reflexion nutzen',
   quarterly_review:'Quartals-Review durchführen',
-  beliefs_revisited:'Glaubenssätze nach 30 Tagen prüfen'
+  beliefs_revisited:'Glaubenssätze nach 30 Tagen prüfen',
+  comfort_map:'Komfortzone kartieren',
+  comfort_challenge:'An 3 Tagen die Komfortzone verlassen'
 };
 function stepLabel(id,s){return STEP_DO[id]||(s&&s.title)||id;}
 // "Warum bekomme ich diese Aufgabe?" – persönliche Begründung aus dem Testprofil
@@ -2568,7 +2702,9 @@ function personalWhy(stepId,p){
     analytics_checked:'Deine eigenen Daten zeigen dir, wann und wie du am besten funktionierst.',
     ai_coach_used:(b==='fear'||p.selfdoubt==='high')?'Im geschützten Gespräch mit FocusAI kannst du Zweifel aussprechen und sortieren.':'FocusAI kennt dein Profil und deine Vision – nutze das für tiefere Reflexion.',
     quarterly_review:'Alle 90 Tage prüfen: Stimmt die Richtung noch? Das verhindert fleißiges Laufen in die falsche Richtung.',
-    beliefs_revisited:'Nach Wochen echter Erfahrung zeigen sich neue Schichten deiner Glaubenssätze – und neue Freiheit.'
+    beliefs_revisited:'Nach Wochen echter Erfahrung zeigen sich neue Schichten deiner Glaubenssätze – und neue Freiheit.',
+    comfort_map:(p.comfortZone&&p.comfortZone!=='none')?'Dein Test zeigt: Bei „'+(COMFORT_LABEL[p.comfortZone]||p.comfortZone)+'" bleibst du am liebsten in der Komfortzone. Sie zu kartieren ist der erste Schritt, sie bewusst zu erweitern.':'Deine Komfortzone zu kennen zeigt dir, wo Wachstum für dich gerade am leichtesten möglich ist.',
+    comfort_challenge:(b==='fear'||p.selfdoubt==='high')?'Angst schrumpft durch Erfahrung, nicht durch Nachdenken. Kleine, sichere Mutproben bauen Beweise auf, dass du mehr kannst, als dein innerer Kritiker behauptet.':((p.comfortZone&&p.comfortZone!=='none')?'Gezielte Challenges im Bereich „'+(COMFORT_LABEL[p.comfortZone]||p.comfortZone)+'" erweitern genau die Grenze, die dich laut Test am meisten zurückhält.':'Regelmäßige kleine Grenzerweiterungen halten dich im Wachstum – Selbstvertrauen entsteht durch Handeln.')
   };
   return M[stepId]||'';
 }
@@ -2675,11 +2811,13 @@ function computeOnboardingProfile(a){
     approach:a.approach||'',
     overwhelmType:a.overwhelm_type||'',
     energyCause:a.energy_cause||'',
-    timeStyle:a.time_style||''
+    timeStyle:a.time_style||'',
+    comfortZone:a.comfort||'none',
+    comfortAppetite:a.comfort_appetite||'sanft'
   };
 }
 function computeJourney(p){
-  const base=['vision_process','life_areas','beliefs_done','first_tasks','mit_used','cal_used','morning_done','pomodoro_used','evening_done','wellbeing_tracked','first_review','journal_7days','analytics_checked','ai_coach_used','quarterly_review','beliefs_revisited'];
+  const base=['vision_process','life_areas','beliefs_done','comfort_map','first_tasks','mit_used','cal_used','morning_done','pomodoro_used','evening_done','wellbeing_tracked','first_review','journal_7days','analytics_checked','comfort_challenge','ai_coach_used','quarterly_review','beliefs_revisited'];
   const boost={};base.forEach(id=>boost[id]=0);
   const add=(id,n)=>{if(boost[id]!=null)boost[id]+=n;};
   if(p.visionClarity==='high'){add('vision_process',-4);add('first_tasks',5);add('mit_used',5);}
@@ -2708,6 +2846,12 @@ function computeJourney(p){
   if(p.energyCause==='sleep')add('wellbeing_tracked',3);
   if(p.energyCause==='stress'){add('wellbeing_tracked',2);add('evening_done',2);}
   if(p.energyCause==='body')add('wellbeing_tracked',2);
+  // Komfortzone: Wachstum am Rand – Gewichtung nach Profil
+  if(p.comfortZone&&p.comfortZone!=='none'){add('comfort_map',2);add('comfort_challenge',2);}
+  else{add('comfort_map',-3);add('comfort_challenge',-3);}
+  if(p.blocker==='fear'||p.selfdoubt==='high')add('comfort_map',3);
+  if(p.motivation==='growth'){add('comfort_map',2);add('comfort_challenge',3);}
+  if(p.comfortAppetite==='mutig')add('comfort_challenge',3);
   return base.map((id,i)=>({id,score:i-boost[id]})).sort((x,y)=>x.score-y.score).map(x=>x.id);
 }
 // Flacher Katalog aus den bestehenden PATH_STAGES (Titel/Aktion/Tab/Zeit + Stufen-Icon)
@@ -3190,6 +3334,14 @@ function renderJourney(){
     return;
   }
   const p=ob.profile||{};
+  // Migration: Komfortzonen-Schritte in bereits bestehende Wege einfügen –
+  // konservativ platziert, ohne den aktuellen Fokus-Schritt zu verschieben.
+  if(ob.journey&&ob.journey.length&&(!ob.journey.includes('comfort_map')||!ob.journey.includes('comfort_challenge'))){
+    const ins=(id,beforeId)=>{if(ob.journey.includes(id))return;const i=ob.journey.indexOf(beforeId);if(i>=0)ob.journey.splice(i,0,id);else ob.journey.push(id);};
+    ins('comfort_map','first_review');
+    ins('comfort_challenge','quarterly_review');
+    try{saveProfile();}catch(e){}
+  }
   const cat=journeyCatalog();
   const completed=computePathStats();
   const journey=(ob.journey||[]).filter(id=>cat[id]);
@@ -3206,7 +3358,7 @@ function renderJourney(){
   const focusId=openSteps[0];
   const nextUpId=openSteps[1];
   // Empfehlung unterdrücken, wenn sie ohnehin auf den Fokus-Schritt zeigt
-  const ACT2STEP={morning:'morning_done',evening:'evening_done',energy:'wellbeing_tracked',mitSet:'mit_used',mitDo:'mit_used',firstTask:'first_tasks'};
+  const ACT2STEP={morning:'morning_done',evening:'evening_done',energy:'wellbeing_tracked',mitSet:'mit_used',mitDo:'mit_used',firstTask:'first_tasks',comfort:'comfort_challenge'};
   const act=(nextActionObj&&nextActionObj.key!=='journey'&&ACT2STEP[nextActionObj.key]!==focusId)?nextActionObj:null;
   const alsoRow=act?`<div style="margin-top:12px;border-top:1px dashed var(--bo);padding-top:11px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
       <div style="flex:1;min-width:160px;font-size:.8rem;color:var(--mu);line-height:1.45"><strong style="color:#92400E">⚡ Auch heute:</strong> ${act.icon} ${act.title}</div>
@@ -3340,13 +3492,15 @@ function computeNextAction(){
   acts.mitDo = (mitFirstUndone>=0) ? A('🎯','Erledige deine Hauptaufgabe: „'+D.mitTasks[mitFirstUndone].slice(0,40)+'"','Diese Aufgabe trägt heute am meisten zu deinem Ziel bei – sie zuerst.','Zu den Tageszielen →',()=>closePathAndGo('mit'),'MIT-Aufgabe „'+D.mitTasks[mitFirstUndone]+'" erledigen') : null;
   acts.topTask = open.length ? (()=>{const top=open.slice().sort((a,b)=>{const pr={high:0,normal:1,low:2};return pr[a.prio]-pr[b.prio];})[0];return A('▶️','Starte mit „'+clean(top.name).slice(0,40)+'"','Deine wichtigste offene Aufgabe – 25 Minuten Pomodoro bringen dich ins Tun.','▶ Pomodoro starten',()=>{closePathAndGo('pomo');startPomo();},'Aufgabe „'+clean(top.name)+'" mit Pomodoro starten');})() : null;
   acts.evening = (hour>=17 && !hasEvening) ? A('🌙','Schließe den Tag mit der Abendreflexion ab','Was nicht reflektiert wird, wiederholt sich. 8 Minuten für Lernen & Vorbereitung auf morgen.','Abendreflexion starten →',()=>openEveningRoutine(),'Abendreflexion durchführen') : null;
+  const cch=D.vision&&D.vision.comfort&&D.vision.comfort.current;
+  acts.comfort = (cch&&cch.date===today) ? A('🧗','Deine heutige Challenge: „'+esc(cch.text.slice(0,40))+(cch.text.length>40?'…':'')+'"','Mut wächst nur durch Handeln – ein kleiner Schritt über die Grenze, heute.','Challenge ansehen →',()=>openComfortChallenge(),'die angenommene Komfortzonen-Challenge umsetzen: „'+cch.text+'"') : null;
   acts.journey = (()=>{const ob=D.vision&&D.vision.onboarding;if(!(ob&&ob.done&&ob.journey))return null;const cat=journeyCatalog();const completed=computePathStats();const nid=ob.journey.find(id=>cat[id]&&!completed[id]);if(!nid)return null;const s=cat[nid];return A(s.icon,stepLabel(nid,s),s.why,'Jetzt starten →',()=>journeyGo(nid),stepLabel(nid,s)+' angehen');})();
   acts.firstTask = A('➕','Lege deine erste Aufgabe an','Jede große Veränderung beginnt mit einer konkreten ersten Aufgabe.','Aufgabe anlegen →',()=>closePathAndGo('tasks'),'die erste Aufgabe anlegen');
   // Reihenfolge – je nach Haupt-Blockade leicht angepasst
-  let order=['frog','overdue','energy','morning','mitSet','mitDo','topTask','evening','journey','firstTask'];
-  if(p.blocker==='lowenergy')order=['energy','morning','overdue','frog','mitDo','mitSet','topTask','evening','journey','firstTask'];
-  else if(p.blocker==='overwhelm')order=['mitSet','mitDo','frog','overdue','energy','morning','topTask','evening','journey','firstTask'];
-  else if(p.blocker==='distraction'||p.blocker==='procrastination')order=['frog','topTask','overdue','mitDo','mitSet','energy','morning','evening','journey','firstTask'];
+  let order=['frog','overdue','energy','morning','comfort','mitSet','mitDo','topTask','evening','journey','firstTask'];
+  if(p.blocker==='lowenergy')order=['energy','morning','overdue','frog','mitDo','mitSet','comfort','topTask','evening','journey','firstTask'];
+  else if(p.blocker==='overwhelm')order=['mitSet','mitDo','frog','overdue','energy','morning','comfort','topTask','evening','journey','firstTask'];
+  else if(p.blocker==='distraction'||p.blocker==='procrastination')order=['frog','topTask','overdue','mitDo','mitSet','comfort','energy','morning','evening','journey','firstTask'];
   for(const k of order){if(acts[k])return Object.assign({key:k},acts[k]);}
   return Object.assign({key:'firstTask'},acts.firstTask);
 }
