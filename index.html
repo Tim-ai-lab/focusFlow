@@ -488,6 +488,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       </div>
     </div>
 
+    <!-- HEUTE-LEISTE: kompakte Zeile statt großem Banner. Stimmung, Routine-
+         Buttons und Statistik liegen eingeklappt darunter (#today-detail),
+         damit "Dein Fokus jetzt" das erste große Element des Screens ist.
+         Vor abgeschlossenem Einstiegstest bleibt beides komplett verborgen. -->
+    <div id="today-strip" style="display:none;background:var(--card);border:1px solid var(--bo);border-radius:var(--r);box-shadow:var(--sh2);padding:10px 14px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div id="ts-greet" style="font-weight:800;font-size:.9rem">☀️</div>
+        <div id="ts-status" style="font-size:.78rem;color:var(--mu);flex:1;min-width:120px"></div>
+        <button class="addbtn" id="ts-action" style="padding:8px 14px;font-size:.82rem" onclick="todayStripAction()">🌅 Tag starten</button>
+        <button class="lbtn" id="ts-toggle" onclick="toggleToday()" title="Stimmung, Routinen und Statistik anzeigen" aria-label="Tages-Details anzeigen">⌄ Mehr</button>
+      </div>
+    </div>
+    <div id="today-detail" style="display:none">
     <!-- MORNING BANNER -->
     <div class="morning-banner" id="morning-banner" style="background:linear-gradient(135deg,#7C9EE8,#9B8EE8)">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;width:100%">
@@ -522,6 +535,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="scard"><div class="sval" id="st2">0</div><div class="slbl">Punkte</div></div>
       <div class="scard"><div class="sval" id="st3">0</div><div class="slbl">Pomodoros</div></div>
     </div>
+    </div><!-- /today-detail -->
 
     <!-- TABS (standardmäßig ausgeblendet – Fokus auf den nächsten Schritt) -->
     <div class="tnav" id="tnav" style="display:none">
@@ -1599,6 +1613,7 @@ function setMood(e,l){
   if(!D.dailyLog[today])D.dailyLog[today]={};
   D.dailyLog[today].mood=e+' '+l;
   toast('Stimmung: '+e+' '+l);
+  try{updateTodayStrip();}catch(err){}
   // P8: Bei Tiefpunkten die Vision reaktivieren – das innere Bild trägt
   if(l==='Müde'||l==='Unmotiviert'){try{showVisionBoost();}catch(err){}}
 }
@@ -3155,11 +3170,23 @@ function checkReminders(){
   check('morning',r.morning,!!dl.morning,'🌅 Morgenroutine','Starte deinen Tag mit Intention & Fokus.');
   check('evening',r.evening,!!dl.evening,'🌙 Abendreflexion','Zeit, deinen Tag zu reflektieren.');
 }
+// Weg-Überblick: Details standardmäßig eingeklappt – der Fokus-Schritt führt.
+let journeyMetaOpen=false;
+function toggleJourneyMeta(){journeyMetaOpen=!journeyMetaOpen;renderJourney();}
 function renderJourney(){
   const el=document.getElementById('journey-content');if(!el)return;
   const ob=D.vision&&D.vision.onboarding;
   if(!ob||!ob.done){
-    el.innerHTML='<div class="sec"><div class="shdr"><div class="stitle">🧭 Mein Weg</div></div><p class="sdesc">Mach den kurzen Einstiegstest, damit FocusFlow deinen persönlichen Weg zum Ziel erstellen kann.</p><button class="addbtn" onclick="startOnboarding()">🧭 Einstiegstest starten</button></div>';
+    // Erst-Zustand: der Test ist die EINZIGE Handlung – kein Banner, keine
+    // Null-Statistik drumherum (siehe updateHomeChrome).
+    el.innerHTML=`<div class="sec" style="text-align:center;padding:38px 24px">
+      <div style="font-size:2.6rem;margin-bottom:10px">🧭</div>
+      <div style="font-size:1.15rem;font-weight:800;margin-bottom:8px">Finde deinen persönlichen Weg</div>
+      <p class="sdesc" style="max-width:430px;margin:0 auto 18px">Beantworte ein paar kurze Fragen. FocusFlow erstellt daraus deinen individuellen Entwicklungsweg – immer nur ein Schritt, ohne Überforderung.</p>
+      <button class="addbtn" style="padding:13px 26px;font-size:.95rem" onclick="startOnboarding()">🧭 Einstiegstest starten</button>
+      <div style="font-size:.75rem;color:var(--mu);margin-top:12px">Dauert ca. 4 Minuten · Deine Antworten bleiben privat</div>
+    </div>`;
+    try{updateHomeChrome();}catch(e){}
     return;
   }
   const p=ob.profile||{};
@@ -3172,59 +3199,24 @@ function renderJourney(){
   const nextId=journey.find(id=>!stepStatus(id).done);
   const bi=BLOCKER_INFO[p.blocker]||{t:p.blocker,s:''};
   let html='';
-  const rtj=retestInfo();
-  if(rtj&&rtj.due){
-    html+=`<div class="sec" style="background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1.5px solid #FED7AA;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <div style="flex:1;min-width:180px"><strong>🔄 Zeit für deinen Standort-Check</strong><div style="font-size:.83rem;color:#92400E;margin-top:3px">Dein letzter Check ist ${Math.round(rtj.days/7)} Wochen her. Ein kurzer neuer Test macht deinen Fortschritt sichtbar und passt deinen Plan an.</div></div>
-      <button class="addbtn" style="background:linear-gradient(135deg,var(--ac),#E87E3A)" onclick="startOnboarding()">Jetzt neu machen →</button>
-    </div>`;
-  }
-  html+=renderNextActionCard();
-  html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
-    <div class="shdr"><div class="stitle">🧭 Dein persönlicher Weg</div>
-      <button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-      <span class="pill-tag on" style="background:var(--p)">🎯 Fokus: ${LIFE_LABEL[p.goalArea]||p.goalArea}</span>
-      <span class="pill-tag on" style="background:var(--ac)">🧱 ${bi.t}</span>
-    </div>`;
-  if(ob.aiIntro){
-    html+=`<div style="background:var(--card);border:1.5px solid var(--bo);border-radius:var(--r2);padding:13px 15px;font-size:.88rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.3rem;flex-shrink:0">🤖</div><div>${ob.aiIntro.replace(/\n/g,'<br>')}</div></div>`;
-  }else{
-    html+=`<div style="font-size:.86rem;color:var(--txt);line-height:1.6">${bi.s}</div>`;
-  }
-  // Vision- & Ziel-Anker: das "Warum" bleibt täglich sichtbar
-  const aff=D.vision&&D.vision.affirmation;
-  const topGoal=((D.vision&&D.vision.goals)||[]).find(g=>!g.done);
-  if(aff||topGoal){
-    html+=`<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">`;
-    if(aff)html+=`<div style="font-size:.85rem;font-style:italic;color:var(--txt);background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px">💫 „${esc(aff)}"</div>`;
-    if(topGoal){
-      const gms=topGoal.milestones||[];const gdn=gms.filter(m=>m.done).length;
-      const gpct=gms.length?Math.round(gdn/gms.length*100):0;
-      html+=`<div onclick="showTab('goals',document.getElementById('tbtn-goals'))" style="cursor:pointer;font-size:.8rem;font-weight:700;background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px;display:flex;justify-content:space-between;gap:8px"><span>🎯 ${esc(topGoal.title)}</span><span style="color:var(--p);white-space:nowrap">${gpct}%</span></div>`;
-    }
-    html+=`</div>`;
-  }
-  html+=`<div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:.76rem;font-weight:700;color:var(--mu);margin-bottom:5px"><span>Fortschritt auf deinem Weg</span><span>${doneN}/${total} · ${pct}%</span></div>
-    <div style="height:9px;background:var(--bo);border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div></div>`;
-  // Etappen-Übersicht (P5): sichtbare Kapitel statt endloser Liste
-  const chapters=chapterList(journey);
-  if(chapters.length){
-    html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">`+chapters.map((c,i)=>{
-      const doneCh=c.done>=c.total;
-      return `<span style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;border:1.5px solid ${doneCh?'#BBF7D0':'var(--bo)'};background:${doneCh?'#DCFCE7':'#fff'};color:${doneCh?'#15803D':'var(--mu)'}">${doneCh?'✓ ':''}${c.icon} Kapitel ${i+1}: ${c.name} · ${c.done}/${c.total}</span>`;
-    }).join('')+`</div>`;
-  }
-  html+=`</div>`;
-  // ── Fokussierte Führung: NUR der aktuelle Schritt + Vorschau auf den einen
-  //    nächsten. Keine Strecken-Liste, keine Alternativen – die App führt.
+  // ── EIN "Jetzt"-Signal: die Tages-Empfehlung (Frosch, Überfälliges, Routine …)
+  //    wird als Zeile in die Fokus-Karte integriert statt darüber zu konkurrieren.
+  nextActionObj=computeNextAction();
   const openSteps=journey.filter(id=>!stepStatus(id).done);
   const focusId=openSteps[0];
   const nextUpId=openSteps[1];
+  // Empfehlung unterdrücken, wenn sie ohnehin auf den Fokus-Schritt zeigt
+  const ACT2STEP={morning:'morning_done',evening:'evening_done',energy:'wellbeing_tracked',mitSet:'mit_used',mitDo:'mit_used',firstTask:'first_tasks'};
+  const act=(nextActionObj&&nextActionObj.key!=='journey'&&ACT2STEP[nextActionObj.key]!==focusId)?nextActionObj:null;
+  const alsoRow=act?`<div style="margin-top:12px;border-top:1px dashed var(--bo);padding-top:11px;display:flex;gap:9px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px;font-size:.8rem;color:var(--mu);line-height:1.45"><strong style="color:#92400E">⚡ Auch heute:</strong> ${act.icon} ${act.title}</div>
+      <button onclick="runNextAction()" style="padding:7px 12px;border:1.5px solid #FED7AA;background:#FFF7ED;border-radius:var(--r3);color:#92400E;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap">${act.btn}</button>
+    </div>`:'';
   const stBadge=(st)=>st.mode==='count'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:st.mode==='daily'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">🔁 täglich</span>`:'';
+  // ── 1) Fokus-Karte: das erste und einzige große Element des Screens ──
   if(focusId){
     const s=cat[focusId];
-    html+=`<div class="sec">
+    html+=`<div class="sec" style="border:2px solid var(--p);box-shadow:0 6px 24px rgba(124,158,232,.16)">
       <div style="font-size:.74rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">👉 Dein Fokus jetzt</div>
       <div style="font-size:1.02rem;font-weight:800;margin-bottom:4px">${s.icon} ${stepLabel(s.id,s)}</div>
       <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:10px">${s.why}</div>
@@ -3235,6 +3227,7 @@ function renderJourney(){
         ${stBadge(stepStatus(focusId))}
       </div>
       <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
+      ${alsoRow}
     </div>`;
     // Vorschau: nur der EINE nächste Schritt – mit individueller Begründung
     if(nextUpId){
@@ -3247,11 +3240,62 @@ function renderJourney(){
       </div>`;
     }
   }else{
-    html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast für jetzt alles erledigt!</div><div style="font-size:.85rem;color:var(--mu)">Tägliche Routinen erscheinen morgen wieder. Mach den Test neu, wenn sich etwas verändert hat.</div><div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
+    html+=`<div class="sec" style="text-align:center"><div style="font-size:2rem;margin-bottom:6px">🎉</div><div style="font-weight:800;margin-bottom:4px">Du hast für jetzt alles erledigt!</div><div style="font-size:.85rem;color:var(--mu)">Tägliche Routinen erscheinen morgen wieder. Mach den Test neu, wenn sich etwas verändert hat.</div>${alsoRow?`<div style="text-align:left">${alsoRow}</div>`:''}<div id="journey-ai-box" style="display:none;margin-top:12px"></div></div>`;
   }
+  // ── 2) Standort-Check-Hinweis (falls fällig) – unterhalb des Fokus ──
+  const rtj=retestInfo();
+  if(rtj&&rtj.due){
+    html+=`<div class="sec" style="background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1.5px solid #FED7AA;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px"><strong>🔄 Zeit für deinen Standort-Check</strong><div style="font-size:.83rem;color:#92400E;margin-top:3px">Dein letzter Check ist ${Math.round(rtj.days/7)} Wochen her. Ein kurzer neuer Test macht deinen Fortschritt sichtbar und passt deinen Plan an.</div></div>
+      <button class="addbtn" style="background:linear-gradient(135deg,var(--ac),#E87E3A)" onclick="startOnboarding()">Jetzt neu machen →</button>
+    </div>`;
+  }
+  // ── 3) Weg-Überblick: kompakt; Pills, KI-Intro, Ziel & Re-Test eingeklappt ──
+  html+=`<div class="sec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE;padding:16px 20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="stitle" style="font-size:.92rem">🧭 Dein Weg im Überblick</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:.76rem;font-weight:700;color:var(--mu)">${doneN}/${total} · ${pct}%</span>
+        <button onclick="toggleJourneyMeta()" style="padding:5px 11px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.74rem;font-weight:700;color:var(--mu)">${journeyMetaOpen?'⌃ Weniger':'⌄ Details'}</button>
+      </div>
+    </div>
+    <div style="height:8px;background:var(--bo);border-radius:5px;overflow:hidden;margin-top:9px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div></div>`;
+  // Etappen-Übersicht (P5): sichtbare Kapitel statt endloser Liste
+  const chapters=chapterList(journey);
+  if(chapters.length){
+    html+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">`+chapters.map((c,i)=>{
+      const doneCh=c.done>=c.total;
+      return `<span style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;border:1.5px solid ${doneCh?'#BBF7D0':'var(--bo)'};background:${doneCh?'#DCFCE7':'#fff'};color:${doneCh?'#15803D':'var(--mu)'}">${doneCh?'✓ ':''}${c.icon} Kapitel ${i+1}: ${c.name} · ${c.done}/${c.total}</span>`;
+    }).join('')+`</div>`;
+  }
+  // Vision-Anker: die Affirmation bleibt täglich sichtbar (P8)
+  const aff=D.vision&&D.vision.affirmation;
+  if(aff)html+=`<div style="font-size:.84rem;font-style:italic;color:var(--txt);background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px;margin-top:11px">💫 „${esc(aff)}"</div>`;
+  if(journeyMetaOpen){
+    html+=`<div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="pill-tag on" style="background:var(--p)">🎯 Fokus: ${LIFE_LABEL[p.goalArea]||p.goalArea}</span>
+        <span class="pill-tag on" style="background:var(--ac)">🧱 ${bi.t}</span>
+      </div>`;
+    if(ob.aiIntro){
+      html+=`<div style="background:var(--card);border:1.5px solid var(--bo);border-radius:var(--r2);padding:13px 15px;font-size:.88rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.3rem;flex-shrink:0">🤖</div><div>${ob.aiIntro.replace(/\n/g,'<br>')}</div></div>`;
+    }else if(bi.s){
+      html+=`<div style="font-size:.86rem;color:var(--txt);line-height:1.6">${bi.s}</div>`;
+    }
+    const topGoal=((D.vision&&D.vision.goals)||[]).find(g=>!g.done);
+    if(topGoal){
+      const gms=topGoal.milestones||[];const gdn=gms.filter(m=>m.done).length;
+      const gpct=gms.length?Math.round(gdn/gms.length*100):0;
+      html+=`<div onclick="showTab('goals',document.getElementById('tbtn-goals'))" style="cursor:pointer;font-size:.8rem;font-weight:700;background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px;display:flex;justify-content:space-between;gap:8px"><span>🎯 ${esc(topGoal.title)}</span><span style="color:var(--p);white-space:nowrap">${gpct}%</span></div>`;
+    }
+    html+=`<div><button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
+    </div>`;
+  }
+  html+=`</div>`;
   el.innerHTML=html;
   try{updateTopProgress();}catch(e){}
   try{updateNavVisibility();}catch(e){}
+  try{updateHomeChrome();}catch(e){}
 }
 function journeyGo(stepId){
   const cat=journeyCatalog();const s=cat[stepId];if(!s)return;
@@ -3303,40 +3347,10 @@ function computeNextAction(){
   if(p.blocker==='lowenergy')order=['energy','morning','overdue','frog','mitDo','mitSet','topTask','evening','journey','firstTask'];
   else if(p.blocker==='overwhelm')order=['mitSet','mitDo','frog','overdue','energy','morning','topTask','evening','journey','firstTask'];
   else if(p.blocker==='distraction'||p.blocker==='procrastination')order=['frog','topTask','overdue','mitDo','mitSet','energy','morning','evening','journey','firstTask'];
-  for(const k of order){if(acts[k])return acts[k];}
-  return acts.firstTask;
-}
-function renderNextActionCard(){
-  nextActionObj=computeNextAction();
-  const a=nextActionObj;if(!a)return '';
-  return `<div class="sec" style="background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1.5px solid #FED7AA">
-    <div style="font-size:.74rem;font-weight:700;color:#92400E;text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px">⚡ Jetzt sofort</div>
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <div style="font-size:1.8rem;flex-shrink:0">${a.icon}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:1rem;font-weight:800;line-height:1.35;margin-bottom:3px">${a.title}</div>
-        <div style="font-size:.84rem;color:#92400E;line-height:1.5">${a.why}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:11px">
-          <button class="addbtn" style="background:linear-gradient(135deg,var(--ac),#E87E3A)" onclick="runNextAction()">${a.btn}</button>
-          <button onclick="refineNextAction()" style="padding:10px 14px;border:2px solid #FED7AA;background:#fff;border-radius:var(--r2);color:#92400E;font-weight:700;cursor:pointer;font-size:.84rem">🤖 verfeinern</button>
-        </div>
-        <div id="next-action-ai" style="display:none;margin-top:11px"></div>
-      </div>
-    </div>
-  </div>`;
+  for(const k of order){if(acts[k])return Object.assign({key:k},acts[k]);}
+  return Object.assign({key:'firstTask'},acts.firstTask);
 }
 function runNextAction(){if(nextActionObj&&nextActionObj.run){try{nextActionObj.run();}catch(e){console.error('runNextAction',e);}}}
-async function refineNextAction(){
-  const box=document.getElementById('next-action-ai');if(!box||!nextActionObj)return;
-  const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
-  box.style.display='block';
-  box.innerHTML='<div style="font-size:.84rem;color:var(--mu);font-style:italic">✨ FocusAI denkt nach…</div>';
-  const sys='Du bist FocusAI, ein konkreter, motivierender Coach. Antworte auf Deutsch, max 110 Wörter, mit 2–3 sehr konkreten Mini-Schritten zum sofort Loslegen. Direkt und warmherzig.';
-  const msg='Empfohlene nächste Handlung des Nutzers: '+nextActionObj.ctx+'. Profil: Blockade='+(p.blocker||'?')+', Energie='+(p.energyBaseline||'?')+', Zeit/Tag='+(p.timePerDay||'?')+'. Hilf ihm, genau JETZT damit anzufangen – nenne den allerersten Mini-Schritt und wie er den inneren Widerstand überwindet.';
-  const reply=await callAI([{role:'user',content:msg}],sys,400);
-  if(reply)box.innerHTML='<div style="background:#fff;border:1.5px solid #FED7AA;border-radius:var(--r2);padding:11px 13px;font-size:.85rem;line-height:1.6;display:flex;gap:9px"><div style="font-size:1.1rem;flex-shrink:0">🤖</div><div>'+reply.replace(/\n/g,'<br>')+'</div></div>';
-  else box.innerHTML='<div class="info-box info-orange" style="margin-top:0">⚠️ FocusAI gerade nicht erreichbar. Mach einfach den allerkleinsten Schritt – 2 Minuten genügen, um den Widerstand zu brechen.</div>';
-}
 
 // ═══════════════════════════════════════════════════════════════
 // ── VISION ──  Vision-Prozess (6 Schritte), Lebensbereiche
@@ -4247,6 +4261,58 @@ function goHome(){const b=document.getElementById('tbtn-journey');if(b)showTab('
 // Nach einem abgeschlossenen Schritt sanft zurück zu "Mein Weg" (nächster Schritt).
 // Kurze Verzögerung, damit die Speicher-Bestätigung noch wahrgenommen wird.
 function routeAfterSave(){setTimeout(()=>{try{goHome();}catch(e){}},650);}
+
+// ── HEUTE-LEISTE ──  Kompakte Tageszeile statt Banner + Statistik.
+// Der Screen hat damit genau EIN großes Element: "Dein Fokus jetzt".
+// Details (Stimmung, Routine-Buttons, Zahlen) öffnen sich auf Wunsch.
+// Vor abgeschlossenem Einstiegstest bleibt alles verborgen – der Test
+// ist die einzige erste Handlung.
+let todayOpen=false;
+function onboardingDone(){return !!(D&&D.vision&&D.vision.onboarding&&D.vision.onboarding.done);}
+function toggleToday(){todayOpen=!todayOpen;updateHomeChrome();}
+function todayStripState(){
+  const today=new Date().toISOString().split('T')[0];
+  const h=new Date().getHours();
+  const dl=(D.dailyLog&&D.dailyLog[today])||{};
+  if(!dl.morning&&h<15)return{label:'🌅 Tag starten',run:'flow'};
+  if(!dl.evening&&h>=17)return{label:'🌙 Tag abschließen',run:'evening'};
+  if(!dl.morning)return{label:'🌅 Morgenroutine',run:'morning'};
+  return null;
+}
+function todayStripAction(){
+  const s=todayStripState();if(!s)return;
+  if(s.run==='evening'){openEveningRoutine();return;}
+  if(s.run==='flow'){try{openDailyFlow();return;}catch(e){}}
+  openMorningRoutine();
+}
+function updateTodayStrip(){
+  const g=document.getElementById('ts-greet'),st=document.getElementById('ts-status'),ab=document.getElementById('ts-action');
+  if(!g||!st||!ab)return;
+  const h=new Date().getHours();
+  g.textContent=h<12?'☀️ Guten Morgen!':h<18?'🌤️ Guten Tag!':'🌙 Guten Abend!';
+  const today=new Date().toISOString().split('T')[0];
+  const dl=(D.dailyLog&&D.dailyLog[today])||{};
+  const bits=[];
+  if(dl.mood)bits.push(dl.mood.split(' ')[0]);
+  if(dl.morning)bits.push('✓ Routine');
+  if(dl.evening)bits.push('✓ Reflexion');
+  bits.push((D.todayDone||0)+' erledigt');
+  if(D.streak)bits.push(D.streak+'🔥');
+  st.textContent=bits.join(' · ');
+  const s=todayStripState();
+  ab.style.display=s?'':'none';
+  if(s)ab.textContent=s.label;
+}
+function updateHomeChrome(){
+  const strip=document.getElementById('today-strip'),det=document.getElementById('today-detail');
+  if(!strip||!det)return;
+  const ob=onboardingDone();
+  strip.style.display=ob?'block':'none';
+  det.style.display=(ob&&todayOpen)?'block':'none';
+  const tg=document.getElementById('ts-toggle');
+  if(tg)tg.textContent=todayOpen?'⌃ Weniger':'⌄ Mehr';
+  if(ob)updateTodayStrip();
+}
 function toggleNav(){const n=document.getElementById('tnav');if(!n)return;const opening=(n.style.display==='none'||!n.style.display);if(opening)updateNavVisibility();n.style.display=opening?'flex':'none';}
 // Kuratierte Navigation: es erscheinen nur Kern-Tabs + Module der noch offenen
 // Weg-Schritte. Keine Feature-Bibliothek – der Rest bleibt hinter "alle Module".
