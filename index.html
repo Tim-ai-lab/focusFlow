@@ -69,8 +69,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .morning-banner h2{font-size:1.15rem;font-weight:800;margin-bottom:4px}
 .morning-banner p{font-size:.85rem;opacity:.88;margin-bottom:14px}
 .mood-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
-.mbtn{font-size:1.4rem;background:rgba(255,255,255,.2);border:none;border-radius:9px;padding:5px 8px;cursor:pointer;transition:all .2s}
+.mbtn{font-size:1.4rem;background:rgba(255,255,255,.2);border:2px solid transparent;border-radius:9px;padding:5px 8px;cursor:pointer;transition:all .2s}
 .mbtn:hover{background:rgba(255,255,255,.35);transform:scale(1.12)}
+.mbtn.sel{background:rgba(255,255,255,.5);border-color:#fff;transform:scale(1.12);box-shadow:0 2px 10px rgba(0,0,0,.15)}
 .morning-quote{font-size:.83rem;font-style:italic;opacity:.82;margin-top:10px}
 
 /* STATS */
@@ -470,7 +471,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div style="height:6px;background:var(--bo);border-radius:3px;overflow:hidden"><div id="top-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:3px;transition:width .5s"></div></div>
     </div>
     <div class="tright">
-      <button class="lbtn" onclick="toggleNav()" id="nav-toggle-btn" title="Alle Bereiche ein-/ausblenden">☰</button>
+      <button class="lbtn" onclick="toggleNav()" id="nav-toggle-btn" title="Alle Bereiche ein-/ausblenden" aria-label="Module ein-/ausblenden">☰ Module</button>
       <div class="upill" id="upill">👤</div>
       <button class="lbtn" onclick="logout()">Abmelden</button>
     </div>
@@ -515,11 +516,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         </div>
       </div>
       <div class="mood-row" style="margin-top:10px">
-        <button class="mbtn" onclick="setMood('😴','Müde')">😴</button>
-        <button class="mbtn" onclick="setMood('😔','Unmotiviert')">😔</button>
-        <button class="mbtn" onclick="setMood('😐','Okay')">😐</button>
-        <button class="mbtn" onclick="setMood('😊','Gut')">😊</button>
-        <button class="mbtn" onclick="setMood('🔥','Fokussiert')">🔥</button>
+        <button class="mbtn" data-m="Müde" onclick="setMood('😴','Müde')" aria-label="Stimmung: Müde">😴</button>
+        <button class="mbtn" data-m="Unmotiviert" onclick="setMood('😔','Unmotiviert')" aria-label="Stimmung: Unmotiviert">😔</button>
+        <button class="mbtn" data-m="Okay" onclick="setMood('😐','Okay')" aria-label="Stimmung: Okay">😐</button>
+        <button class="mbtn" data-m="Gut" onclick="setMood('😊','Gut')" aria-label="Stimmung: Gut">😊</button>
+        <button class="mbtn" data-m="Fokussiert" onclick="setMood('🔥','Fokussiert')" aria-label="Stimmung: Fokussiert">🔥</button>
+        <span id="mood-effect" style="font-size:.78rem;opacity:.9;font-weight:600;margin-left:4px"></span>
       </div>
       <!-- TAGES-ZUSAMMENFASSUNG (nach Morgenroutine) -->
       <div id="morning-summary" style="display:none;margin-top:12px;background:rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:.83rem;line-height:1.6">
@@ -587,7 +589,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
         <div class="shdr"><div class="stitle">Aufgaben</div><span style="font-size:.74rem;color:var(--mu);font-weight:700" id="task-counter"></span></div>
         <div id="frogtip" style="display:none" class="frogtip">🐸 Eat the Frog: Starte mit deiner schwersten Aufgabe!</div>
         <div style="margin-bottom:14px">
-          <div class="row"><input class="ti" id="tn" placeholder="Aufgabe eingeben..." onkeydown="if(event.key==='Enter')addTask()"><button class="addbtn" id="add-task-btn" onclick="addTask()">+ Hinzufügen</button></div>
+          <!-- Schnell-Eingabe: nur Name + Hinzufügen. Alle weiteren Felder liegen
+               hinter "Details" (Progressive Disclosure gegen Formular-Reibung). -->
+          <div class="row"><input class="ti" id="tn" placeholder="Aufgabe eingeben..." onkeydown="if(event.key==='Enter')addTask()"><button class="addbtn" id="add-task-btn" onclick="addTask()">+ Hinzufügen</button><button class="lbtn" id="task-details-btn" onclick="toggleTaskDetails()" title="Priorität, Termin, Lebensbereich, Wiederholung …">⌄ Details</button></div>
+          <div id="task-details" style="display:none">
           <div class="row">
             <select class="sel" id="tprio"><option value="high">🔴 Hoch</option><option value="normal" selected>🔵 Normal</option><option value="low">⚪ Niedrig</option></select>
             <select class="sel" id="tdiff"><option value="easy">😊 Leicht</option><option value="medium" selected>😐 Mittel</option><option value="hard">😰 Schwer</option></select>
@@ -604,6 +609,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
           <div class="row">
             <div style="flex:1;min-width:160px"><div class="flbl">Abhängig von</div><select class="sel" id="tdep" style="width:100%"><option value="">Keine</option></select></div>
           </div>
+          </div><!-- /task-details -->
         </div>
         <div class="tlist" id="tlist"><div class="empty">Noch keine Aufgaben 🚀</div></div>
       </div>
@@ -1610,19 +1616,43 @@ function setMorningGreeting(){
   document.getElementById('morning-quote').textContent=QUOTES[Math.floor(Math.random()*QUOTES.length)];
 }
 
+// Stimmung hat sichtbare Konsequenz: Auswahl wird markiert, der Effekt auf den
+// Tag wird erklärt, und der Ton der App passt sich an (ruhig bei Tiefpunkten).
+const MOOD_INFO={
+  'Müde':{p:'Alles klar – heute zählt sanftes Dranbleiben, nicht Tempo.',fx:'→ Dein Einstieg wird leichter',calm:true},
+  'Unmotiviert':{p:'Okay. Wir machen den ersten Schritt besonders klein – Motivation folgt dem Handeln.',fx:'→ Kleinster erster Schritt',calm:true},
+  'Okay':{p:'Solide Basis – ein klarer erster Schritt bringt dich in Bewegung.',fx:''},
+  'Gut':{p:'Schön! Nutze den Rückenwind für deinen Fokus-Schritt.',fx:''},
+  'Fokussiert':{p:'Stark – jetzt ist der beste Moment für deine wichtigste Aufgabe.',fx:'→ Schwerste Aufgabe zuerst'}
+};
+const CALM_QUOTES=['🌱 Kleine Schritte sind heute genau richtig.','🤍 Sanft dranbleiben zählt mehr als Tempo.','🍃 Ein ruhiger Anfang ist auch ein Anfang.','🕯️ Heute reicht das Nötigste – und das ist okay.'];
+function todayMoodLabel(){const t=new Date().toISOString().split('T')[0];const m=(D.dailyLog&&D.dailyLog[t]&&D.dailyLog[t].mood)||'';return m?m.split(' ')[1]||'':'';}
+function calmMode(){const l=todayMoodLabel();return l==='Müde'||l==='Unmotiviert';}
+function updateMoodButtons(){
+  const l=todayMoodLabel();
+  document.querySelectorAll('.mbtn').forEach(b=>b.classList.toggle('sel',!!l&&b.dataset.m===l));
+  const fx=document.getElementById('mood-effect');
+  if(fx)fx.textContent=l&&MOOD_INFO[l]?MOOD_INFO[l].fx:'';
+}
 function setMood(e,l){
   const colors={Müde:'#94A3B8,#748496',Unmotiviert:'#E87C7C,#D05050',Okay:'#F4D06A,#D4A82A',Gut:'#6DC98A,#4CAF72',Fokussiert:'#7C9EE8,#5B7FD4'};
   const c=colors[l]||'#7C9EE8,#9B8EE8';
   document.getElementById('morning-banner').style.background=`linear-gradient(135deg,${c})`;
   document.getElementById('morning-h').textContent='Stimmung: '+e+' '+l;
-  document.getElementById('morning-p').textContent='Schön, dass du hier bist! ✨';
+  const info=MOOD_INFO[l]||{p:'Schön, dass du hier bist.'};
+  document.getElementById('morning-p').textContent=info.p;
+  if(info.calm)document.getElementById('morning-quote').textContent=CALM_QUOTES[Math.floor(Math.random()*CALM_QUOTES.length)];
   D.currentMood=e+' '+l;
   const today=new Date().toISOString().split('T')[0];
   if(!D.dailyLog)D.dailyLog={};
   if(!D.dailyLog[today])D.dailyLog[today]={};
   D.dailyLog[today].mood=e+' '+l;
-  toast('Stimmung: '+e+' '+l);
+  try{saveProfile();}catch(err){}
+  updateMoodButtons();
+  toast(info.calm?'Danke für deine Ehrlichkeit. Heute gehen wir es sanfter an.':'Stimmung: '+e+' '+l);
   try{updateTodayStrip();}catch(err){}
+  // Tages-Empfehlung neu berechnen – die Stimmung verändert den Einstieg
+  try{renderJourney();}catch(err){}
   // P8: Bei Tiefpunkten die Vision reaktivieren – das innere Bild trägt
   if(l==='Müde'||l==='Unmotiviert'){try{showVisionBoost();}catch(err){}}
 }
@@ -3460,8 +3490,10 @@ async function journeyAI(stepId){
   const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
   box.style.display='block';
   box.innerHTML='<div style="font-size:.85rem;color:var(--mu);font-style:italic">✨ FocusAI denkt nach…</div>';
-  const sys='Du bist FocusAI, ein konkreter, motivierender Coach. Antworte auf Deutsch, max 130 Wörter, mit 2–4 sehr konkreten ersten Mini-Schritten. Direkt und warmherzig.';
-  const msg='Der Nutzer steht bei diesem Schritt seines Weges: "'+s.title+'" ('+s.why+'). Sein Profil: Ziel='+p.goal+', Fokus-Bereich='+(LIFE_LABEL[p.goalArea]||p.goalArea)+', Blockade='+p.blocker+', Energie='+p.energyBaseline+', Zeit/Tag='+p.timePerDay+'. Wie fängt er am besten an? Gib konkrete, sofort umsetzbare erste Schritte – zugeschnitten auf seine Blockade und verfügbare Zeit.';
+  const sys=calmMode()
+    ?'Du bist FocusAI, ein ruhiger, sanfter Coach. Der Nutzer ist heute erschöpft oder unmotiviert. Antworte auf Deutsch, max 110 Wörter, ohne Hype und ohne Ausrufezeichen. Schlage 1–2 winzige, leichte erste Schritte vor und würdige, dass er da ist.'
+    :'Du bist FocusAI, ein konkreter, motivierender Coach. Antworte auf Deutsch, max 130 Wörter, mit 2–4 sehr konkreten ersten Mini-Schritten. Direkt und warmherzig.';
+  const msg='Der Nutzer steht bei diesem Schritt seines Weges: "'+s.title+'" ('+s.why+'). Sein Profil: Ziel='+p.goal+', Fokus-Bereich='+(LIFE_LABEL[p.goalArea]||p.goalArea)+', Blockade='+p.blocker+', Energie='+p.energyBaseline+', Zeit/Tag='+p.timePerDay+(todayMoodLabel()?', heutige Stimmung='+todayMoodLabel():'')+'. Wie fängt er am besten an? Gib konkrete, sofort umsetzbare erste Schritte – zugeschnitten auf seine Blockade und verfügbare Zeit.';
   const reply=await callAI([{role:'user',content:msg}],sys,500);
   if(reply){box.innerHTML='<div style="background:var(--bg);border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px;font-size:.86rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.2rem;flex-shrink:0">🤖</div><div>'+reply.replace(/\n/g,'<br>')+'</div></div>';}
   else{box.innerHTML='<div class="info-box info-orange" style="margin-top:0">⚠️ FocusAI ist gerade nicht erreichbar. Tipp: Starte mit dem allerkleinsten möglichen Schritt – 2 Minuten genügen.</div>';}
@@ -3501,6 +3533,10 @@ function computeNextAction(){
   if(p.blocker==='lowenergy')order=['energy','morning','overdue','frog','mitDo','mitSet','comfort','topTask','evening','journey','firstTask'];
   else if(p.blocker==='overwhelm')order=['mitSet','mitDo','frog','overdue','energy','morning','comfort','topTask','evening','journey','firstTask'];
   else if(p.blocker==='distraction'||p.blocker==='procrastination')order=['frog','topTask','overdue','mitDo','mitSet','comfort','energy','morning','evening','journey','firstTask'];
+  // Tages-Stimmung übersteuert: bei Müde/Unmotiviert sanfter Einstieg statt
+  // schwerster Aufgabe (das Versprechen der Stimmungs-Auswahl wird eingelöst)
+  if(calmMode())order=['energy','morning','mitDo','mitSet','overdue','topTask','comfort','evening','journey','firstTask','frog'];
+  else if(todayMoodLabel()==='Fokussiert')order=['frog','topTask','overdue','mitDo','comfort','mitSet','energy','morning','evening','journey','firstTask'];
   for(const k of order){if(acts[k])return Object.assign({key:k},acts[k]);}
   return Object.assign({key:'firstTask'},acts.firstTask);
 }
@@ -4320,6 +4356,7 @@ ${beliefs||'Noch nicht definiert'}
 Offene Aufgaben: ${tasks||'Keine'}
 Heutiger Streak: ${D.streak} Tage
 Heute erledigt: ${D.todayDone} Aufgaben
+Heutige Stimmung: ${todayMoodLabel()||'nicht angegeben'}${calmMode()?' – WICHTIG: Der Nutzer ist heute erschöpft/unmotiviert. Sei besonders ruhig und sanft, kein Hype, keine Ausrufezeichen. Schlage nur winzige, leichte Schritte vor und würdige, dass er überhaupt da ist.':''}
 
 WICHTIG: Du bist ein Coach, kein Therapeut. Bei Anzeichen von akuter Krise, Selbstgefährdung oder schwerer Depression: Verweise einfühlsam auf professionelle Hilfe (Telefonseelsorge 0800 111 0 111, Notruf 112) statt normale Coaching-Aufgaben fortzusetzen.
 
@@ -4466,8 +4503,28 @@ function updateHomeChrome(){
   const tg=document.getElementById('ts-toggle');
   if(tg)tg.textContent=todayOpen?'⌃ Weniger':'⌄ Mehr';
   if(ob)updateTodayStrip();
+  try{updateMoodButtons();}catch(e){}
+  // Einmaliger Hinweis auf die Modul-Navigation (Entdeckbarkeit hinter ☰)
+  if(ob&&D.vision&&!D.vision.navHintSeen){
+    D.vision.navHintSeen=true;try{saveProfile();}catch(e){}
+    setTimeout(()=>{try{toast('💡 Tipp: Alle Bereiche findest du oben unter „☰ Module".');}catch(e){}},2500);
+  }
 }
-function toggleNav(){const n=document.getElementById('tnav');if(!n)return;const opening=(n.style.display==='none'||!n.style.display);if(opening)updateNavVisibility();n.style.display=opening?'flex':'none';}
+function toggleNav(){
+  const n=document.getElementById('tnav');if(!n)return;
+  const opening=(n.style.display==='none'||!n.style.display);
+  if(opening)updateNavVisibility();
+  n.style.display=opening?'flex':'none';
+  // Wer die Navigation selbst entdeckt hat, braucht den Ersthinweis nicht mehr
+  if(opening&&D&&D.vision&&!D.vision.navHintSeen){D.vision.navHintSeen=true;try{saveProfile();}catch(e){}}
+}
+// Aufgaben-Formular: Zusatzfelder (Priorität, Termin …) nur auf Wunsch
+let taskDetailsOpen=false;
+function toggleTaskDetails(){
+  taskDetailsOpen=!taskDetailsOpen;
+  const d=document.getElementById('task-details');if(d)d.style.display=taskDetailsOpen?'block':'none';
+  const b=document.getElementById('task-details-btn');if(b)b.textContent=taskDetailsOpen?'⌃ Weniger':'⌄ Details';
+}
 // Kuratierte Navigation: es erscheinen nur Kern-Tabs + Module der noch offenen
 // Weg-Schritte. Keine Feature-Bibliothek – der Rest bleibt hinter "alle Module".
 let navShowAll=false;
