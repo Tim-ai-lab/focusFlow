@@ -1,7 +1,7 @@
 // FocusFlow Service Worker – Network-first mit Offline-Fallback.
 // Bewusst network-first: Nutzer bekommen IMMER die neueste Version,
 // der Cache greift nur, wenn keine Verbindung besteht.
-const CACHE = 'focusflow-v1';
+const CACHE = 'focusflow-v2';
 
 self.addEventListener('install', () => { self.skipWaiting(); });
 
