@@ -158,7 +158,7 @@ async function sendVisionMessage(){
   msgBox.scrollTop=msgBox.scrollHeight;
   currentVisionConv.push({role:'user',content:msg});
   const system=step.systemPrompt+'\n\nNutzer-Kontext:\nBisherige Vision-Erkenntnisse: '+JSON.stringify(D.vision||{})+'\nKernwerte: '+(D.vision?.values||'noch nicht definiert');
-  const reply=await callAI(currentVisionConv,system,1000);
+  const reply=await callAI(currentVisionConv,system,1000,true);
   currentVisionConv.push({role:'assistant',content:reply||'Entschuldigung, bitte versuche es erneut.'});
   visionConversations[step.id]=[...currentVisionConv];
   thinking.remove();

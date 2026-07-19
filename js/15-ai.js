@@ -10,7 +10,10 @@ function initAIProvider(){const el=document.getElementById('ai-provider');if(el)
 
 // Ruft die Supabase Edge Function auf, die ihrerseits Anthropic/OpenAI
 // kontaktiert. Der API-Key liegt als Supabase-Secret – nie im Browser.
-async function callAI(messages,system,maxTokens){
+// cache=true aktiviert Prompt-Caching im Proxy – nur bei Aufrufen sinnvoll,
+// die denselben Prompt/Verlauf innerhalb weniger Minuten wiederholen
+// (Vision-Prozess, FocusAI-Chat). Einmal-Aufrufe lassen es weg.
+async function callAI(messages,system,maxTokens,cache){
   if(!SESSION)return null;
   try{
     const res=await fetchWithTimeout(SB_URL+'/functions/v1/ai-proxy',{
@@ -20,7 +23,7 @@ async function callAI(messages,system,maxTokens){
         'Authorization':'Bearer '+(SESSION?.access_token||SB_KEY),
         'Content-Type':'application/json'
       },
-      body:JSON.stringify({provider:getAIProvider(),system,messages,max_tokens:maxTokens||1000})
+      body:JSON.stringify({provider:getAIProvider(),system,messages,max_tokens:maxTokens||1000,cache:!!cache})
     },30000);
     const text=await res.text();
     let data=null;try{data=text?JSON.parse(text):null;}catch{}
@@ -84,7 +87,7 @@ async function sendAI(){
   const thinking=document.createElement('div');thinking.className='ai-msg bot thinking';thinking.textContent='✨ Denke nach...';msgs.appendChild(thinking);
   msgs.scrollTop=msgs.scrollHeight;
   aiConversation.push({role:'user',content:msg});
-  const reply=await callAI(aiConversation,getContext(),1000);
+  const reply=await callAI(aiConversation,getContext(),1000,true);
   aiConversation.push({role:'assistant',content:reply||'Entschuldigung, ich konnte keine Antwort generieren.'});
   if(reply)logStep('ai_coach_used'); // erst ein echtes Coaching-Gespräch zählt
   if(aiConversation.length>20)aiConversation=aiConversation.slice(-20);
