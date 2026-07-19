@@ -67,7 +67,7 @@ function showVisionBoost(){
 const MORNING_STEPS=[
   {title:'🙏 Dankbarkeit',q:'Für was bist du heute dankbar?',placeholder:'Nenne 3 Dinge für die du heute dankbar bist...',key:'gratitude'},
   {title:'🌟 Tagesintention',q:'Was ist deine Intention für heute?',placeholder:'Wie möchtest du dich heute fühlen und was möchtest du erreichen?',key:'intention'},
-  {title:'💫 Affirmation',q:'Deine Affirmation für heute – sprich sie laut aus!',placeholder:'',key:'affirmation',fromVision:true},
+  {title:'💫 Dein Satz für heute',q:'Sprich ihn einmal laut aus – er begleitet dich durch den Tag.',placeholder:'',key:'affirmation',fromVision:true},
   {title:'🎯 Fokus-Aufgabe',q:'Was ist deine wichtigste Aufgabe heute?',placeholder:'Die eine Aufgabe die heute alles andere übertrifft...',key:'focus'},
 ];
 const EVENING_STEPS=[
@@ -91,7 +91,8 @@ function renderMorningStep(){
   const step=MORNING_STEPS[morningStep];
   const isLast=morningStep===MORNING_STEPS.length-1;
   document.getElementById('morning-next-btn').textContent=isLast?'✓ Fertig':'Weiter ›';
-  const val=step.fromVision?(D.vision?.affirmation||'Ich bin fokussiert und erschaffe mein bestes Leben.'):morningData[step.key]||'';
+  // Satz des Tages: rotierender Anker (Destillation) mit Affirmation als Fallback
+  const val=step.fromVision?(typeof morningAnchorText==='function'?morningAnchorText():(D.vision?.affirmation||'Ich bin fokussiert und erschaffe mein bestes Leben.')):morningData[step.key]||'';
   document.getElementById('morning-step-content').innerHTML=`
     <div style="font-size:.73rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Schritt ${morningStep+1} von ${MORNING_STEPS.length}</div>
     <div style="font-size:1rem;font-weight:800;margin-bottom:5px">${step.title}</div>
@@ -280,6 +281,12 @@ async function saveEveningData(){
   logStep('evening_done');
   try{renderJourney();}catch(e){}
   toast('🌙 Abendreflexion gespeichert & ins Tagebuch übertragen! 📓');
+  // Ernte: Wertvolles aus der Reflexion als Anker anbieten (ein optionales
+  // Angebot, vorbefüllt – Schließen kostet einen Tap)
+  const harvest=String(e.learnings||e.comfort_note||'').trim();
+  if(harvest.length>=15){
+    setTimeout(()=>{try{openAnchorCapture(harvest.slice(0,300),'insight','evening');}catch(err){}},900);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════

@@ -184,6 +184,8 @@ function renderMyBereich(){
     </label>
     ${rt?`<span style="font-size:.78rem;color:${rt.due?'var(--ac)':'var(--mu)'};font-weight:700">${rt.due?'⏰ jetzt fällig':'nächster in '+rt.nextInDays+' Tagen'}</span>`:''}
   </div></div>`;
+  // 💎 Anker: Glaubenssätze & Erkenntnisse verwalten (Destillation)
+  try{html+=renderAnchorsSection();}catch(e){console.error('anchorsSection',e);}
   if(arr.length>=2){
     const deltas=profileDelta(arr[1].profile,arr[0].profile);
     const cur=arr[0].profile||{},prev=arr[1].profile||{};

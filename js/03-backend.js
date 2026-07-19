@@ -284,7 +284,14 @@ async function saveProfile(){await sbFetch('/rest/v1/profiles?id=eq.'+UID,{metho
 function checkStreak(){
   const today=new Date().toDateString();if(D.lastDate===today)return;
   const y=new Date();y.setDate(y.getDate()-1);
-  D.streak=D.lastDate===y.toDateString()?(D.streak||0)+1:0;
+  const cont=D.lastDate===y.toDateString();
+  // Selbstvergebung statt "What-the-hell-Effekt": Riss einer echten Serie
+  // festhalten – "Mein Weg" entlastet dann einmalig, statt nur die 0 zu zeigen.
+  if(!cont&&(D.streak||0)>=3&&D.lastDate){
+    if(!D.vision)D.vision={};
+    D.vision.lapse={date:new Date().toISOString().split('T')[0],lost:D.streak||0};
+  }
+  D.streak=cont?(D.streak||0)+1:0;
   D.lastDate=today;D.todayDone=0;D.todayScore=0;D.pomoSess=0;D.weekDone[new Date().getDay()]=0;
   // Tägliche Tagesziele (MIT) für den neuen Tag zurücksetzen – gestrige Haken verschwinden
   D.mitTasks=['','',''];D.mitDone=[false,false,false];

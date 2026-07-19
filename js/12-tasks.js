@@ -113,13 +113,27 @@ function renderTasks(){
 // ═══════════════════════════════════════════════════════════════
 // ── MIT ──  Most Important Tasks – Tagesziele
 // ═══════════════════════════════════════════════════════════════
+// Wenn-Dann-Pläne (Implementation Intentions, Gollwitzer): Aufgaben mit
+// konkretem Wann/Wo werden deutlich seltener aufgeschoben als blanke To-dos.
+// Tagesgebunden im Profil (D.vision.mitPlans), resettet sich selbst per Datum.
+function mitPlans(){
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.vision)D.vision={};
+  if(!D.vision.mitPlans||D.vision.mitPlans.date!==today)D.vision.mitPlans={date:today,plans:['','','']};
+  return D.vision.mitPlans.plans;
+}
 function renderMIT(){
+  const plans=mitPlans();
   document.getElementById('mitslots').innerHTML=['1️⃣','2️⃣','3️⃣'].map((n,i)=>{
     const v=D.mitTasks[i]||'',done=D.mitDone[i];
     return `<div class="mitslot${v?' filled':''}${done?' done':''}">
       <div class="mitcb${done?' on':''}" onclick="togMIT(${i})">${done?'✓':''}</div>
       <span>${n}</span>
-      <input value="${esc(v)}" placeholder="Wichtigste Aufgabe ${i+1}..." oninput="D.mitTasks[${i}]=this.value" onblur="saveMIT()">
+      <div style="flex:1;min-width:0">
+        <input style="width:100%" value="${esc(v)}" placeholder="Wichtigste Aufgabe ${i+1}..." oninput="D.mitTasks[${i}]=this.value" onblur="saveMIT();renderMIT()">
+        ${v&&!done?`<input style="width:100%;margin-top:5px;font-size:.78rem;padding:6px 10px;border:1.5px dashed var(--bo);border-radius:var(--r3);background:var(--bg);outline:none;font-family:inherit;color:var(--txt)" value="${esc(plans[i]||'')}" placeholder="Wenn–dann: Wann &amp; wo startest du? (z. B. „Nach dem Mittagessen am Schreibtisch")" oninput="mitPlans()[${i}]=this.value" onblur="try{saveProfile()}catch(e){}">`:''}
+        ${v&&done&&plans[i]?`<div style="font-size:.72rem;color:var(--mu);margin-top:4px">⏱ ${esc(plans[i])}</div>`:''}
+      </div>
     </div>`;
   }).join('');
 }

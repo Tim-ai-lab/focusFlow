@@ -100,6 +100,7 @@
         <div id="ts-greet" style="font-weight:800;font-size:.9rem">☀️</div>
         <div id="ts-status" style="font-size:.78rem;color:var(--mu);flex:1;min-width:120px"></div>
         <button class="addbtn" id="ts-action" style="padding:8px 14px;font-size:.82rem" onclick="todayStripAction()">🌅 Tag starten</button>
+        <button class="lbtn" id="ts-anchor" onclick="openAnchorCapture()" title="Erkenntnis oder Satz festhalten" aria-label="Erkenntnis oder Satz festhalten">💎</button>
         <button class="lbtn" id="ts-toggle" onclick="toggleToday()" title="Stimmung, Routinen und Statistik anzeigen" aria-label="Tages-Details anzeigen">⌄ Mehr</button>
       </div>
     </div>
@@ -793,6 +794,22 @@
   </div>
 </div>
 
+<!-- ANKER-EINFANG: Erkenntnis/Glaubenssatz in ≤10 Sekunden festhalten -->
+<div class="modal-bg" id="anchormod">
+  <div class="modal-card">
+    <div class="modal-title">💎 Festhalten</div>
+    <p class="sdesc" id="anchor-subtitle" style="margin-bottom:12px">Kurz festhalten, bevor es verfliegt – das Verankern übernimmt danach die App.</p>
+    <div style="display:flex;gap:7px;margin-bottom:10px">
+      <button class="ob-opt sel" id="ak-insight" style="flex:1;text-align:center" onclick="setAnchorKind('insight')">💡 Erkenntnis</button>
+      <button class="ob-opt" id="ak-belief" style="flex:1;text-align:center" onclick="setAnchorKind('belief')">🧠 Glaubenssatz</button>
+    </div>
+    <textarea class="ta" id="anchor-text" placeholder="Der Gedanke, der bleiben soll..." style="min-height:70px"></textarea>
+    <div id="anchor-form-hint" class="info-box info-blue" style="display:none;margin-top:8px;font-size:.78rem">💡 Prozess-Form trägt: „Ich lerne, …" / „Ich kann …, auch wenn …" – glaubwürdig statt übertrieben.</div>
+    <button class="addbtn" style="width:100%;margin-top:12px" onclick="saveAnchorCapture()">💎 Speichern</button>
+    <button class="modal-close" onclick="document.getElementById('anchormod').style.display='none'">Abbrechen</button>
+  </div>
+</div>
+
 <!-- BETA-FEEDBACK: lokal gespeichert + als E-Mail-Entwurf an den Entwickler -->
 <div class="modal-bg" id="feedbackmod">
   <div class="modal-card">
@@ -907,6 +924,7 @@
 <script src="js/15-ai.js"></script>
 <script src="js/16-analytics.js"></script>
 <script src="js/17-ui.js"></script>
+<script src="js/19-anchors.js"></script>
 <script src="js/18-init.js"></script>
 </body>
 </html>

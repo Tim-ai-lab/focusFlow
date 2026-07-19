@@ -193,6 +193,15 @@ const REFLECTIONS={
     {key:'new',q:'Welche neuen Glaubenssätze zeigen sich?',ph:'Manchmal tauchen tiefere Schichten auf...'},
     {key:'empower',q:'Dein ermächtigender Gegen-Satz',ph:'Formuliere einen kraftvollen, wahren Satz in Gegenwartsform...'}
   ]},
+  // ABC-Modell (kognitive Umstrukturierung): Auslöser → Bewertung → Konsequenz
+  // → Prüfung → neuer Satz. Das Ergebnis wandert als Kandidat in die Anker.
+  abc_reframe:{stepId:'abc_reframe',title:'🧠 Gedanken umbauen (ABC)',accent:'#7C9EE8',steps:[
+    {key:'situation',q:'A – Auslöser: In welcher Situation taucht der bremsende Gedanke auf?',ph:'Z. B. „Wenn ich etwas präsentieren soll…" / „Wenn ich eine große Aufgabe anfangen will…"'},
+    {key:'thought',q:'B – Bewertung: Was genau sagt der Gedanke?',ph:'Wörtlich aufschreiben – z. B. „Das schaffe ich sowieso nicht."'},
+    {key:'consequence',q:'C – Konsequenz: Was macht der Gedanke mit dir?',ph:'Gefühl (z. B. Anspannung, Lähmung) und Verhalten (z. B. aufschieben, vermeiden)...'},
+    {key:'evidence',q:'Prüfung: Was spricht gegen den Gedanken?',ph:'Momente, in denen es anders lief. Was würdest du einem guten Freund in derselben Lage sagen?'},
+    {key:'newthought',q:'Dein neuer, realistischer Satz',ph:'Prozess-Form trägt: „Ich lerne, …" / „Ich kann …, auch wenn …" – glaubwürdig statt übertrieben.'}
+  ]},
   comfort_map:{stepId:'comfort_map',title:'🧗 Komfortzone kartieren',accent:'#F4A96A',steps:[
     {key:'inside',q:'Was gehört zu deiner Komfortzone?',ph:'Situationen, in denen du dich sicher fühlst: vertraute Routinen, bekannte Aufgaben, dein gewohntes Umfeld...'},
     {key:'avoid',q:'Was vermeidest du, obwohl es dich weiterbringen würde?',ph:'Z. B. präsentieren, Nein sagen, auf Fremde zugehen, um Hilfe bitten, Neues ausprobieren...'},
@@ -240,6 +249,13 @@ async function finishReflection(){
   logStep(def.stepId);
   document.getElementById('reflectmod').style.display='none';
   try{renderJourney();}catch(e){}
+  // ABC-Ergebnis wird als Anker-Kandidat übernommen – hier beginnt die Destillation
+  if(reflectKey==='abc_reframe'&&reflectData.newthought&&String(reflectData.newthought).trim()){
+    try{addAnchor(String(reflectData.newthought).trim(),'belief','abc');}catch(e){}
+    try{renderMyBereich();}catch(e){}
+    toast('💎 Neuer Satz gespeichert – er startet jetzt in deinen Ankern.');
+    return;
+  }
   toast('✅ '+def.title+' abgeschlossen!');
 }
 
@@ -300,8 +316,15 @@ function renderComfortModal(){
     return;
   }
   const sugg=comfortSuggestions();
+  const pz=comfortProfile().comfortZone;
+  // Coaching-Grenze: Bei sozial geprägten Zonen auf professionelle Hilfe verweisen,
+  // falls die Angst Alltags-einschränkend ist (Exposition ersetzt keine Therapie).
+  const sozialHint=({visibility:1,social:1,conflict:1,help:1})[pz]
+    ?'<div style="font-size:.72rem;color:var(--mu);line-height:1.5;margin-bottom:10px">Wenn dich solche Situationen im Alltag stark einschränken, ist professionelle Unterstützung der wirksamere Weg – diese Challenges ersetzen keine Therapie.</div>'
+    :'';
   el.innerHTML=prog+`
-    <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">Wähle EINE Mutprobe für heute – passend zu deinem Profil${comfortProfile().comfortZone&&comfortProfile().comfortZone!=='none'?' („'+(COMFORT_LABEL[comfortProfile().comfortZone]||'')+'")':''}. Herausfordernd, aber sicher und freiwillig – niemals ein Risiko für dich oder andere.</div>
+    <div style="font-size:.85rem;color:var(--mu);line-height:1.55;margin-bottom:12px">Wähle EINE Mutprobe für heute – passend zu deinem Profil${pz&&pz!=='none'?' („'+(COMFORT_LABEL[pz]||'')+'")':''}. Herausfordernd, aber sicher und freiwillig – niemals ein Risiko für dich oder andere.</div>
+    ${sozialHint}
     <div style="display:flex;flex-direction:column;gap:8px">${sugg.map((s,i)=>`<button class="ob-opt" onclick="chooseComfortChallenge(${i})">${esc(s.text)}</button>`).join('')}</div>
     <div style="font-size:.78rem;font-weight:700;color:var(--mu);margin:12px 0 6px">Oder deine eigene Challenge:</div>
     <div style="display:flex;gap:8px">
@@ -336,9 +359,17 @@ function completeComfortChallenge(){
   c.current=null;
   logStep('comfort_challenge');
   saveProfile();
-  document.getElementById('comfortmod').style.display='none';
   const st=stepStatus('comfort_challenge');
   toast(st.done?'🏆 3 Challenges gemeistert – deine Komfortzone ist gewachsen!':'💪 Geschafft! Deine Komfortzone ist heute ein Stück größer geworden.');
+  // Attribution im Moment der Wahrheit: Welcher Anker hat getragen?
+  // (valider als abstrakte Bewertung am Abend; überspringbar mit einem Tap)
+  let attr='';
+  try{attr=anchorAttributionHtml();}catch(e){}
+  if(attr){
+    const el=document.getElementById('comfort-content');
+    if(el){el.innerHTML=attr;try{renderJourney();}catch(e){}return;}
+  }
+  document.getElementById('comfortmod').style.display='none';
   try{renderJourney();}catch(e){}
 }
 function renderPath(){

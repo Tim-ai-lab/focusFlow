@@ -51,6 +51,8 @@ function renderJourney(){
       <button onclick="runNextAction()" style="padding:7px 12px;border:1.5px solid #FED7AA;background:#FFF7ED;border-radius:var(--r3);color:#92400E;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap">${act.btn}</button>
     </div>`:'';
   const stBadge=(st)=>st.mode==='count'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">${st.count}/${st.target} ${st.unit}</span>`:st.mode==='daily'?`<span style="font-size:.72rem;color:var(--mu);font-weight:700;align-self:center">🔁 täglich</span>`:'';
+  // ── 0) Selbstvergebung nach Serien-Riss: einmalig entlasten (nur am Riss-Tag) ──
+  try{html+=lapseCardHtml();}catch(e){}
   // ── 1) Fokus-Karte: das erste und einzige große Element des Screens ──
   if(focusId){
     const s=cat[focusId];
@@ -106,9 +108,9 @@ function renderJourney(){
       return `<span style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;border:1.5px solid ${doneCh?'#BBF7D0':'var(--bo)'};background:${doneCh?'#DCFCE7':'#fff'};color:${doneCh?'#15803D':'var(--mu)'}">${doneCh?'✓ ':''}${c.icon} Kapitel ${i+1}: ${c.name} · ${c.done}/${c.total}</span>`;
     }).join('')+`</div>`;
   }
-  // Vision-Anker: die Affirmation bleibt täglich sichtbar (P8)
-  const aff=D.vision&&D.vision.affirmation;
-  if(aff)html+=`<div style="font-size:.84rem;font-style:italic;color:var(--txt);background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px;margin-top:11px">💫 „${esc(aff)}"</div>`;
+  // Impuls des Tages: rotierender Anker bzw. Affirmation, mit Beweis-Kopplung
+  // und 1-Tap-Wirksamkeits-Signal (P8 + Anker-Destillation)
+  try{html+=impulseHtml();}catch(e){}
   if(journeyMetaOpen){
     html+=`<div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;gap:8px;flex-wrap:wrap">
