@@ -85,7 +85,11 @@ const ONBOARD_QUESTIONS=[
    {v:'help',label:'🙋 Um Hilfe bitten, Schwäche zeigen'},
    {v:'none',label:'🤷 Keiner davon besonders'}]}
 ];
-let obStep=0,obAnswers={},obQuestions=[],obFollowupsAdded=false;
+// Progressive Profiling: Erst-Test = nur 8 Kern-Fragen (schneller Einstieg,
+// weniger Abbrüche). Die übrigen Fragen kommen später als Weg-Schritt
+// "Profil vertiefen"; der Re-Test (Standort-Check) stellt alle Fragen.
+const CORE_QUESTION_IDS=['goal','area','visionClarity','blocker','energy','time','motivation','comfort'];
+let obStep=0,obAnswers={},obQuestions=[],obFollowupsAdded=false,obMode='first';
 // Adaptive Folgefragen: werden nur gestellt, wenn sie den Weg präziser machen.
 const ADAPTIVE_FOLLOWUPS=[
   {id:'approach',when:a=>a.visionClarity==='low'&&a.goal!=='vision',q:'Deine Vision ist noch nicht ganz klar. Was ist dir jetzt wichtiger?',o:[
@@ -135,7 +139,8 @@ const STEP_DO={
   quarterly_review:'Quartals-Review durchführen',
   beliefs_revisited:'Glaubenssätze nach 30 Tagen prüfen',
   comfort_map:'Komfortzone kartieren',
-  comfort_challenge:'An 3 Tagen die Komfortzone verlassen'
+  comfort_challenge:'An 3 Tagen die Komfortzone verlassen',
+  profile_depth:'Profil vertiefen (kurze Zusatzfragen)'
 };
 function stepLabel(id,s){return STEP_DO[id]||(s&&s.title)||id;}
 // "Warum bekomme ich diese Aufgabe?" – persönliche Begründung aus dem Testprofil
@@ -159,7 +164,8 @@ function personalWhy(stepId,p){
     quarterly_review:'Alle 90 Tage prüfen: Stimmt die Richtung noch? Das verhindert fleißiges Laufen in die falsche Richtung.',
     beliefs_revisited:'Nach Wochen echter Erfahrung zeigen sich neue Schichten deiner Glaubenssätze – und neue Freiheit.',
     comfort_map:(p.comfortZone&&p.comfortZone!=='none')?'Dein Test zeigt: Bei „'+(COMFORT_LABEL[p.comfortZone]||p.comfortZone)+'" bleibst du am liebsten in der Komfortzone. Sie zu kartieren ist der erste Schritt, sie bewusst zu erweitern.':'Deine Komfortzone zu kennen zeigt dir, wo Wachstum für dich gerade am leichtesten möglich ist.',
-    comfort_challenge:(b==='fear'||p.selfdoubt==='high')?'Angst schrumpft durch Erfahrung, nicht durch Nachdenken. Kleine, sichere Mutproben bauen Beweise auf, dass du mehr kannst, als dein innerer Kritiker behauptet.':((p.comfortZone&&p.comfortZone!=='none')?'Gezielte Challenges im Bereich „'+(COMFORT_LABEL[p.comfortZone]||p.comfortZone)+'" erweitern genau die Grenze, die dich laut Test am meisten zurückhält.':'Regelmäßige kleine Grenzerweiterungen halten dich im Wachstum – Selbstvertrauen entsteht durch Handeln.')
+    comfort_challenge:(b==='fear'||p.selfdoubt==='high')?'Angst schrumpft durch Erfahrung, nicht durch Nachdenken. Kleine, sichere Mutproben bauen Beweise auf, dass du mehr kannst, als dein innerer Kritiker behauptet.':((p.comfortZone&&p.comfortZone!=='none')?'Gezielte Challenges im Bereich „'+(COMFORT_LABEL[p.comfortZone]||p.comfortZone)+'" erweitern genau die Grenze, die dich laut Test am meisten zurückhält.':'Regelmäßige kleine Grenzerweiterungen halten dich im Wachstum – Selbstvertrauen entsteht durch Handeln.'),
+    profile_depth:'Dein Einstieg war bewusst kurz. Ein paar Zusatzfragen (Schlaf, Stress, Struktur, innerer Kritiker) machen dein Profil vollständig – und deinen Weg ab hier präziser.'
   };
   return M[stepId]||'';
 }
@@ -205,6 +211,12 @@ function maybeStartOnboarding(){
 }
 function startOnboarding(){
   obStep=0;obAnswers={};
+  // Erst-Test: nur Kern-Fragen. Re-Test (Standort-Check): alle Fragen.
+  obMode=(D.vision&&D.vision.onboarding&&D.vision.onboarding.done)?'retest':'first';
+  const it=document.getElementById('ob-intro-text');
+  if(it)it.textContent=obMode==='first'
+    ?'8 kurze Fragen (ca. 2 Minuten). FocusFlow erstellt daraus deine individuelle Strecke zum Ziel – vertiefende Fragen folgen später auf deinem Weg.'
+    :'Dein Standort-Check: Beantworte die Fragen neu (ca. 5 Minuten), damit FocusFlow deinen Fortschritt sichtbar macht und deinen Weg neu kalibriert.';
   // P8: Beim Re-Test die Vision reaktivieren – ehrlicher Abgleich mit dem Zielbild
   const ovl=document.getElementById('ob-vision-line');
   if(ovl){
@@ -217,11 +229,36 @@ function startOnboarding(){
   document.getElementById('ob-result').style.display='none';
   document.getElementById('onboardmod').style.display='block';
 }
+// Weg-Schritt "Profil vertiefen": stellt nur die noch unbeantworteten
+// Zusatzfragen und kalibriert den Weg danach mit vollständigem Profil neu.
+function startProfileDepth(){
+  const ob=D.vision&&D.vision.onboarding;if(!(ob&&ob.done))return;
+  obMode='depth';obStep=0;obAnswers={...(ob.answers||{})};
+  obQuestions=ONBOARD_QUESTIONS.filter(q=>!CORE_QUESTION_IDS.includes(q.id)&&!(q.id in obAnswers));
+  obFollowupsAdded=false;
+  if(!obQuestions.length){
+    // Profil ist bereits vollständig (z. B. nach komplettem Re-Test)
+    logStep('profile_depth');try{saveProfile();}catch(e){}
+    toast('✅ Dein Profil ist bereits vollständig.');
+    try{renderJourney();}catch(e){}
+    return;
+  }
+  trackObStart();
+  document.getElementById('ob-intro').style.display='none';
+  document.getElementById('ob-result').style.display='none';
+  document.getElementById('ob-quiz').style.display='block';
+  document.getElementById('onboardmod').style.display='block';
+  renderObStep();
+}
 function beginOnboarding(){
   document.getElementById('ob-intro').style.display='none';
   document.getElementById('ob-result').style.display='none';
   document.getElementById('ob-quiz').style.display='block';
-  obQuestions=ONBOARD_QUESTIONS.slice();obFollowupsAdded=false;
+  obQuestions=obMode==='first'
+    ?ONBOARD_QUESTIONS.filter(q=>CORE_QUESTION_IDS.includes(q.id))
+    :ONBOARD_QUESTIONS.slice();
+  obFollowupsAdded=false;
+  trackObStart();
   renderObStep();
 }
 function renderObStep(){
@@ -272,7 +309,7 @@ function computeOnboardingProfile(a){
   };
 }
 function computeJourney(p){
-  const base=['vision_process','life_areas','beliefs_done','comfort_map','first_tasks','mit_used','cal_used','morning_done','pomodoro_used','evening_done','wellbeing_tracked','first_review','journal_7days','analytics_checked','comfort_challenge','ai_coach_used','quarterly_review','beliefs_revisited'];
+  const base=['vision_process','life_areas','beliefs_done','comfort_map','first_tasks','mit_used','cal_used','morning_done','pomodoro_used','evening_done','wellbeing_tracked','profile_depth','first_review','journal_7days','analytics_checked','comfort_challenge','ai_coach_used','quarterly_review','beliefs_revisited'];
   const boost={};base.forEach(id=>boost[id]=0);
   const add=(id,n)=>{if(boost[id]!=null)boost[id]+=n;};
   if(p.visionClarity==='high'){add('vision_process',-4);add('first_tasks',5);add('mit_used',5);}
@@ -317,11 +354,30 @@ function journeyCatalog(){
 }
 async function finishOnboarding(){
   document.getElementById('ob-quiz').style.display='none';
+  try{trackObDone();}catch(e){}
+  // "Profil vertiefen": Antworten mergen, Weg mit vollem Profil neu kalibrieren
+  if(obMode==='depth'){
+    const ob=D.vision.onboarding;
+    const p2=computeOnboardingProfile(obAnswers);
+    ob.answers={...obAnswers};ob.profile=p2;
+    ob.journey=computeJourney(p2).filter(id=>id!=='profile_depth');
+    if(!D.vision.pathAdjustLog)D.vision.pathAdjustLog=[];
+    D.vision.pathAdjustLog.unshift({date:new Date().toISOString(),trigger:'Profil-Vertiefung',oldA:'Weg auf Basis der 8 Kern-Fragen',newA:'Weg mit vollständigem Profil neu kalibriert',focus:''});
+    logStep('profile_depth');
+    try{await saveProfile();}catch(e){console.error('saveProfile depth',e);}
+    document.getElementById('onboardmod').style.display='none';
+    toast('✅ Profil vervollständigt – dein Weg wurde neu kalibriert.');
+    try{renderJourney();}catch(e){}
+    return;
+  }
   const el=document.getElementById('ob-result');
   el.style.display='block';
   el.innerHTML='<div class="spinner" style="margin:10px auto 16px"></div><div style="font-size:1.05rem;font-weight:800;margin-bottom:6px">Deine Analyse wird erstellt…</div><div style="font-size:.85rem;color:var(--mu)">FocusAI wertet deine Antworten psychologisch aus.</div>';
   const p=computeOnboardingProfile(obAnswers);
-  const journey=computeJourney(p);
+  // "Profil vertiefen" nur in den Weg aufnehmen, wenn Zusatzfragen offen sind
+  let journey=computeJourney(p);
+  const depthDone=ONBOARD_QUESTIONS.every(q=>CORE_QUESTION_IDS.includes(q.id)||(q.id in obAnswers));
+  if(depthDone)journey=journey.filter(id=>id!=='profile_depth');
   if(!D.vision)D.vision={};
   // P9: Re-Test-Anpassung protokollieren, wenn sich Kern-Annahmen ändern
   const prevOb=D.vision.onboarding;

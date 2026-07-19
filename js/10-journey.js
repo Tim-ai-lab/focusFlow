@@ -12,9 +12,9 @@ function renderJourney(){
     el.innerHTML=`<div class="sec" style="text-align:center;padding:38px 24px">
       <div style="font-size:2.6rem;margin-bottom:10px">🧭</div>
       <div style="font-size:1.15rem;font-weight:800;margin-bottom:8px">Finde deinen persönlichen Weg</div>
-      <p class="sdesc" style="max-width:430px;margin:0 auto 18px">Beantworte ein paar kurze Fragen. FocusFlow erstellt daraus deinen individuellen Entwicklungsweg – immer nur ein Schritt, ohne Überforderung.</p>
+      <p class="sdesc" style="max-width:430px;margin:0 auto 18px">Beantworte 8 kurze Fragen. FocusFlow erstellt daraus deinen individuellen Entwicklungsweg – immer nur ein Schritt, ohne Überforderung.</p>
       <button class="addbtn" style="padding:13px 26px;font-size:.95rem" onclick="startOnboarding()">🧭 Einstiegstest starten</button>
-      <div style="font-size:.75rem;color:var(--mu);margin-top:12px">Dauert ca. 4 Minuten · Deine Antworten bleiben privat</div>
+      <div style="font-size:.75rem;color:var(--mu);margin-top:12px">Dauert ca. 2 Minuten · Deine Antworten bleiben privat</div>
     </div>`;
     try{updateHomeChrome();}catch(e){}
     return;

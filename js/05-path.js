@@ -45,6 +45,7 @@ const PATH_STAGES=[
     color:'#B08EE8',badge:'Wachstum',
     why:'Wachstum entsteht nicht durch Erfahrung – sondern durch reflektierte Erfahrung.',
     steps:[
+      {id:'profile_depth',title:'Profil vertiefen',why:'Dein Einstiegstest war bewusst kurz. Ein paar Zusatzfragen zu Schlaf, Stress, Struktur und innerem Kritiker machen deinen Weg ab hier präziser.',time:'3 Min',tab:'journey',action:'startProfileDepth()'},
       {id:'first_review',title:'Ersten Wochenrückblick durchgeführt',why:'Der Wochenrückblick ist das mächtigste Werkzeug gegen Prokrastination. Er macht Muster sichtbar bevor sie sich verfestigen.',time:'20 Min',tab:'review',action:'showTab("review",document.querySelectorAll(".tbtn")[7])'},
       {id:'journal_7days',title:'Journal 7 Tage geführt',why:'Das Journal verbindet alle Bereiche zu einem ganzheitlichen Tagesprotokoll. Nach 7 Tagen werden erste Muster sichtbar.',time:'Auto-befüllt',tab:'diary',action:'showTab("diary",document.querySelectorAll(".tbtn")[8])'},
       {id:'analytics_checked',title:'Analytics-Insights angeschaut',why:'Daten über dich selbst sind Gold. Wann bist du produktiv? Was korreliert mit deiner Energie? Diese Einblicke verändern Verhalten.',time:'5 Min',tab:'analytics',action:'showTab("analytics",document.querySelectorAll(".tbtn")[10])'},
@@ -72,7 +73,7 @@ const STEP_CFG={
   vision_process:{mode:'once'},life_areas:{mode:'once'},beliefs_done:{mode:'once'},
   first_tasks:{mode:'once'},cal_used:{mode:'once'},first_review:{mode:'once'},
   analytics_checked:{mode:'once'},ai_coach_used:{mode:'once'},quarterly_review:{mode:'once'},
-  beliefs_revisited:{mode:'once'},comfort_map:{mode:'once'},
+  beliefs_revisited:{mode:'once'},comfort_map:{mode:'once'},profile_depth:{mode:'once'},
   comfort_challenge:{mode:'count',target:3,unit:'Challenges'},
   morning_done:{mode:'daily'},evening_done:{mode:'daily'},
   mit_used:{mode:'count',target:3,unit:'Tage'},

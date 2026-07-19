@@ -2,7 +2,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --p:#7C9EE8;--pd:#5B7FD4;--ac:#F4A96A;--ok:#6DC98A;--err:#E87C7C;--warn:#F4D06A;
-  --bg:#F4F6FB;--card:#FFF;--txt:#2D3748;--mu:#8A97B0;--bo:#E4EAF4;
+  --bg:#F4F6FB;--card:#FFF;--txt:#2D3748;--mu:#64748F;--bo:#E4EAF4;
   --sh:0 4px 20px rgba(124,158,232,.10);--sh2:0 2px 8px rgba(124,158,232,.08);
   --r:18px;--r2:12px;--r3:8px;
   --life-career:#7C9EE8;--life-health:#6DC98A;--life-relations:#F4A96A;
@@ -122,7 +122,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .tname{font-size:.9rem;font-weight:600}
 .tmeta{font-size:.74rem;color:var(--mu);margin-top:2px}
 .badges{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px}
-.badge{font-size:.67rem;font-weight:700;padding:2px 7px;border-radius:20px}
+.badge{font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:20px}
 .b-easy{background:#DCFCE7;color:#15803D}.b-medium{background:#FEF9C3;color:#854D0E}.b-hard{background:#FFE4E4;color:#C0392B}
 .b-high{background:#FFE4E4;color:#C0392B}.b-normal{background:#E8EEFF;color:#3730A3}.b-low{background:#F1F5F9;color:#64748B}
 .b-frog{background:#EDE9FE;color:#6D28D9}.b-2min{background:#DCFCE7;color:#065F46}.b-dep{background:#FEF3C7;color:#92400E}
@@ -175,7 +175,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .cal-day.other-month{opacity:.35}
 .cal-day.has-tasks{border-color:var(--ac)}
 .cal-dn{font-size:.76rem;font-weight:800;margin-bottom:2px}
-.cal-task-chip{font-size:.62rem;font-weight:700;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cal-task-chip{font-size:.68rem;font-weight:700;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .chip-high{background:#FFE4E4;color:#C0392B}.chip-normal{background:#E8EEFF;color:#3730A3}.chip-low{background:#F1F5F9;color:#64748B}.chip-done{background:#DCFCE7;color:#15803D;text-decoration:line-through}
 /* DAY VIEW */
 .day-view-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
@@ -184,14 +184,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .day-title-big{font-size:.95rem;font-weight:800}
 .day-grid{display:flex;border:1.5px solid var(--bo);border-radius:var(--r2);overflow:hidden;position:relative}
 .day-times{width:50px;flex-shrink:0;background:var(--bg);border-right:1.5px solid var(--bo)}
-.day-time-slot{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 7px 0 0;font-size:.67rem;font-weight:700;color:var(--mu);border-bottom:1px solid var(--bo)}
+.day-time-slot{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 7px 0 0;font-size:.7rem;font-weight:700;color:var(--mu);border-bottom:1px solid var(--bo)}
 .day-events{flex:1;position:relative;min-height:1440px;background:var(--card)}
 .day-hour-line{position:absolute;left:0;right:0;border-top:1px solid var(--bo);pointer-events:none}
 .day-hour-line.half{border-top-style:dashed;opacity:.4}
 .day-event{position:absolute;left:6px;right:6px;border-radius:var(--r3);padding:4px 8px;cursor:pointer;overflow:hidden;transition:all .2s;border-left:4px solid transparent}
 .day-event:hover{filter:brightness(.95);box-shadow:0 3px 12px rgba(0,0,0,.12)}
 .day-event-name{font-size:.77rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.day-event-time{font-size:.67rem;opacity:.8}
+.day-event-time{font-size:.7rem;opacity:.8}
 .ev-high{background:#FFE4E4;border-left-color:#E87C7C;color:#C0392B}
 .ev-normal{background:#E8EEFF;border-left-color:#7C9EE8;color:#2D3748}
 .ev-low{background:#F1F5F9;border-left-color:#94A3B8;color:#475569}
@@ -405,3 +405,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .jstep-num{width:30px;height:30px;border-radius:50%;background:var(--bo);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:var(--mu);flex-shrink:0}
 .jstep.current .jstep-num{background:var(--p);color:#fff}
 .jstep.done .jstep-num{background:var(--ok);color:#fff}
+
+/* ── A11y ── Sichtbarer Tastatur-Fokus + reduzierte Bewegung */
+:focus-visible{outline:3px solid var(--p);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}

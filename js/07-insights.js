@@ -178,6 +178,7 @@ function renderMyBereich(){
     <button class="addbtn" onclick="startOnboarding()">🔄 Standort-Check erneut</button>
     <button onclick="openTutorial(false)" style="padding:9px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">📖 Tutorial</button>
     <button onclick="exportAllData()" title="Alle deine Daten als JSON-Backup herunterladen" style="padding:9px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">⬇ Daten-Backup</button>
+    <button onclick="openFeedback()" title="Fehler melden oder Idee einreichen" style="padding:9px 14px;border:2px solid var(--bo);background:#fff;border-radius:var(--r2);color:var(--mu);font-weight:700;cursor:pointer;font-size:.82rem">💬 Feedback</button>
     <label style="font-size:.8rem;color:var(--mu);font-weight:700;display:flex;align-items:center;gap:6px">Rhythmus
       <select class="sel" onchange="setRetestWeeks(this.value)">${[4,6,8,12].map(w=>`<option value="${w}"${(D.vision.retestWeeks||6)===w?' selected':''}>alle ${w} Wo.</option>`).join('')}</select>
     </label>

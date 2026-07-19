@@ -67,9 +67,9 @@
 <!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="tlogo" onclick="goHome()" style="cursor:pointer" title="Zu Mein Weg">🎯 FocusFlow</div>
+    <div class="tlogo" onclick="goHome()" onkeydown="if(event.key==='Enter')goHome()" style="cursor:pointer" title="Zu Mein Weg" role="button" tabindex="0" aria-label="Zurück zu Mein Weg">🎯 FocusFlow</div>
     <div id="top-progress-wrap" style="flex:1;max-width:300px;margin:0 14px;display:none">
-      <div style="display:flex;justify-content:space-between;font-size:.62rem;font-weight:700;color:var(--mu);margin-bottom:2px"><span>Dein Fortschritt</span><span id="top-progress-pct">0%</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:.7rem;font-weight:700;color:var(--mu);margin-bottom:2px"><span>Dein Fortschritt</span><span id="top-progress-pct">0%</span></div>
       <div style="height:6px;background:var(--bo);border-radius:3px;overflow:hidden"><div id="top-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:3px;transition:width .5s"></div></div>
     </div>
     <div class="tright">
@@ -667,6 +667,8 @@
         <div class="qbox" id="qbox">💡 Lade...</div>
         <div id="ana-complete" style="margin-top:14px"></div>
       </div>
+      <!-- Nutzungs-/Wirksamkeits-Metriken (lokal im Profil, renderUsagePanel) -->
+      <div class="sec" id="usage-panel"></div>
     </div>
 
   </div>
@@ -791,6 +793,26 @@
   </div>
 </div>
 
+<!-- BETA-FEEDBACK: lokal gespeichert + als E-Mail-Entwurf an den Entwickler -->
+<div class="modal-bg" id="feedbackmod">
+  <div class="modal-card">
+    <div class="modal-title">💬 Feedback zur App</div>
+    <p class="sdesc" style="margin-bottom:12px">Was funktioniert gut, was fehlt, wo hakt es? Dein Feedback macht FocusFlow besser.</p>
+    <div class="flbl">Art</div>
+    <select class="sel" id="fb-cat" style="width:100%;margin-bottom:10px">
+      <option value="Fehler">🐞 Fehler / etwas geht nicht</option>
+      <option value="Idee">💡 Idee / Verbesserungsvorschlag</option>
+      <option value="Verwirrung">🤔 Etwas war unverständlich</option>
+      <option value="Lob">❤️ Das gefällt mir</option>
+    </select>
+    <div class="flbl">Dein Feedback</div>
+    <textarea class="ta" id="fb-text" placeholder="Beschreibe so konkret wie möglich – bei Fehlern gern mit den Schritten, die dorthin geführt haben..."></textarea>
+    <button class="addbtn" style="width:100%;margin-top:12px" onclick="sendFeedback()">📨 Feedback senden</button>
+    <div style="font-size:.72rem;color:var(--mu);margin-top:8px;line-height:1.5">Öffnet deinen E-Mail-Entwurf an den Entwickler; eine Kopie bleibt in deinem Profil gespeichert.</div>
+    <button class="modal-close" onclick="document.getElementById('feedbackmod').style.display='none'">Schließen</button>
+  </div>
+</div>
+
 <!-- KRISEN-HINWEIS (Coaching ersetzt keine Therapie) -->
 <div class="modal-bg" id="crisismod" style="z-index:450">
   <div class="modal-card" style="max-width:450px">
@@ -840,7 +862,7 @@
       <div id="ob-intro">
         <div style="font-size:2.4rem;text-align:center;margin-bottom:8px">🧭</div>
         <h2 style="text-align:center;font-size:1.4rem;font-weight:800;margin-bottom:8px">Dein persönlicher Weg</h2>
-        <p style="text-align:center;color:var(--mu);font-size:.9rem;line-height:1.6;margin-bottom:22px">Bevor du startest, lernen wir dich kennen. In wenigen kurzen Fragen (ca. 5 Minuten) findet FocusFlow heraus, wo du stehst und was dich wirklich weiterbringt – und erstellt daraus deine individuelle Strecke zum Ziel.</p>
+        <p id="ob-intro-text" style="text-align:center;color:var(--mu);font-size:.9rem;line-height:1.6;margin-bottom:22px">8 kurze Fragen (ca. 2 Minuten). FocusFlow erstellt daraus deine individuelle Strecke zum Ziel – vertiefende Fragen folgen später auf deinem Weg.</p>
         <div id="ob-vision-line" style="display:none;font-size:.85rem;font-style:italic;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:var(--r2);padding:10px 13px;margin-bottom:14px;line-height:1.55"></div>
         <div class="info-box info-blue" style="margin-bottom:22px">🔒 Deine Antworten bleiben privat und bestimmen nur deinen persönlichen Weg in der App. FocusFlow ist ein Coaching-Werkzeug und ersetzt keine Psychotherapie oder ärztliche Behandlung.</div>
         <button class="btnmain" onclick="beginOnboarding()">Los geht's →</button>

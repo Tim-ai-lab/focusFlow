@@ -234,6 +234,7 @@ async function loadAllData(){
     catch(e){console.error('load '+label,e);errors.push(label+' ('+(e.message||e)+')');}
   }));
   checkStreak();generateRecurring();renderAll();
+  try{trackAppOpen();}catch(e){console.error('trackAppOpen',e);}
   showDataError(errors);
 }
 async function loadTasks(){

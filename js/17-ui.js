@@ -182,3 +182,25 @@ function checkEveningPrompt(){
   }
 }
 
+
+// ── BETA-FEEDBACK ──  Niedrigschwelliger Rückkanal: lokal im Profil
+// gespeichert UND als vorbefüllter E-Mail-Entwurf an den Entwickler.
+function openFeedback(){
+  const t=document.getElementById('fb-text');if(t)t.value='';
+  document.getElementById('feedbackmod').style.display='flex';
+}
+function sendFeedback(){
+  const cat=(document.getElementById('fb-cat')||{}).value||'Feedback';
+  const text=((document.getElementById('fb-text')||{}).value||'').trim();
+  if(!text){toast('✍️ Beschreibe kurz dein Anliegen.');return;}
+  if(!D.vision)D.vision={};
+  if(!D.vision.feedback)D.vision.feedback=[];
+  D.vision.feedback.unshift({date:new Date().toISOString(),cat,text:text.slice(0,2000)});
+  D.vision.feedback=D.vision.feedback.slice(0,50);
+  try{saveProfile();}catch(e){}
+  const meta='\n\n—\nKategorie: '+cat+'\nDatum: '+new Date().toLocaleString('de-DE')+'\nApp: FocusFlow (Beta)';
+  const mail='mailto:tim.gentemann@gmail.com?subject='+encodeURIComponent('[FocusFlow] '+cat)+'&body='+encodeURIComponent(text+meta);
+  try{window.location.href=mail;}catch(e){}
+  document.getElementById('feedbackmod').style.display='none';
+  toast('💬 Danke! Dein Feedback wurde gespeichert und als E-Mail-Entwurf geöffnet.');
+}

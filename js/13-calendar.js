@@ -110,7 +110,7 @@ function renderGantt(){
     const bc=t.done?'gbar-done':t.prio==='high'?'gbar-high':t.prio==='low'?'gbar-low':'gbar-normal';
     let cells='';
     for(let i=0;i<days;i++){const d=new Date(startD);d.setDate(d.getDate()+i);const isT=d.toDateString()===today.toDateString();const isS=d.toDateString()===ts.toDateString();cells+=`<td class="gbar-cell" style="${isT?'background:rgba(244,169,106,.07)':''}">${isS?`<div class="gbar ${bc}" style="width:${Math.max(1,Math.round((te-ts)/864e5)+1)*CELL-4}px;left:2px">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,12))}</div>`:''} ${isT?'<div class="gantt-today-line"></div>':''}</td>`;}
-    return `<tr><td class="gtask-name" title="${esc(t.name)}">${t.done?'✅ ':''}${LA_BADGE[t.lifeArea]||''} ${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}<div style="font-size:.67rem;color:var(--mu);font-weight:600;margin-top:1px">${fmtDate(t.start)} – ${fmtDate(t.end)}</div></td>${cells}</tr>`;
+    return `<tr><td class="gtask-name" title="${esc(t.name)}">${t.done?'✅ ':''}${LA_BADGE[t.lifeArea]||''} ${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}<div style="font-size:.7rem;color:var(--mu);font-weight:600;margin-top:1px">${fmtDate(t.start)} – ${fmtDate(t.end)}</div></td>${cells}</tr>`;
   }).join('');
   wrap.innerHTML=`<table class="gantt-table"><thead>${hdr}</thead><tbody>${rows}</tbody></table>`;
 }
