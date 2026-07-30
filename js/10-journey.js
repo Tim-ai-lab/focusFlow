@@ -63,7 +63,7 @@ function renderJourney(){
       <div style="font-size:.84rem;line-height:1.55;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:var(--r3);padding:9px 12px;margin-bottom:12px;color:#3730A3"><strong>Warum dieser Schritt für dich:</strong> ${personalWhy(s.id,p)||s.why}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button class="addbtn" onclick="journeyGo('${s.id}')">Jetzt starten →</button>
-        <button onclick="journeyAI('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">🤖 Wie fange ich an?</button>
+        <button onclick="journeyStart('${s.id}')" style="padding:10px 16px;border:2px solid var(--p);background:#fff;border-radius:var(--r2);color:var(--p);font-weight:700;cursor:pointer;font-size:.86rem">💡 Wie fange ich an?</button>
         ${stBadge(stepStatus(focusId))}
       </div>
       <div id="journey-ai-box" style="display:none;margin-top:12px"></div>
@@ -142,19 +142,56 @@ function journeyGo(stepId){
   try{(new Function(s.action))();}catch(e){console.error('journeyGo action',e);}
   if(s.tab)closePathAndGo(s.tab);
 }
-async function journeyAI(stepId){
+// ── „So fängst du an" – kuratiert & deterministisch, kein KI-Aufruf ──
+// Substanz je Schritt (konkrete erste Mini-Schritte) + profilabhängige
+// Rahmung (Blockade, Zeit). Sofort, konsistent, ausfallsicher, offline,
+// null Grenzkosten – die richtige Form für ein Mehrnutzer-Produkt.
+const STEP_START={
+  vision_process:['Öffne den Vision-Prozess und lies nur die erste Frage.','Antworte in Stichworten – kein perfekter Text nötig.','Ein Satz genügt, um den ersten Schritt zu machen.'],
+  life_areas:['Wähle den EINEN Lebensbereich, der dir gerade am wichtigsten ist.','Schreib in einem Satz, wie er in 3 Jahren aussehen soll.','Die übrigen Bereiche kannst du später ergänzen.'],
+  beliefs_done:['Denk an eine Situation, in der du dich selbst gebremst hast.','Schreib wortwörtlich den Satz auf, den dein innerer Kritiker dabei sagt.','Mehr braucht der erste Schritt nicht.'],
+  comfort_map:['Öffne „Komfortzone kartieren".','Beantworte nur die erste Frage: Was gehört zu deiner Komfortzone?','Ehrlich statt vollständig – das reicht.'],
+  first_tasks:['Denk an eine konkrete Sache, die du diese Woche erledigen willst.','Leg sie als Aufgabe an und ordne ihr einen Lebensbereich zu.','Eine Aufgabe genügt für den Anfang.'],
+  mit_used:['Frag dich: Was ist HEUTE das Wichtigste?','Trag es in den ersten Tagesziel-Slot ein.','Maximal 3 – lieber weniger.'],
+  cal_used:['Nimm eine offene Aufgabe.','Gib ihr einen festen Zeitblock im Kalender – heute oder morgen.','Ein Termin mit dir selbst ist ein Versprechen.'],
+  morning_done:['Starte die Morgenroutine.','Beantworte nur die erste Frage (Dankbarkeit) – ein Stichwort reicht.','7 Minuten oder weniger.'],
+  pomodoro_used:['Wähle eine Aufgabe, vor der du dich drückst.','Starte einen 25-Minuten-Timer und leg sofort los.','Nach dem Klingeln darfst du aufhören.'],
+  evening_done:['Öffne die Abendreflexion.','Nenne einen Erfolg von heute – auch ein kleiner zählt.','Die App führt dich durch den Rest.'],
+  wellbeing_tracked:['Öffne Wohlbefinden.','Schätze Schlaf, Energie und Stress kurz ein – Bauchgefühl genügt.','Dauert unter einer Minute.'],
+  profile_depth:['Öffne „Profil vertiefen".','Beantworte die kurzen Zusatzfragen ehrlich.','Danach wird dein Weg noch genauer.'],
+  first_review:['Öffne den Wochenrückblick.','Beantworte nur: Was lief diese Woche gut?','Ein Satz reicht, um zu starten.'],
+  journal_7days:['Öffne das Journal für heute.','Halte einen Gedanken oder eine Beobachtung fest.','Konsistenz schlägt Länge.'],
+  analytics_checked:['Öffne Analytics.','Schau dir eine Zahl an, die dich überrascht.','Frag dich, was sie über dich verrät.'],
+  comfort_challenge:['Öffne die Komfortzonen-Challenge.','Wähle EINE Mutprobe für heute.','Herausfordernd, aber sicher – du entscheidest.'],
+  ai_coach_used:['Öffne FocusAI.','Stell die Frage, die dich gerade wirklich beschäftigt.','Es gibt keine falsche erste Nachricht.'],
+  quarterly_review:['Öffne den Quartals-Review.','Beantworte nur: Stimmt meine Richtung noch?','Ehrlich statt ausführlich.'],
+  beliefs_revisited:['Öffne die Glaubenssatz-Prüfung.','Erinnere dich an einen alten bremsenden Satz.','Frag dich: Glaube ich das heute noch?']
+};
+// Profilabhängige Rahmung – senkt die Einstiegshürde je nach Haupt-Blockade.
+const BLOCKER_REFRAME={
+  overwhelm:'🧱 Bei Überforderung zählt nur der erste Punkt. Alles andere darfst du jetzt bewusst ignorieren.',
+  unclarity:'🤔 Klarheit entsteht beim Tun, nicht davor. Fang an, auch wenn noch nicht alles klar ist.',
+  lowenergy:'😴 Wenig Energie? Mach nur den allerersten Mini-Schritt – mehr ist heute nicht nötig.',
+  fear:'😰 Fang so klein an, dass es sich sicher anfühlt. Ein Versuch zählt schon als Erfolg.',
+  distraction:'🎮 Leg das Handy für die nächsten Minuten weg. Ein kurzer, geschützter Moment genügt.',
+  procrastination:'⏳ Der Start ist die einzige echte Hürde. Mach die erste Handlung so klein, dass Anfangen leichter ist als Aufschieben.'
+};
+function journeyStart(stepId){
   const box=document.getElementById('journey-ai-box');if(!box)return;
-  const cat=journeyCatalog();const s=cat[stepId];if(!s)return;
+  // Zweiter Klick schließt die Anleitung wieder (reine Anzeige, kein Aufruf)
+  if(box.style.display==='block'){box.style.display='none';box.innerHTML='';return;}
   const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
+  const steps=STEP_START[stepId]||['Öffne den Schritt und mach den kleinstmöglichen ersten Schritt – 2 Minuten genügen.'];
+  const reframe=calmMode()?BLOCKER_REFRAME.lowenergy:(BLOCKER_REFRAME[p.blocker]||'');
+  const timeNote=p.timePerDay==='low'
+    ?'<div style="font-size:.78rem;color:var(--mu);margin-top:9px">⏱️ Du hast wenig Zeit eingeplant – der erste Schritt allein reicht für heute völlig.</div>':'';
   box.style.display='block';
-  box.innerHTML='<div style="font-size:.85rem;color:var(--mu);font-style:italic">✨ FocusAI denkt nach…</div>';
-  const sys=calmMode()
-    ?'Du bist FocusAI, ein ruhiger, sanfter Coach. Der Nutzer ist heute erschöpft oder unmotiviert. Antworte auf Deutsch, max 110 Wörter, ohne Hype und ohne Ausrufezeichen. Schlage 1–2 winzige, leichte erste Schritte vor und würdige, dass er da ist.'
-    :'Du bist FocusAI, ein konkreter, motivierender Coach. Antworte auf Deutsch, max 130 Wörter, mit 2–4 sehr konkreten ersten Mini-Schritten. Direkt und warmherzig.';
-  const msg='Der Nutzer steht bei diesem Schritt seines Weges: "'+s.title+'" ('+s.why+'). Sein Profil: Ziel='+p.goal+', Fokus-Bereich='+(LIFE_LABEL[p.goalArea]||p.goalArea)+', Blockade='+p.blocker+', Energie='+p.energyBaseline+', Zeit/Tag='+p.timePerDay+(todayMoodLabel()?', heutige Stimmung='+todayMoodLabel():'')+'. Wie fängt er am besten an? Gib konkrete, sofort umsetzbare erste Schritte – zugeschnitten auf seine Blockade und verfügbare Zeit.';
-  const reply=await callAI([{role:'user',content:msg}],sys,500);
-  if(reply){box.innerHTML='<div style="background:var(--bg);border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px;font-size:.86rem;line-height:1.6;display:flex;gap:10px"><div style="font-size:1.2rem;flex-shrink:0">🤖</div><div>'+reply.replace(/\n/g,'<br>')+'</div></div>';}
-  else{box.innerHTML='<div class="info-box info-orange" style="margin-top:0">⚠️ FocusAI ist gerade nicht erreichbar. Tipp: Starte mit dem allerkleinsten möglichen Schritt – 2 Minuten genügen.</div>';}
+  box.innerHTML=`<div style="background:var(--bg);border:1.5px solid var(--bo);border-radius:var(--r2);padding:12px 14px">
+    <div style="font-size:.8rem;font-weight:800;color:var(--p);margin-bottom:8px">👉 So fängst du an</div>
+    <ol style="margin:0;padding-left:18px;font-size:.86rem;line-height:1.7">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>
+    ${reframe?`<div style="font-size:.82rem;line-height:1.5;background:#FFF7ED;border:1px solid #FED7AA;border-radius:var(--r3);padding:8px 11px;margin-top:10px;color:#92400E">${reframe}</div>`:''}
+    ${timeNote}
+  </div>`;
 }
 
 // ── Jetzt sofort: konkrete nächste Handlung (regelbasiert, KI auf Klick) ──
