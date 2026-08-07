@@ -176,13 +176,45 @@ const BLOCKER_REFRAME={
   distraction:'🎮 Leg das Handy für die nächsten Minuten weg. Ein kurzer, geschützter Moment genügt.',
   procrastination:'⏳ Der Start ist die einzige echte Hürde. Mach die erste Handlung so klein, dass Anfangen leichter ist als Aufschieben.'
 };
+// Profilspezifische Varianten – NUR für Schritte, bei denen sich der erste
+// Schritt je Blockade wirklich unterscheidet (bewusst schlank, keine 19×6-Matrix).
+// Fehlt eine Kombination, greift STEP_START (Basis) + BLOCKER_REFRAME.
+const STEP_START_BY_BLOCKER={
+  first_tasks:{
+    overwhelm:['Denk an die EINE Sache, die dich gerade am meisten beschäftigt.','Leg nur sie als Aufgabe an – sonst nichts.','Der Rest darf warten, bis diese erledigt ist.'],
+    fear:['Wähle etwas Kleines, das sich sicher anfühlt.','Leg es als Aufgabe an – niemand sieht es außer dir.','Ein erster, risikoloser Eintrag genügt.'],
+    procrastination:['Nimm die Aufgabe, die du am längsten vor dir herschiebst.','Zerleg sie in einen Schritt, der nur 2 Minuten dauert.','Leg genau diesen 2-Minuten-Schritt an.']
+  },
+  mit_used:{
+    overwhelm:['Wähle nur EINE Aufgabe für heute – nicht drei.','Trag sie in den ersten Slot ein, lass die anderen leer.','Eine erledigte Sache schlägt drei angefangene.'],
+    fear:['Wähle die am wenigsten bedrohliche wichtige Aufgabe.','Trag sie als erstes Tagesziel ein.','Mut wächst, wenn du klein anfängst.'],
+    procrastination:['Wähle die Aufgabe, vor der du dich am meisten drückst – deinen „Frosch".','Setz sie auf Platz 1 der Tagesziele.','Ist sie erledigt, wird der Rest des Tages leicht.']
+  },
+  pomodoro_used:{
+    fear:['Wähle eine Aufgabe und stell den Timer auf nur 10 Minuten statt 25.','Sag dir: Nach 10 Minuten darf ich aufhören.','Meist willst du dann weitermachen – musst aber nicht.'],
+    lowenergy:['Stell den Timer auf 10 Minuten statt 25.','Ein kurzer Block ist besser als gar keiner.','Nach dem Klingeln entscheidest du neu.'],
+    distraction:['Leg das Handy außer Reichweite.','Stell den 25-Minuten-Timer und schließe alle anderen Tabs/Apps.','Für diese 25 Minuten existiert nur die eine Aufgabe.']
+  },
+  beliefs_done:{
+    fear:['Sei sanft mit dir – das hier ist keine Prüfung.','Denk an eine Situation, in der du dich klein gefühlt hast.','Schreib nur den einen Satz auf, den dein Kritiker dabei sagt.'],
+    unclarity:['Denk an einen Moment, in dem du gezögert hast, obwohl du wolltest.','Frag dich: Welcher Gedanke hat mich zurückgehalten?','Schreib ihn in einem Satz auf – das genügt.']
+  },
+  vision_process:{
+    unclarity:['Erwarte noch keine fertige Vision – sie entsteht beim Schreiben.','Öffne den Prozess und lies nur die erste Frage.','Schreib den ersten Gedanken auf, der kommt – ungefiltert.'],
+    fear:['Es gibt keine falsche Antwort, und niemand liest mit.','Öffne den Prozess und lies nur die erste Frage.','Ein ehrlicher Halbsatz ist ein voller erster Schritt.']
+  }
+};
 function journeyStart(stepId){
   const box=document.getElementById('journey-ai-box');if(!box)return;
   // Zweiter Klick schließt die Anleitung wieder (reine Anzeige, kein Aufruf)
   if(box.style.display==='block'){box.style.display='none';box.innerHTML='';return;}
   const p=(D.vision&&D.vision.onboarding&&D.vision.onboarding.profile)||{};
-  const steps=STEP_START[stepId]||['Öffne den Schritt und mach den kleinstmöglichen ersten Schritt – 2 Minuten genügen.'];
-  const reframe=calmMode()?BLOCKER_REFRAME.lowenergy:(BLOCKER_REFRAME[p.blocker]||'');
+  // Bei müder Tagesstimmung wie "lowenergy" behandeln, sonst die Test-Blockade
+  const key=calmMode()?'lowenergy':p.blocker;
+  const variant=STEP_START_BY_BLOCKER[stepId]&&STEP_START_BY_BLOCKER[stepId][key];
+  const steps=variant||STEP_START[stepId]||['Öffne den Schritt und mach den kleinstmöglichen ersten Schritt – 2 Minuten genügen.'];
+  // Rahmung nur bei Basis-Schritten – die Variante trägt die Anpassung schon in sich
+  const reframe=variant?'':(BLOCKER_REFRAME[key]||'');
   const timeNote=p.timePerDay==='low'
     ?'<div style="font-size:.78rem;color:var(--mu);margin-top:9px">⏱️ Du hast wenig Zeit eingeplant – der erste Schritt allein reicht für heute völlig.</div>':'';
   box.style.display='block';
