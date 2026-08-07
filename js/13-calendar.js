@@ -1,7 +1,7 @@
-// FocusFlow · 13-calendar.js — Kalender (Monat/Tag) und Gantt
+// FocusFlow · 13-calendar.js — Kalender (Monat/Tag)
 // Klassisches Script (kein ES-Modul): Top-Level-Deklarationen sind global. Ladereihenfolge: index.html.
 // ═══════════════════════════════════════════════════════════════
-// ── CALENDAR ──  Monats- und Tagesansicht, Gantt
+// ── CALENDAR ──  Monats- und Tagesansicht
 // ═══════════════════════════════════════════════════════════════
 function setCalView(view,btn){
   calView=view;document.querySelectorAll('.cal-vtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
@@ -89,30 +89,6 @@ async function addTaskFromCal(){
   if(!r.ok){toast('❌ Fehler.');return;}
   D.tasks.unshift(task);document.getElementById('day-new-task').value='';
   logStep('cal_used');toast('✅ Aufgabe hinzugefügt!');refreshCalDay();renderTasks();renderStats();updateDepSelect();
-}
-
-// ─── Gantt ───
-function renderGantt(){
-  const zoom=gs('gantt-zoom'),flt=gs('gantt-filter');
-  const today=new Date();today.setHours(0,0,0,0);
-  const days=zoom==='week'?7:zoom==='2week'?14:30;
-  const startD=new Date(today);startD.setDate(startD.getDate()-Math.floor(days/4));
-  let tasks=D.tasks.filter(t=>t.start&&t.end);
-  if(flt==='open')tasks=tasks.filter(t=>!t.done);if(flt==='done')tasks=tasks.filter(t=>t.done);
-  const wrap=document.getElementById('gantt-wrap');
-  if(!tasks.length){wrap.innerHTML='<div class="empty" style="padding:28px">Keine Aufgaben mit Start- und Enddatum vorhanden.</div>';return;}
-  const CELL=Math.max(24,Math.floor(660/days));
-  let hdr='<tr><th style="min-width:140px;text-align:left;padding:6px 10px">Aufgabe</th>';
-  for(let i=0;i<days;i++){const d=new Date(startD);d.setDate(d.getDate()+i);const isT=d.toDateString()===today.toDateString();const lbl=d.getDate()===1||i===0?d.toLocaleDateString('de-DE',{day:'numeric',month:'short'}):d.getDate()%5===0?d.getDate():'';hdr+=`<th style="width:${CELL}px;min-width:${CELL}px;${isT?'color:var(--ac)':''}">${lbl}</th>`;}
-  hdr+='</tr>';
-  const rows=tasks.map(t=>{
-    const ts=new Date(t.start);ts.setHours(0,0,0,0);const te=new Date(t.end);te.setHours(0,0,0,0);
-    const bc=t.done?'gbar-done':t.prio==='high'?'gbar-high':t.prio==='low'?'gbar-low':'gbar-normal';
-    let cells='';
-    for(let i=0;i<days;i++){const d=new Date(startD);d.setDate(d.getDate()+i);const isT=d.toDateString()===today.toDateString();const isS=d.toDateString()===ts.toDateString();cells+=`<td class="gbar-cell" style="${isT?'background:rgba(244,169,106,.07)':''}">${isS?`<div class="gbar ${bc}" style="width:${Math.max(1,Math.round((te-ts)/864e5)+1)*CELL-4}px;left:2px">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,12))}</div>`:''} ${isT?'<div class="gantt-today-line"></div>':''}</td>`;}
-    return `<tr><td class="gtask-name" title="${esc(t.name)}">${t.done?'✅ ':''}${LA_BADGE[t.lifeArea]||''} ${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}<div style="font-size:.7rem;color:var(--mu);font-weight:600;margin-top:1px">${fmtDate(t.start)} – ${fmtDate(t.end)}</div></td>${cells}</tr>`;
-  }).join('');
-  wrap.innerHTML=`<table class="gantt-table"><thead>${hdr}</thead><tbody>${rows}</tbody></table>`;
 }
 
 // ─── Wellbeing (Speichern & Rendern) ───

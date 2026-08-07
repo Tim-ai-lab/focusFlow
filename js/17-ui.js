@@ -120,18 +120,25 @@ function updateTopProgress(){
   document.getElementById('top-progress-pct').textContent=done+'/'+total+' · '+pct+'%';
   document.getElementById('top-progress-bar').style.width=pct+'%';
 }
+// Tab-Button per Name finden (robust gegen Umsortieren/Entfernen von Tabs) –
+// ersetzt die früheren fragilen document.querySelectorAll('.tbtn')[N]-Indizes.
+function tabBtn(name){
+  return Array.from(document.querySelectorAll('.tbtn')).find(b=>{
+    const m=(b.getAttribute('onclick')||'').match(/showTab\('([^']+)'/);
+    return m&&m[1]===name;
+  })||null;
+}
 function showTab(name,btn){
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
-  document.getElementById('tab-'+name).classList.add('on');btn.classList.add('on');
+  const pnl=document.getElementById('tab-'+name);if(pnl)pnl.classList.add('on');
+  if(btn)btn.classList.add('on');
   if(name==='journey')renderJourney();
   if(name==='me')renderMyBereich();
   if(name==='goals')renderGoals();
-  if(name==='path')renderPath();
   if(name==='mit')renderMIT();
   if(name==='vision')renderVision();
   if(name==='cal'){if(calView==='month')renderCal();else renderDayView();}
-  if(name==='gantt')renderGantt();
   if(name==='wellbeing')renderWellbeing();
   if(name==='review')renderReviews();
   if(name==='diary'){journalDate=new Date().toISOString().split('T')[0];renderJournal();}
@@ -154,7 +161,6 @@ function renderAll(){
   try{updateDepSelect();}catch(e){console.error('updateDepSelect',e);}
   try{showMorningSummary();}catch(e){console.error('showMorningSummary',e);}
   try{checkEveningPrompt();}catch(e){console.error('checkEveningPrompt',e);}
-  try{renderPath();}catch(e){console.error('renderPath',e);}
   try{renderJourney();}catch(e){console.error('renderJourney',e);}
   try{renderMyBereich();}catch(e){console.error('renderMyBereich',e);}
   try{renderGoals();}catch(e){console.error('renderGoals',e);}

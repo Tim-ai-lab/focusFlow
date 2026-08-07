@@ -146,11 +146,9 @@
     <div class="tnav" id="tnav" style="display:none">
       <button class="tbtn" onclick="showTab('tasks',this)">📋 Aufgaben</button>
       <button class="tbtn" onclick="showTab('mit',this)">🎯 Tagesziele</button>
-      <button class="tbtn" onclick="showTab('path',this)">🗺️ Mein Pfad</button>
       <button class="tbtn" onclick="showTab('vision',this)">🌟 Vision</button>
       <button class="tbtn" onclick="showTab('pomo',this)">⏱️ Pomodoro</button>
       <button class="tbtn" onclick="showTab('cal',this)">📅 Kalender</button>
-      <button class="tbtn" onclick="showTab('gantt',this)">📊 Gantt</button>
       <button class="tbtn" onclick="showTab('wellbeing',this)">🧘 Wohlbefinden</button>
       <button class="tbtn" onclick="showTab('review',this)">🔄 Wochenrückblick</button>
       <button class="tbtn" onclick="showTab('diary',this)">📓 Journal</button>
@@ -225,130 +223,6 @@
         <p class="sdesc">Fokussiere dich auf maximal 3 Aufgaben pro Tag. Diese sollten direkt zu deiner Vision beitragen!</p>
         <div id="mitslots"></div>
         <div class="info-box info-orange">💡 <strong>Prokrastinations-Tipp:</strong> Starte mit der Aufgabe, vor der du dich am meisten drückst. Danach fühlt sich alles leichter an!</div>
-      </div>
-    </div>
-
-    <!-- PATH TAB -->
-    <div class="tpanel" id="tab-path">
-
-      <!-- NEXT STEP AI RECOMMENDATION -->
-      <div class="sec" id="path-ai-rec" style="background:linear-gradient(135deg,#EEF2FF,#F4F6FB);border:1.5px solid #C7D2FE">
-        <div style="display:flex;align-items:flex-start;gap:12px">
-          <div style="font-size:2rem;flex-shrink:0">🤖</div>
-          <div style="flex:1">
-            <div style="font-size:.78rem;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">FocusAI · Dein nächster Schritt</div>
-            <div id="path-ai-text" style="font-size:.9rem;line-height:1.6;color:var(--txt)">Analysiere deinen Fortschritt...</div>
-            <div id="path-ai-action" style="margin-top:12px"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PROGRESS OVERVIEW -->
-      <div class="sec">
-        <div class="shdr">
-          <div class="stitle">🗺️ Dein persönlicher Entwicklungspfad</div>
-          <div id="path-overall-progress" style="font-size:.82rem;font-weight:700;color:var(--p)"></div>
-        </div>
-        <p class="sdesc">Alle Features sind zugänglich – dieser Pfad zeigt dir die psychologisch optimale Reihenfolge für maximale Wirkung. Folge dem Pfad oder wähle frei.</p>
-
-        <!-- OVERALL PROGRESS BAR -->
-        <div style="margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;color:var(--mu);margin-bottom:6px">
-            <span>Gesamtfortschritt</span>
-            <span id="path-pct">0%</span>
-          </div>
-          <div style="height:10px;background:var(--bo);border-radius:5px;overflow:hidden">
-            <div id="path-bar" style="height:100%;background:linear-gradient(90deg,var(--p),var(--ac));border-radius:5px;transition:width .6s"></div>
-          </div>
-        </div>
-
-        <!-- 5 STAGES -->
-        <div id="path-stages" style="display:flex;flex-direction:column;gap:16px"></div>
-      </div>
-
-      <!-- PHILOSOPHY -->
-      <div class="sec">
-        <div class="shdr"><div class="stitle">💡 Warum dieser Pfad funktioniert</div></div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div style="background:#EEF2FF;border-radius:var(--r2);padding:14px 16px;border:1px solid #C7D2FE">
-            <div style="font-size:.85rem;font-weight:800;color:#3730A3;margin-bottom:6px">⚡ Energie entsteht aus drei Quellen</div>
-            <div style="font-size:.83rem;color:#3730A3;line-height:1.6">
-              <strong>1. Klarheit</strong> – Ich weiß wer ich bin, was ich will und warum.<br>
-              <strong>2. Ausrichtung</strong> – Mein Alltag spiegelt meine Vision wider.<br>
-              <strong>3. Zustand</strong> – Körper, Geist und Emotionen sind reguliert.<br><br>
-              <em>Fehlt eines dieser drei Elemente, entsteht Prokrastination, Erschöpfung oder Ziellosigkeit.</em>
-            </div>
-          </div>
-          <div style="background:#FFF7ED;border-radius:var(--r2);padding:14px 16px;border:1px solid #FED7AA">
-            <div style="font-size:.85rem;font-weight:800;color:#92400E;margin-bottom:6px">⏱️ 15-30 Minuten täglich</div>
-            <div style="font-size:.83rem;color:#92400E;line-height:1.6">
-              Die App ist auf <strong>maximale Wirkung bei minimalem Zeitaufwand</strong> ausgelegt.<br><br>
-              Morgenritual: 7 Min · Tagesarbeit: 5-10 Min · Abendreflexion: 8 Min<br>
-              <strong>Gesamt: ~20 Min täglich</strong> für nachhaltigen Wandel.
-            </div>
-          </div>
-          <div style="background:#F0FDF4;border-radius:var(--r2);padding:14px 16px;border:1px solid #BBF7D0">
-            <div style="font-size:.85rem;font-weight:800;color:#065F46;margin-bottom:6px">🧠 Psychologisches Fundament</div>
-            <div style="font-size:.83rem;color:#065F46;line-height:1.6">
-              Dieser Pfad basiert auf: <strong>Positiver Psychologie</strong> (Seligman), <strong>Selbstbestimmungstheorie</strong> (Deci & Ryan), <strong>ACT</strong> (Hayes), <strong>CBT</strong>, <strong>Logotherapie</strong> (Frankl), <strong>Habit-Forschung</strong> (Clear/Fogg) und <strong>Neuroplastizität</strong>-Forschung.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- DAILY RITUAL GUIDE -->
-      <div class="sec">
-        <div class="stitle" style="margin-bottom:14px">📅 Dein ideales Tagesritual</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border-radius:var(--r2);border:1px solid #FED7AA">
-            <div style="font-size:1.4rem;flex-shrink:0">🌅</div>
-            <div>
-              <div style="font-size:.88rem;font-weight:800;color:#92400E">Morgen · 7 Minuten</div>
-              <div style="font-size:.8rem;color:#92400E;margin-top:3px;line-height:1.5">
-                <strong>1 Min</strong> – Affirmation & Tagesintention setzen<br>
-                <strong>1 Min</strong> – Energie-Level einschätzen<br>
-                <strong>2 Min</strong> – 3 MIT-Aufgaben die zur Vision beitragen wählen<br>
-                <strong>3 Min</strong> – Dankbarkeit & Fokus-Aufgabe bestimmen
-              </div>
-            </div>
-            <button onclick="openMorningRoutine()" style="padding:7px 12px;background:var(--ac);border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Starten →</button>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#EEF2FF,#E8EFFF);border-radius:var(--r2);border:1px solid #C7D2FE">
-            <div style="font-size:1.4rem;flex-shrink:0">☀️</div>
-            <div style="flex:1">
-              <div style="font-size:.88rem;font-weight:800;color:#3730A3">Tag · 5-10 Minuten</div>
-              <div style="font-size:.8rem;color:#3730A3;margin-top:3px;line-height:1.5">
-                <strong>Pomodoro-Blöcke</strong> für tiefe Fokus-Arbeit<br>
-                <strong>MIT-Aufgaben</strong> nach Energie-Level einteilen<br>
-                <strong>Aufgaben</strong> immer mit Vision-Bezug anlegen
-              </div>
-            </div>
-            <button onclick="showTab('tasks',document.querySelectorAll('.tbtn')[0])" style="padding:7px 12px;background:var(--p);border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Zu Aufgaben →</button>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#FAF5FF,#EDE9FE);border-radius:var(--r2);border:1px solid #DDD6FE">
-            <div style="font-size:1.4rem;flex-shrink:0">🌙</div>
-            <div>
-              <div style="font-size:.88rem;font-weight:800;color:#6D28D9">Abend · 8 Minuten</div>
-              <div style="font-size:.8rem;color:#6D28D9;margin-top:3px;line-height:1.5">
-                <strong>3 Min</strong> – Was hat Energie gegeben / genommen?<br>
-                <strong>2 Min</strong> – Hat mein Tag zu meiner Vision beigetragen?<br>
-                <strong>3 Min</strong> – Intention für morgen setzen
-              </div>
-            </div>
-            <button onclick="openEveningRoutine()" style="padding:7px 12px;background:#8B5CF6;border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Starten →</button>
-          </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;padding:12px;background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border-radius:var(--r2);border:1px solid #BBF7D0">
-            <div style="font-size:1.4rem;flex-shrink:0">📅</div>
-            <div style="flex:1">
-              <div style="font-size:.88rem;font-weight:800;color:#065F46">Woche · Sonntag 20 Minuten</div>
-              <div style="font-size:.8rem;color:#065F46;margin-top:3px;line-height:1.5">
-                <strong>Wochenrückblick</strong> – Was lief gut? Was lerne ich?<br>
-                <strong>Vision-Alignment</strong> – Hat meine Woche zu meiner Vision beigetragen?
-              </div>
-            </div>
-            <button onclick="showTab('review',document.querySelectorAll('.tbtn')[7])" style="padding:7px 12px;background:var(--ok);border:none;border-radius:var(--r3);color:#fff;font-weight:700;cursor:pointer;font-size:.78rem;white-space:nowrap;flex-shrink:0">Starten →</button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -509,21 +383,6 @@
           </div>
           <div style="margin-top:10px;text-align:center"><button class="addbtn" onclick="openDayModalForDate(dayViewDate)">+ Aufgabe für diesen Tag</button></div>
         </div>
-      </div>
-    </div>
-
-    <!-- GANTT -->
-    <div class="tpanel" id="tab-gantt">
-      <div class="sec">
-        <div class="shdr">
-          <div class="stitle">📊 Gantt-Chart</div>
-          <div style="display:flex;gap:7px;flex-wrap:wrap">
-            <select class="sel" id="gantt-zoom" onchange="renderGantt()"><option value="week">Woche</option><option value="2week" selected>2 Wochen</option><option value="month">Monat</option></select>
-            <select class="sel" id="gantt-filter" onchange="renderGantt()"><option value="all">Alle</option><option value="open">Offen</option><option value="done">Erledigt</option></select>
-          </div>
-        </div>
-        <div style="font-size:.79rem;color:var(--mu);margin-bottom:10px;font-weight:600">Nur Aufgaben mit Start- und Enddatum werden angezeigt. <span style="color:var(--ac)">Orangene Linie = Heute</span></div>
-        <div class="gantt-wrap" id="gantt-wrap"></div>
       </div>
     </div>
 
@@ -852,7 +711,7 @@
   <div class="modal-card" style="max-width:430px">
     <div class="modal-title">💫 Dein Anker</div>
     <div id="vboost-content"></div>
-    <button class="addbtn" style="width:100%;margin-top:14px" onclick="document.getElementById('vboostmod').style.display='none';showTab('mit',document.querySelectorAll('.tbtn')[1])">Zu meinen Tageszielen →</button>
+    <button class="addbtn" style="width:100%;margin-top:14px" onclick="document.getElementById('vboostmod').style.display='none';showTab('mit',tabBtn('mit'))">Zu meinen Tageszielen →</button>
     <button class="modal-close" onclick="document.getElementById('vboostmod').style.display='none'">Schließen</button>
   </div>
 </div>

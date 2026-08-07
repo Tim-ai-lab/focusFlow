@@ -11,8 +11,8 @@ const PATH_STAGES=[
     why:'Ohne Selbstkenntnis keine echte Vision. Diese Stufe legt das psychologische Fundament für alles andere.',
     steps:[
       {id:'vision_process',title:'Vision-Prozess durchführen',why:'Der 6-Schritte-Prozess führt dich von der Sterbebett-Frage zur fertigen Affirmation – psychologisch fundiert und KI-begleitet.',time:'60-90 Min',tab:'vision',action:'startVisionProcess()'},
-      {id:'life_areas',title:'Lebensbereiche definieren',why:'Ohne klare Lebensbereiche fehlt die Struktur für Ziele. Du brauchst Klarheit in welchen Feldern du wachsen willst.',time:'20-30 Min',tab:'vision',action:'showTab("vision",document.querySelectorAll(".tbtn")[3])'},
-      {id:'beliefs_done',title:'Glaubenssätze pro Lebensbereich notiert',why:'Limitierende Glaubenssätze sind die unsichtbare Bremse. Wer sie kennt, kann sie transformieren.',time:'15 Min',tab:'vision',action:'showTab("vision",document.querySelectorAll(".tbtn")[3])'},
+      {id:'life_areas',title:'Lebensbereiche definieren',why:'Ohne klare Lebensbereiche fehlt die Struktur für Ziele. Du brauchst Klarheit in welchen Feldern du wachsen willst.',time:'20-30 Min',tab:'vision',action:'showTab("vision",tabBtn("vision"))'},
+      {id:'beliefs_done',title:'Glaubenssätze pro Lebensbereich notiert',why:'Limitierende Glaubenssätze sind die unsichtbare Bremse. Wer sie kennt, kann sie transformieren.',time:'15 Min',tab:'vision',action:'showTab("vision",tabBtn("vision"))'},
       {id:'comfort_map',title:'Komfortzone kartieren',why:'Wachstum passiert am Rand der Komfortzone. Wer seine Grenzen kennt, kann sie bewusst und sicher erweitern – statt zufällig an ihnen zu scheitern.',time:'10 Min',tab:'journey',action:"openReflection('comfort_map')"},
     ]
   },
@@ -22,9 +22,9 @@ const PATH_STAGES=[
     color:'#F4A96A',badge:'Struktur',
     why:'Vision ohne Ausrichtung bleibt ein Traum. Diese Stufe macht die Vision alltagstauglich.',
     steps:[
-      {id:'first_tasks',title:'Erste Aufgaben mit Lebensbereich anlegen',why:'Wenn jede Aufgabe einem Lebensbereich zugeordnet ist, bekommt Arbeit automatisch mehr Sinn – das stärkste Anti-Prokrastinations-Werkzeug.',time:'10 Min',tab:'tasks',action:'showTab("tasks",document.querySelectorAll(".tbtn")[0])'},
-      {id:'mit_used',title:'MIT-Methode 3 Tage angewendet',why:'Die 3 wichtigsten Aufgaben pro Tag auswählen verhindert Überforderung und schafft tägliche Erfolgserlebnisse.',time:'2 Min/Tag',tab:'mit',action:'showTab("mit",document.querySelectorAll(".tbtn")[1])'},
-      {id:'cal_used',title:'Kalender mit Zeitblöcken genutzt',why:'Aufgaben ohne Zeitplan werden 3x häufiger aufgeschoben. Zeit einplanen = Commitment.',time:'5 Min',tab:'cal',action:'showTab("cal",document.querySelectorAll(".tbtn")[4])'},
+      {id:'first_tasks',title:'Erste Aufgaben mit Lebensbereich anlegen',why:'Wenn jede Aufgabe einem Lebensbereich zugeordnet ist, bekommt Arbeit automatisch mehr Sinn – das stärkste Anti-Prokrastinations-Werkzeug.',time:'10 Min',tab:'tasks',action:'showTab("tasks",tabBtn("tasks"))'},
+      {id:'mit_used',title:'MIT-Methode 3 Tage angewendet',why:'Die 3 wichtigsten Aufgaben pro Tag auswählen verhindert Überforderung und schafft tägliche Erfolgserlebnisse.',time:'2 Min/Tag',tab:'mit',action:'showTab("mit",tabBtn("mit"))'},
+      {id:'cal_used',title:'Kalender mit Zeitblöcken genutzt',why:'Aufgaben ohne Zeitplan werden 3x häufiger aufgeschoben. Zeit einplanen = Commitment.',time:'5 Min',tab:'cal',action:'showTab("cal",tabBtn("cal"))'},
     ]
   },
   {
@@ -34,9 +34,9 @@ const PATH_STAGES=[
     why:'Energie ist keine Ressource die man hat – sie wird täglich erzeugt durch Rituale und Rhythmus.',
     steps:[
       {id:'morning_done',title:'Erste Morgenroutine abgeschlossen',why:'Die Morgenroutine ist der stärkste Energiegenerator des Tages. Sie aktiviert Intention, Dankbarkeit und Fokus in 7 Minuten.',time:'7 Min',tab:'pomo',action:'openMorningRoutine()'},
-      {id:'pomodoro_used',title:'Pomodoro-Technik 3x genutzt',why:'25-Minuten-Sprints überwinden den Startwiderstand. Das Gehirn prokrastiniert bei großen Aufgaben, nicht bei kleinen Zeitblöcken.',time:'25 Min/Block',tab:'pomo',action:'showTab("pomo",document.querySelectorAll(".tbtn")[3])'},
+      {id:'pomodoro_used',title:'Pomodoro-Technik 3x genutzt',why:'25-Minuten-Sprints überwinden den Startwiderstand. Das Gehirn prokrastiniert bei großen Aufgaben, nicht bei kleinen Zeitblöcken.',time:'25 Min/Block',tab:'pomo',action:'showTab("pomo",tabBtn("pomo"))'},
       {id:'evening_done',title:'Erste Abendreflexion abgeschlossen',why:'Der Abschluss-Loop ist entscheidend. Was nicht reflektiert wird, wiederholt sich. Abendreflexion schafft Lernschleifen.',time:'8 Min',tab:'diary',action:'openEveningRoutine()'},
-      {id:'wellbeing_tracked',title:'Wohlbefinden 3 Tage getrackt',why:'Energie hat körperliche Ursachen. Wer Schlaf, Stress und Bewegung trackt, erkennt seine persönlichen Energie-Muster.',time:'2 Min/Tag',tab:'wellbeing',action:'showTab("wellbeing",document.querySelectorAll(".tbtn")[6])'},
+      {id:'wellbeing_tracked',title:'Wohlbefinden 3 Tage getrackt',why:'Energie hat körperliche Ursachen. Wer Schlaf, Stress und Bewegung trackt, erkennt seine persönlichen Energie-Muster.',time:'2 Min/Tag',tab:'wellbeing',action:'showTab("wellbeing",tabBtn("wellbeing"))'},
     ]
   },
   {
@@ -46,9 +46,9 @@ const PATH_STAGES=[
     why:'Wachstum entsteht nicht durch Erfahrung – sondern durch reflektierte Erfahrung.',
     steps:[
       {id:'profile_depth',title:'Profil vertiefen',why:'Dein Einstiegstest war bewusst kurz. Ein paar Zusatzfragen zu Schlaf, Stress, Struktur und innerem Kritiker machen deinen Weg ab hier präziser.',time:'3 Min',tab:'journey',action:'startProfileDepth()'},
-      {id:'first_review',title:'Ersten Wochenrückblick durchgeführt',why:'Der Wochenrückblick ist das mächtigste Werkzeug gegen Prokrastination. Er macht Muster sichtbar bevor sie sich verfestigen.',time:'20 Min',tab:'review',action:'showTab("review",document.querySelectorAll(".tbtn")[7])'},
-      {id:'journal_7days',title:'Journal 7 Tage geführt',why:'Das Journal verbindet alle Bereiche zu einem ganzheitlichen Tagesprotokoll. Nach 7 Tagen werden erste Muster sichtbar.',time:'Auto-befüllt',tab:'diary',action:'showTab("diary",document.querySelectorAll(".tbtn")[8])'},
-      {id:'analytics_checked',title:'Analytics-Insights angeschaut',why:'Daten über dich selbst sind Gold. Wann bist du produktiv? Was korreliert mit deiner Energie? Diese Einblicke verändern Verhalten.',time:'5 Min',tab:'analytics',action:'showTab("analytics",document.querySelectorAll(".tbtn")[10])'},
+      {id:'first_review',title:'Ersten Wochenrückblick durchgeführt',why:'Der Wochenrückblick ist das mächtigste Werkzeug gegen Prokrastination. Er macht Muster sichtbar bevor sie sich verfestigen.',time:'20 Min',tab:'review',action:'showTab("review",tabBtn("review"))'},
+      {id:'journal_7days',title:'Journal 7 Tage geführt',why:'Das Journal verbindet alle Bereiche zu einem ganzheitlichen Tagesprotokoll. Nach 7 Tagen werden erste Muster sichtbar.',time:'Auto-befüllt',tab:'diary',action:'showTab("diary",tabBtn("diary"))'},
+      {id:'analytics_checked',title:'Analytics-Insights angeschaut',why:'Daten über dich selbst sind Gold. Wann bist du produktiv? Was korreliert mit deiner Energie? Diese Einblicke verändern Verhalten.',time:'5 Min',tab:'analytics',action:'showTab("analytics",tabBtn("analytics"))'},
     ]
   },
   {
@@ -58,7 +58,7 @@ const PATH_STAGES=[
     why:'Ab hier wird die App zu deinem persönlichsten Werkzeug. KI-Coach, Quartals-Review und tiefe Muster-Arbeit.',
     steps:[
       {id:'comfort_challenge',title:'Komfortzone 3× bewusst verlassen',why:'Selbstvertrauen entsteht durch Beweise, nicht durch Nachdenken. Jede gemeisterte Challenge erweitert deine Komfortzone dauerhaft.',time:'5-30 Min',tab:'journey',action:'openComfortChallenge()'},
-      {id:'ai_coach_used',title:'FocusAI für tiefe Reflexion genutzt',why:'Der KI-Coach kennt deine Vision, Glaubenssätze und Muster. Tiefe Gespräche bringen Erkenntnisse die alleine schwer erreichbar sind.',time:'10-20 Min',tab:'ai',action:'showTab("ai",document.querySelectorAll(".tbtn")[9])'},
+      {id:'ai_coach_used',title:'FocusAI für tiefe Reflexion genutzt',why:'Der KI-Coach kennt deine Vision, Glaubenssätze und Muster. Tiefe Gespräche bringen Erkenntnisse die alleine schwer erreichbar sind.',time:'10-20 Min',tab:'ai',action:'showTab("ai",tabBtn("ai"))'},
       {id:'quarterly_review',title:'Ersten Quartals-Review durchgeführt',why:'Alle 90 Tage: Stimmt meine Vision noch? Was hat sich verändert? Dieser Review verhindert dass man fleißig in die falsche Richtung läuft.',time:'30 Min',tab:'journey',action:"openReflection('quarterly_review')"},
       {id:'beliefs_revisited',title:'Glaubenssätze nach 30 Tagen überprüft',why:'Glaubenssätze verändern sich durch Erfahrung. Nach 30 Tagen zeigen sich neue Schichten – und neue Möglichkeiten zur Transformation.',time:'20 Min',tab:'journey',action:"openReflection('beliefs_revisited')"},
     ]
@@ -151,7 +151,6 @@ function logStep(id){
 function completeStep(id){
   const added=logStep(id);
   try{renderJourney();}catch(e){}
-  try{renderPath();}catch(e){}
   toast(added?'✅ Abgeschlossen – im Log gespeichert!':'Schon erledigt ✓');
 }
 // Letzten (bzw. heutigen) Log-Eintrag wieder entfernen
@@ -165,7 +164,6 @@ function undoStep(id){
   }else{arr.pop();}
   saveProfile();
   try{renderJourney();}catch(e){}
-  try{renderPath();}catch(e){}
   try{renderMyBereich();}catch(e){}
   toast('↩ Rückgängig gemacht');
 }
@@ -372,107 +370,8 @@ function completeComfortChallenge(){
   document.getElementById('comfortmod').style.display='none';
   try{renderJourney();}catch(e){}
 }
-function renderPath(){
-  if(!UID||!D)return;
-  const completed=computePathStats();
-  const totalSteps=PATH_STAGES.reduce((s,st)=>s+st.steps.length,0);
-  const doneSteps=PATH_STAGES.reduce((s,st)=>s+st.steps.filter(sp=>completed[sp.id]).length,0);
-  const pct=Math.round((doneSteps/totalSteps)*100);
-  document.getElementById('path-pct').textContent=pct+'%';
-  document.getElementById('path-bar').style.width=pct+'%';
-  document.getElementById('path-overall-progress').textContent=doneSteps+' von '+totalSteps+' Schritten';
-
-  // Find next recommended step
-  let nextStep=null,nextStage=null;
-  outer:for(const stage of PATH_STAGES){
-    for(const step of stage.steps){
-      if(!completed[step.id]){nextStep=step;nextStage=stage;break outer;}
-    }
-  }
-  renderPathAI(nextStep,nextStage,pct);
-
-  // Render stages
-  const stagesEl=document.getElementById('path-stages');
-  stagesEl.innerHTML='';
-  PATH_STAGES.forEach((stage,si)=>{
-    const stageDone=stage.steps.filter(s=>completed[s.id]).length;
-    const stageTotal=stage.steps.length;
-    const isComplete=stageDone===stageTotal;
-    const isActive=nextStage?.id===stage.id;
-    const div=document.createElement('div');
-    div.className='path-stage'+(isComplete?' completed':isActive?' active':'');
-    div.innerHTML=`<div class="path-stage-header" onclick="togglePathStage(this)">
-      <div class="path-stage-icon">${stage.icon}</div>
-      <div class="path-stage-info">
-        <div class="path-stage-name">${stage.name}</div>
-        <div class="path-stage-desc">${stage.desc}</div>
-        <div style="height:4px;background:var(--bo);border-radius:2px;margin-top:7px;overflow:hidden;max-width:200px">
-          <div style="height:100%;width:${Math.round((stageDone/stageTotal)*100)}%;background:${isComplete?'var(--ok)':'var(--p)'};border-radius:2px;transition:width .5s"></div>
-        </div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-        <span class="path-stage-badge" style="background:${isComplete?'#DCFCE7':isActive?'#EEF2FF':'var(--bg)'};color:${isComplete?'#15803D':isActive?'var(--p)':'var(--mu)'};border:1.5px solid ${isComplete?'#BBF7D0':isActive?'#C7D2FE':'var(--bo)'}">${isComplete?'✓ Abgeschlossen':isActive?'● Aktiv':stage.badge}</span>
-        <span class="path-stage-prog">${stageDone}/${stageTotal}</span>
-      </div>
-    </div>
-    <div class="path-stage-steps">
-      <div style="padding:12px 16px 8px;font-size:.8rem;color:var(--mu);line-height:1.5;border-bottom:1px solid var(--bo);font-style:italic">💡 ${stage.why}</div>
-      ${stage.steps.map(step=>{
-        const done=!!completed[step.id];
-        return`<div class="path-step${done?' completed':''}">
-          <div class="path-step-cb">${done?'✓':''}</div>
-          <div class="path-step-info">
-            <div class="path-step-title">${step.title}</div>
-            <div class="path-step-why">${step.why}</div>
-          </div>
-          <span class="path-step-time">⏱ ${step.time}</span>
-          ${!done?`<button class="path-step-action" onclick="${step.action};closePathAndGo('${step.tab}')">Starten →</button>`:`<span style="padding:6px 10px;border:2px solid var(--ok);border-radius:var(--r3);color:var(--ok);font-size:.75rem;font-weight:700;white-space:nowrap">✓ Erledigt</span>`}
-        </div>`;
-      }).join('')}
-    </div>`;
-    // Auto-open active stage
-    if(isActive||isComplete)div.classList.add('open');
-    stagesEl.appendChild(div);
-  });
-}
-function togglePathStage(header){header.parentElement.classList.toggle('open');}
 function closePathAndGo(tab){
   const btn=Array.from(document.querySelectorAll('.tbtn')).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+tab+"'"));
   if(btn)btn.click();
-}
-async function renderPathAI(nextStep,nextStage,pct){
-  if(!document.getElementById('path-ai-text'))return;
-  const textEl=document.getElementById('path-ai-text');
-  const actionEl=document.getElementById('path-ai-action');
-  if(pct===100){
-    textEl.textContent='🎉 Du hast alle Schritte abgeschlossen! Das ist eine außergewöhnliche Leistung. Dein nächster Schritt ist der Quartals-Review – überprüfe deine Vision und setze neue Impulse.';
-    actionEl.innerHTML=`<button class="path-step-action" onclick="showTab('review',document.querySelectorAll('.tbtn')[7])">Zum Quartals-Review →</button>`;
-    return;
-  }
-  if(!nextStep){
-    textEl.textContent='Starte mit Schritt 1 – dem Vision-Prozess. Er ist das Fundament für alles andere.';
-    return;
-  }
-  // Static recommendations based on step – no API call needed
-  const recs={
-    vision_process:'🌟 Beginne mit dem Vision-Prozess – er ist das Fundament für maximale Energie. Ohne klare Vision fehlt die Richtung, und ohne Richtung entsteht Prokrastination.',
-    life_areas:'🎯 Definiere deine Lebensbereiche. Sie geben deinen täglichen Aufgaben Sinn – und Sinn ist der stärkste Anti-Prokrastinations-Faktor.',
-    beliefs_done:'🧠 Limitierende Glaubenssätze sind die unsichtbare Bremse. Wer sie kennt, kann sie transformieren. Das ist der Unterschied zwischen Wollen und Tun.',
-    first_tasks:'📋 Lege deine ersten Aufgaben mit Lebensbereich an. Wenn jede Aufgabe einem größeren Ziel dient, steigt die Motivation automatisch.',
-    mit_used:'🎯 Probiere die MIT-Methode aus. 3 Aufgaben pro Tag statt endloser Listen – das reduziert Überforderung und schafft tägliche Erfolgserlebnisse.',
-    cal_used:'📅 Plane Aufgaben mit konkreten Zeitblöcken. Aufgaben ohne Zeitplan werden 3x häufiger aufgeschoben.',
-    morning_done:'🌅 Starte deine erste Morgenroutine. 5 Minuten Intention + Dankbarkeit verändern den gesamten Energieverlauf des Tages.',
-    pomodoro_used:'⏱️ Nutze den Pomodoro-Timer. 25-Minuten-Sprints überwinden den Startwiderstand – das Gehirn prokrastiniert bei großen Aufgaben, nicht bei kleinen Zeitblöcken.',
-    evening_done:'🌙 Schließe deinen ersten Tag mit der Abendreflexion ab. Was nicht reflektiert wird, wiederholt sich. Der Abschluss-Loop ist entscheidend.',
-    wellbeing_tracked:'🧘 Tracke dein Wohlbefinden 3 Tage. Erst dann werden Energie-Muster sichtbar – und du verstehst wann du produktiv bist und wann nicht.',
-    first_review:'🔄 Führe deinen ersten Wochenrückblick durch. Er ist das mächtigste Werkzeug gegen Prokrastination – macht Muster sichtbar bevor sie sich verfestigen.',
-    journal_7days:'📓 Führe das Journal 7 Tage. Nach einer Woche werden erste Muster sichtbar die du alleine nie bemerkt hättest.',
-    analytics_checked:'📈 Schau dir deine Analytics an. Daten über dich selbst sind Gold – sie zeigen wann und warum du produktiv bist.',
-    ai_coach_used:'🤖 Nutze den FocusAI-Coach für ein tiefes Gespräch. Er kennt deine Vision und Glaubenssätze und gibt personalisierte Impulse.',
-    quarterly_review:'🔄 Führe deinen ersten Quartals-Review durch. Alle 90 Tage: Stimmt meine Vision noch? Was verändert sich?',
-    beliefs_revisited:'💡 Überprüfe deine Glaubenssätze nach 30 Tagen. Nach echten Erfahrungen zeigen sich neue Schichten – und neue Möglichkeiten.'
-  };
-  textEl.textContent=recs[nextStep.id]||`Dein nächster Schritt: "${nextStep.title}" – ${nextStep.why}`;
-  actionEl.innerHTML=`<button class="path-step-action" onclick="${nextStep.action};closePathAndGo('${nextStep.tab}')">Jetzt starten →</button>`;
 }
 

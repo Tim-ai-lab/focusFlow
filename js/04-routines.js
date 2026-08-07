@@ -363,7 +363,7 @@ function selectEmotion(type){
   const btn=document.getElementById('emotion-action-btn');
   btn.textContent=s.btn;
   if(type==='fokus'){btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';openFocus();};}
-  else if(type==='erschoepfung'){btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';showTab('wellbeing',document.querySelectorAll('.tbtn')[6]);};}
+  else if(type==='erschoepfung'){btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';showTab('wellbeing',tabBtn('wellbeing'));};}
   else{btn.onclick=()=>{document.getElementById('emotionmod').style.display='none';};}
   // Log emotion to journal
   const today=new Date().toISOString().split('T')[0];
@@ -470,7 +470,7 @@ function openDailyFlow(){
 
   // Step 1: Energie erfassen (if not done)
   if(!hasWb){
-    steps.push({done:false,time:'1 Min',title:'⚡ Energie erfassen',sub:'Kurzer Wohlbefinden-Check – gibt dir und der App wichtige Daten',action:()=>{document.getElementById('flowmod').style.display='none';showTab('wellbeing',document.querySelectorAll('.tbtn')[6]);}});
+    steps.push({done:false,time:'1 Min',title:'⚡ Energie erfassen',sub:'Kurzer Wohlbefinden-Check – gibt dir und der App wichtige Daten',action:()=>{document.getElementById('flowmod').style.display='none';showTab('wellbeing',tabBtn('wellbeing'));}});
   } else {
     steps.push({done:true,time:'✓',title:'⚡ Energie erfasst',sub:`Energie: ${todayWb.energy}/10 · Schlaf: ${todayWb.sleep}h`});
   }
@@ -485,7 +485,7 @@ function openDailyFlow(){
   // Step 3: MIT (smart recommendation based on energy)
   if(!mitDone){
     const rec=energyLevel>=7?'Hohe Energie → heute eine schwere Aufgabe als MIT wählen':energyLevel&&energyLevel<=4?'Niedrige Energie → heute leichte MIT-Aufgaben wählen':'3 Aufgaben wählen die heute zur Vision beitragen';
-    steps.push({done:false,time:'2 Min',title:'🎯 Tagesziele setzen (MIT)',sub:rec,action:()=>{document.getElementById('flowmod').style.display='none';showTab('mit',document.querySelectorAll('.tbtn')[1]);}});
+    steps.push({done:false,time:'2 Min',title:'🎯 Tagesziele setzen (MIT)',sub:rec,action:()=>{document.getElementById('flowmod').style.display='none';showTab('mit',tabBtn('mit'));}});
   } else {
     steps.push({done:true,time:'✓',title:'🎯 Tagesziele gesetzt',sub:'MIT-Aufgaben für heute definiert'});
   }
