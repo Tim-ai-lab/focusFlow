@@ -138,7 +138,7 @@ function showTab(name,btn){
   if(name==='goals')renderGoals();
   if(name==='mit')renderMIT();
   if(name==='vision')renderVision();
-  if(name==='cal'){if(calView==='month')renderCal();else renderDayView();}
+  if(name==='cal')renderCal();
   if(name==='wellbeing')renderWellbeing();
   if(name==='review')renderReviews();
   if(name==='diary'){journalDate=new Date().toISOString().split('T')[0];renderJournal();}

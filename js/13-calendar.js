@@ -1,94 +1,74 @@
-// FocusFlow · 13-calendar.js — Kalender (Monat/Tag)
+// FocusFlow · 13-calendar.js — Einplanen (Zeitblöcke) + Wohlbefinden
 // Klassisches Script (kein ES-Modul): Top-Level-Deklarationen sind global. Ladereihenfolge: index.html.
 // ═══════════════════════════════════════════════════════════════
-// ── CALENDAR ──  Monats- und Tagesansicht
+// ── EINPLANEN ──  Schlanke Zeitblock-Planung (ersetzt Monats-/Tagesansicht).
+// Zeitblock = Commitment-Praktik: Geplantes wird seltener aufgeschoben.
 // ═══════════════════════════════════════════════════════════════
-function setCalView(view,btn){
-  calView=view;document.querySelectorAll('.cal-vtab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
-  document.getElementById('cal-month-view').style.display=view==='month'?'block':'none';
-  document.getElementById('cal-day-view').style.display=view==='day'?'block':'none';
-  if(view==='month')renderCal();else renderDayView();
-}
+function cleanTaskName(n){return (n||'').replace(/_rec_\d{4}-\d{2}-\d{2}$/,'');}
 function renderCal(){
-  const mn=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-  document.getElementById('cal-title').textContent=mn[calMonth]+' '+calYear;
-  const grid=document.getElementById('cal-grid');grid.innerHTML='';
-  ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el);});
-  const startDow=(new Date(calYear,calMonth,1).getDay()+6)%7;
-  const days=new Date(calYear,calMonth+1,0).getDate();
-  const today=new Date();
-  for(let i=0;i<startDow;i++){const el=document.createElement('div');el.className='cal-day other-month';grid.appendChild(el);}
-  for(let d=1;d<=days;d++){
-    const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const dayTasks=D.tasks.filter(t=>{if(t.start&&t.end)return ds>=t.start&&ds<=t.end;if(t.end)return t.end===ds;if(t.start)return t.start===ds;return false;});
-    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
-    const el=document.createElement('div');
-    el.className='cal-day'+(isToday?' today':'')+(dayTasks.length?' has-tasks':'');
-    el.innerHTML=`<div class="cal-dn">${d}</div>`+dayTasks.slice(0,3).map(t=>`<div class="cal-task-chip ${t.done?'chip-done':'chip-'+t.prio}">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,'').slice(0,10))}</div>`).join('')+(dayTasks.length>3?`<div style="font-size:.6rem;color:var(--mu);font-weight:700">+${dayTasks.length-3}</div>`:'');
-    el.onclick=()=>openDayModalForDate(ds);grid.appendChild(el);
+  // Aufgaben-Auswahl (offene Aufgaben) + Default-Datum heute
+  const sel=document.getElementById('cal-plan-task');
+  if(sel){
+    const open=(D.tasks||[]).filter(t=>!t.done);
+    sel.innerHTML=open.length
+      ? open.map(t=>`<option value="${t.id}">${esc(cleanTaskName(t.name).slice(0,50))}</option>`).join('')
+      : '<option value="">Erst eine Aufgabe anlegen…</option>';
   }
+  const dEl=document.getElementById('cal-plan-date');
+  if(dEl&&!dEl.value)dEl.value=new Date().toISOString().split('T')[0];
+  renderUpcoming();
 }
-function calMove(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCal();}
-function renderDayView(){
-  const dt=new Date(dayViewDate+'T12:00:00');
-  document.getElementById('day-view-title').textContent=dt.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  const timesEl=document.getElementById('day-times');const eventsEl=document.getElementById('day-events');
-  const nowLine=document.getElementById('day-now-line');timesEl.innerHTML='';eventsEl.innerHTML='';eventsEl.appendChild(nowLine);
-  for(let h=0;h<24;h++){
-    const ts=document.createElement('div');ts.className='day-time-slot';ts.textContent=String(h).padStart(2,'0')+':00';timesEl.appendChild(ts);
-    const ln=document.createElement('div');ln.className='day-hour-line';ln.style.top=(h*60)+'px';eventsEl.appendChild(ln);
-    const hl=document.createElement('div');hl.className='day-hour-line half';hl.style.top=(h*60+30)+'px';eventsEl.appendChild(hl);
+function inDay(t,ds){if(t.start&&t.end)return ds>=t.start&&ds<=t.end;if(t.end)return t.end===ds;if(t.start)return t.start===ds;return false;}
+function upcomingRow(t,over){
+  const time=(t.startTime||t.endTime)?((fmtTime(t.startTime)||'')+(t.endTime?' – '+fmtTime(t.endTime):'')):'ganztägig';
+  return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bo)">
+    <div class="tcb${t.done?' on':''}" onclick="toggleTaskCal(${t.id})" style="flex-shrink:0">${t.done?'✓':''}</div>
+    <div style="flex:1;min-width:0"><div style="font-size:.86rem;font-weight:700;${t.done?'text-decoration:line-through;opacity:.6':''}">${esc(cleanTaskName(t.name))}</div>
+      <div style="font-size:.73rem;color:${over?'#991B1B':'var(--mu)'}">${over?'war fällig · ':''}⏱ ${time}</div></div>
+    <button class="delbtn" title="Termin entfernen" onclick="unscheduleTask(${t.id})">✕</button>
+  </div>`;
+}
+function renderUpcoming(){
+  const el=document.getElementById('cal-upcoming');if(!el)return;
+  const today=new Date().toISOString().split('T')[0];
+  const overdue=(D.tasks||[]).filter(t=>!t.done&&(t.end||t.start)&&((t.end||t.start)<today));
+  let html='';
+  if(overdue.length){
+    html+=`<div style="font-size:.78rem;font-weight:800;color:#991B1B;margin:0 0 4px">⚠️ Überfällig geplant</div>`
+      +overdue.map(t=>upcomingRow(t,true)).join('')+`<div style="height:14px"></div>`;
   }
-  D.tasks.filter(t=>{if(!t.start&&!t.end)return false;const ds=dayViewDate;if(t.start&&t.end)return ds>=t.start&&ds<=t.end;if(t.end)return t.end===ds;if(t.start)return t.start===ds;return false;}).forEach(t=>{
-    const sm=t.startTime?timeToMin(t.startTime):0;const em=t.endTime?timeToMin(t.endTime):sm+60;
-    const ev=document.createElement('div');
-    ev.className='day-event '+(t.done?'ev-done':t.prio==='high'?'ev-high':t.prio==='low'?'ev-low':'ev-normal');
-    ev.style.top=sm+'px';ev.style.height=Math.max(22,em-sm)+'px';
-    ev.innerHTML=`<div class="day-event-name">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}</div><div class="day-event-time">${t.startTime?fmtTime(t.startTime):''}${t.endTime?' – '+fmtTime(t.endTime):''}</div>`;
-    ev.onclick=()=>openDayModalForDate(dayViewDate);eventsEl.appendChild(ev);
-  });
-  const isToday=dayViewDate===new Date().toISOString().split('T')[0];
-  nowLine.style.display=isToday?'block':'none';
-  if(isToday){updateNowLine();if(nowLineInterval)clearInterval(nowLineInterval);nowLineInterval=setInterval(updateNowLine,60000);}
-  setTimeout(()=>eventsEl.parentElement&&(eventsEl.parentElement.scrollTop=(isToday?Math.max(0,(new Date().getHours()-1)*60):8*60)),50);
+  let any=false;
+  for(let i=0;i<7;i++){
+    const d=new Date();d.setDate(d.getDate()+i);const ds=d.toISOString().split('T')[0];
+    const tasks=(D.tasks||[]).filter(t=>inDay(t,ds));
+    if(!tasks.length)continue;
+    any=true;
+    const label=i===0?'Heute':i===1?'Morgen':d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'short'});
+    html+=`<div style="font-size:.78rem;font-weight:800;color:var(--p);margin:10px 0 2px">${label}</div>`+tasks.map(t=>upcomingRow(t,false)).join('');
+  }
+  if(!overdue.length&&!any)html='<div class="empty">Noch nichts eingeplant. Plane oben deine erste Aufgabe in einen Zeitblock.</div>';
+  el.innerHTML=html;
 }
-function timeToMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
-function updateNowLine(){const now=new Date();document.getElementById('day-now-line').style.top=(now.getHours()*60+now.getMinutes())+'px';}
-function dayMove(dir){const dt=new Date(dayViewDate+'T12:00:00');dt.setDate(dt.getDate()+dir);dayViewDate=dt.toISOString().split('T')[0];renderDayView();}
-function openDayModalForDate(ds){
-  activeDayStr=ds;
-  const dt=new Date(ds+'T12:00:00');
-  document.getElementById('day-title').textContent='📅 '+dt.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
-  document.getElementById('day-new-task').value='';document.getElementById('day-new-start-time').value='';document.getElementById('day-new-end-time').value='';
-  renderDayTasks(D.tasks.filter(t=>{if(t.start&&t.end)return ds>=t.start&&ds<=t.end;if(t.end)return t.end===ds;if(t.start)return t.start===ds;return false;}));
-  document.getElementById('daymod').style.display='flex';
-  setTimeout(()=>document.getElementById('day-new-task').focus(),100);
+async function planTask(){
+  const id=+gs('cal-plan-task');const date=gs('cal-plan-date');
+  if(!id){toast('Bitte eine Aufgabe wählen.');return;}
+  if(!date){toast('Bitte ein Datum wählen.');return;}
+  const t=(D.tasks||[]).find(x=>x.id===id);if(!t)return;
+  const startTime=gs('cal-plan-start'),endTime=gs('cal-plan-end');
+  t.start=date;t.end=date;t.startTime=startTime;t.endTime=endTime;
+  const r=await sbFetch('/rest/v1/tasks?id=eq.'+id,{method:'PATCH',body:JSON.stringify({start_date:date,end_date:date,start_time:startTime||null,end_time:endTime||null})});
+  if(!r.ok){toast('❌ Fehler beim Einplanen.');return;}
+  logStep('cal_used');
+  toast('📅 Eingeplant – ein Zeitblock ist ein Versprechen an dich selbst.');
+  renderCal();try{renderTasks();renderStats();}catch(e){}
 }
-function renderDayTasks(tasks){
-  const el=document.getElementById('day-tasks');
-  if(!tasks.length){el.innerHTML='<div style="text-align:center;color:var(--mu);padding:10px;font-size:.86rem">Keine Aufgaben – füge unten eine hinzu!</div>';return;}
-  el.innerHTML=tasks.map(t=>`<div class="daytask">
-    <div class="tcb${t.done?' on':''}" onclick="toggleTaskCal(${t.id})">${t.done?'✓':''}</div>
-    <div style="flex:1"><div style="font-size:.87rem;font-weight:700;${t.done?'text-decoration:line-through;opacity:.6':''}">${esc(t.name.replace(/_rec_\d{4}-\d{2}-\d{2}$/,''))}</div>
-    <div style="font-size:.73rem;color:var(--mu)">${t.startTime||t.endTime?(fmtTime(t.startTime)||'')+(t.endTime?' – '+fmtTime(t.endTime):''):'Kein Zeitraum definiert'}</div></div>
-    <span class="badge b-${t.prio}">${t.prio==='high'?'🔴':t.prio==='low'?'⚪':'🔵'}</span>
-    <button class="delbtn" onclick="delTaskCal(${t.id})">🗑</button>
-  </div>`).join('');
-}
-async function toggleTaskCal(id){await toggleTask(id);refreshCalDay();}
-async function delTaskCal(id){await delTask(id);refreshCalDay();}
-function refreshCalDay(){
-  const tasks=D.tasks.filter(t=>{if(t.start&&t.end)return activeDayStr>=t.start&&activeDayStr<=t.end;if(t.end)return t.end===activeDayStr;if(t.start)return t.start===activeDayStr;return false;});
-  renderDayTasks(tasks);if(calView==='month')renderCal();else renderDayView();
-}
-async function addTaskFromCal(){
-  const name=document.getElementById('day-new-task').value.trim();if(!name){toast('Bitte Aufgabe eingeben!');return;}
-  const id=Date.now();const startTime=gs('day-new-start-time'),endTime=gs('day-new-end-time');
-  const task={id,name,prio:gs('day-new-prio'),diff:gs('day-new-diff'),special:'',lifeArea:'',recurring:'',start:activeDayStr,end:activeDayStr,startTime,endTime,dep:'',done:false};
-  const r=await sbFetch('/rest/v1/tasks',{method:'POST',body:JSON.stringify({id,user_id:UID,name,prio:task.prio,diff:task.diff,special:'',life_area:null,recurring:null,start_date:activeDayStr,end_date:activeDayStr,start_time:startTime||null,end_time:endTime||null,dep:null,done:false})});
+async function toggleTaskCal(id){await toggleTask(id);renderUpcoming();}
+async function unscheduleTask(id){
+  const t=(D.tasks||[]).find(x=>x.id===id);if(!t)return;
+  t.start='';t.end='';t.startTime='';t.endTime='';
+  const r=await sbFetch('/rest/v1/tasks?id=eq.'+id,{method:'PATCH',body:JSON.stringify({start_date:null,end_date:null,start_time:null,end_time:null})});
   if(!r.ok){toast('❌ Fehler.');return;}
-  D.tasks.unshift(task);document.getElementById('day-new-task').value='';
-  logStep('cal_used');toast('✅ Aufgabe hinzugefügt!');refreshCalDay();renderTasks();renderStats();updateDepSelect();
+  toast('Termin entfernt.');renderCal();try{renderTasks();}catch(e){}
 }
 
 // ─── Wellbeing (Speichern & Rendern) ───

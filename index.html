@@ -356,33 +356,24 @@
       </div>
     </div>
 
-    <!-- CALENDAR -->
+    <!-- EINPLANEN (schlanke Zeitblock-Planung statt voller Kalender) -->
     <div class="tpanel" id="tab-cal">
       <div class="sec">
-        <div class="cal-view-tabs">
-          <button class="cal-vtab on" onclick="setCalView('month',this)">📅 Monat</button>
-          <button class="cal-vtab" onclick="setCalView('day',this)">🕐 Tag</button>
+        <div class="shdr"><div class="stitle">📅 Aufgaben einplanen</div></div>
+        <p class="sdesc">Geplantes wird deutlich seltener aufgeschoben – ein fester Zeitblock ist ein Versprechen an dich selbst.</p>
+        <div class="row">
+          <select class="sel" id="cal-plan-task" style="flex:2;min-width:160px"></select>
+          <div style="flex:1;min-width:130px"><div class="flbl">Datum</div><input type="date" class="sel" id="cal-plan-date" style="width:100%"></div>
         </div>
-        <div id="cal-month-view">
-          <div class="cal-hdr">
-            <button class="cal-nav" onclick="calMove(-1)">‹</button>
-            <div class="cal-title" id="cal-title"></div>
-            <button class="cal-nav" onclick="calMove(1)">›</button>
-          </div>
-          <div class="cal-grid" id="cal-grid"></div>
+        <div class="row" style="align-items:flex-end">
+          <div style="flex:1;min-width:90px"><div class="flbl">Von (optional)</div><input type="time" class="sel" id="cal-plan-start" style="width:100%"></div>
+          <div style="flex:1;min-width:90px"><div class="flbl">Bis (optional)</div><input type="time" class="sel" id="cal-plan-end" style="width:100%"></div>
+          <button class="addbtn" onclick="planTask()">📅 Einplanen</button>
         </div>
-        <div id="cal-day-view" style="display:none">
-          <div class="day-view-hdr">
-            <button class="day-nav-btn" onclick="dayMove(-1)">‹ Vorher</button>
-            <div class="day-title-big" id="day-view-title"></div>
-            <button class="day-nav-btn" onclick="dayMove(1)">Nächster ›</button>
-          </div>
-          <div class="day-grid">
-            <div class="day-times" id="day-times"></div>
-            <div class="day-events" id="day-events"><div class="day-now-line" id="day-now-line" style="display:none"><div class="day-now-dot"></div></div></div>
-          </div>
-          <div style="margin-top:10px;text-align:center"><button class="addbtn" onclick="openDayModalForDate(dayViewDate)">+ Aufgabe für diesen Tag</button></div>
-        </div>
+      </div>
+      <div class="sec">
+        <div class="stitle" style="margin-bottom:12px">Deine nächsten 7 Tage</div>
+        <div id="cal-upcoming"><div class="empty">Noch nichts eingeplant.</div></div>
       </div>
     </div>
 
@@ -548,25 +539,6 @@
   </div>
   <div style="opacity:.3;font-size:.72rem;margin-top:7px">Wird als Aufgabe für später gespeichert – du bleibst im Fokus.</div>
   <button class="fexit" onclick="closeFocus()">Beenden</button>
-</div>
-
-<!-- DAY MODAL -->
-<div class="modal-bg" id="daymod">
-  <div class="modal-card">
-    <div class="modal-title" id="day-title">Aufgaben</div>
-    <div id="day-tasks"></div>
-    <div style="margin-top:14px;border-top:1px solid var(--bo);padding-top:14px">
-      <div class="flbl" style="margin-bottom:8px">+ Neue Aufgabe für diesen Tag</div>
-      <div class="row"><input class="ti" id="day-new-task" placeholder="Aufgabe..." onkeydown="if(event.key==='Enter')addTaskFromCal()"><select class="sel" id="day-new-prio"><option value="high">🔴 Hoch</option><option value="normal" selected>🔵 Normal</option><option value="low">⚪ Niedrig</option></select></div>
-      <div class="row">
-        <select class="sel" id="day-new-diff" style="flex:1"><option value="easy">😊 Leicht</option><option value="medium" selected>😐 Mittel</option><option value="hard">😰 Schwer</option></select>
-        <input type="time" class="sel" id="day-new-start-time" style="flex:1">
-        <input type="time" class="sel" id="day-new-end-time" style="flex:1">
-      </div>
-      <button class="addbtn" style="width:100%;margin-top:8px" onclick="addTaskFromCal()">+ Hinzufügen</button>
-    </div>
-    <button class="modal-close" onclick="document.getElementById('daymod').style.display='none'">Schließen</button>
-  </div>
 </div>
 
 <!-- EMOTION CHECK MODAL -->
