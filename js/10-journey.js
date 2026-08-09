@@ -126,7 +126,7 @@ function renderJourney(){
     if(topGoal){
       const gms=topGoal.milestones||[];const gdn=gms.filter(m=>m.done).length;
       const gpct=gms.length?Math.round(gdn/gms.length*100):0;
-      html+=`<div onclick="showTab('goals',document.getElementById('tbtn-goals'))" style="cursor:pointer;font-size:.8rem;font-weight:700;background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px;display:flex;justify-content:space-between;gap:8px"><span>🎯 ${esc(topGoal.title)}</span><span style="color:var(--p);white-space:nowrap">${gpct}%</span></div>`;
+      html+=`<div onclick="showTab('goals',null)" style="cursor:pointer;font-size:.8rem;font-weight:700;background:rgba(255,255,255,.65);border:1px solid var(--bo);border-radius:var(--r3);padding:8px 11px;display:flex;justify-content:space-between;gap:8px"><span>🎯 ${esc(topGoal.title)}</span><span style="color:var(--p);white-space:nowrap">${gpct}%</span></div>`;
     }
     html+=`<div><button onclick="startOnboarding()" style="padding:6px 12px;border:2px solid var(--bo);background:#fff;border-radius:var(--r3);cursor:pointer;font-size:.76rem;font-weight:700;color:var(--mu)">↻ Test wiederholen</button></div>
     </div>`;

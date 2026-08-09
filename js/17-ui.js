@@ -94,13 +94,16 @@ function toggleTaskDetails(){
 // Weg-Schritte. Keine Feature-Bibliothek – der Rest bleibt hinter "alle Module".
 let navShowAll=false;
 function toggleNavAll(){navShowAll=!navShowAll;updateNavVisibility();}
+// Plan-Hub: alte Tab-Namen (tasks/mit/goals) laufen jetzt auf ein Tab "plan"
+// und scrollen zur jeweiligen Sektion.
+const PLAN_ALIAS={tasks:'plan-tasks',mit:'plan-today',goals:'plan-goals'};
 function updateNavVisibility(){
   const nav=document.getElementById('tnav');if(!nav)return;
-  const rel=new Set(['journey','goals','me','tasks']);
+  const rel=new Set(['journey','plan','me']);
   const ob=D&&D.vision&&D.vision.onboarding;
   if(ob&&ob.done){
     const cat=journeyCatalog();
-    (ob.journey||[]).forEach(id=>{const s=cat[id];if(s&&s.tab&&!stepStatus(id).done)rel.add(s.tab);});
+    (ob.journey||[]).forEach(id=>{const s=cat[id];if(s&&s.tab&&!stepStatus(id).done)rel.add(PLAN_ALIAS[s.tab]?'plan':s.tab);});
   }
   nav.querySelectorAll('.tbtn').forEach(b=>{
     if(b.id==='tbtn-more'){b.textContent=navShowAll?'‹ nur mein Weg':'⋯ alle Module';return;}
@@ -128,21 +131,31 @@ function tabBtn(name){
     return m&&m[1]===name;
   })||null;
 }
+// Plan-Hub: Heute (MIT), Aufgaben und Ziele in einem Tab rendern.
+function renderPlan(){
+  try{renderMIT();}catch(e){console.error('renderMIT',e);}
+  try{renderTasks();}catch(e){console.error('renderTasks',e);}
+  try{renderGoals();}catch(e){console.error('renderGoals',e);}
+  try{updateDepSelect();}catch(e){}
+}
 function showTab(name,btn){
+  // Aliase auf den Plan-Hub (Sektion merken, danach dorthin scrollen)
+  let anchor='';
+  if(PLAN_ALIAS[name]){anchor=PLAN_ALIAS[name];name='plan';btn=tabBtn('plan');}
   document.querySelectorAll('.tpanel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
   const pnl=document.getElementById('tab-'+name);if(pnl)pnl.classList.add('on');
   if(btn)btn.classList.add('on');
   if(name==='journey')renderJourney();
   if(name==='me')renderMyBereich();
-  if(name==='goals')renderGoals();
-  if(name==='mit')renderMIT();
+  if(name==='plan')renderPlan();
   if(name==='vision')renderVision();
   if(name==='cal')renderCal();
   if(name==='wellbeing')renderWellbeing();
   if(name==='review')renderReviews();
   if(name==='diary'){journalDate=new Date().toISOString().split('T')[0];renderJournal();}
   if(name==='analytics')renderAnalytics();
+  if(anchor){const el=document.getElementById(anchor);if(el)setTimeout(()=>{try{el.scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}},60);}
 }
 
 let tTO;

@@ -371,7 +371,9 @@ function completeComfortChallenge(){
   try{renderJourney();}catch(e){}
 }
 function closePathAndGo(tab){
-  const btn=Array.from(document.querySelectorAll('.tbtn')).find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+tab+"'"));
-  if(btn)btn.click();
+  const btn=tabBtn(tab);
+  if(btn){btn.click();return;}
+  // Aliasierter/entfernter Tab (tasks/mit/goals → Plan-Hub): direkt über showTab
+  showTab(tab,null);
 }
 
