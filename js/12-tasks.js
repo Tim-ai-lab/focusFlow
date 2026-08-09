@@ -17,6 +17,8 @@ async function addTask(){
   if(task.lifeArea)logStep('first_tasks');
   if(start||end)logStep('cal_used');
   D.tasks.unshift(task);document.getElementById('tn').value='';
+  const gid=gs('tgoal');
+  if(gid){taskGoals()[id]=gid;try{saveProfile();}catch(e){}}
   renderTasks();renderStats();updateDepSelect();renderLifeGrid();
 }
 function generateRecurring(){
@@ -74,6 +76,16 @@ function updateDepSelect(){
   D.tasks.forEach(t=>sel.innerHTML+=`<option value="${t.id}">${esc(t.name.slice(0,28))}</option>`);
   sel.value=cur;
 }
+// Aufgabe↔Ziel: Zuordnung liegt im Profil-JSON (D.vision.taskGoals), kein DB-Schema.
+function taskGoals(){if(!D.vision)D.vision={};if(!D.vision.taskGoals)D.vision.taskGoals={};return D.vision.taskGoals;}
+function taskGoal(id){const gid=taskGoals()[id];return gid?((D.vision.goals||[]).find(g=>String(g.id)===String(gid))):null;}
+function populateGoalSelect(){
+  const sel=document.getElementById('tgoal');if(!sel)return;
+  const cur=sel.value;
+  const goals=((D.vision&&D.vision.goals)||[]).filter(g=>!g.done);
+  sel.innerHTML='<option value="">Kein Ziel</option>'+goals.map(g=>`<option value="${g.id}">🎯 ${esc(g.title.slice(0,40))}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+}
 function renderTasks(){
   const list=document.getElementById('tlist');
   const sorted=[...D.tasks].sort((a,b)=>{if(a.special==='frog'&&b.special!=='frog')return -1;if(b.special==='frog'&&a.special!=='frog')return 1;const p={high:0,normal:1,low:2};return p[a.prio]-p[b.prio];});
@@ -83,6 +95,7 @@ function renderTasks(){
   list.innerHTML=sorted.map(t=>{
     const ov=isOverdue(t);
     const depT=t.dep?D.tasks.find(x=>x.id==t.dep):null;
+    const goal=taskGoal(t.id);
     let dateTxt='';
     if(t.start&&t.end)dateTxt=fmtDate(t.start)+(t.startTime?' '+fmtTime(t.startTime):'')+' → '+fmtDate(t.end)+(t.endTime?' '+fmtTime(t.endTime):'');
     else if(t.end)dateTxt='Bis '+fmtDate(t.end);
@@ -98,6 +111,7 @@ function renderTasks(){
           <span class="badge b-${t.diff}">${t.diff==='easy'?'😊 Leicht':t.diff==='hard'?'😰 Schwer':'😐 Mittel'}</span>
           ${t.special==='frog'?'<span class="badge b-frog">🐸 Frog</span>':''}
           ${t.special==='2min'?'<span class="badge b-2min">⚡ 2 Min</span>':''}
+          ${goal?`<span class="badge" style="background:#EEF2FF;border:1.5px solid #C7D2FE;color:#3730A3">🎯 ${esc(goal.title.slice(0,18))}</span>`:''}
           ${t.lifeArea?`<span class="badge" style="background:var(--bg);border:1.5px solid var(--bo)">${LA_BADGE[t.lifeArea]||''} ${t.lifeArea}</span>`:''}
           ${isRec?`<span class="badge b-rec">${REC_LBL[t.recurring]||'🔁'}</span>`:''}
           ${depT?'<span class="badge b-dep">🔗 Abhängig</span>':''}
@@ -122,22 +136,73 @@ function mitPlans(){
   if(!D.vision.mitPlans||D.vision.mitPlans.date!==today)D.vision.mitPlans={date:today,plans:['','','']};
   return D.vision.mitPlans.plans;
 }
+// Verknüpfung Tagesziel-Slot → echte Aufgabe (id), tagesgebunden im Profil-JSON.
+function mitLinkIds(){
+  const today=new Date().toISOString().split('T')[0];
+  if(!D.vision)D.vision={};
+  if(!D.vision.mitLinks||D.vision.mitLinks.date!==today)D.vision.mitLinks={date:today,ids:['','','']};
+  return D.vision.mitLinks.ids;
+}
 function renderMIT(){
-  const plans=mitPlans();
+  const plans=mitPlans();const links=mitLinkIds();
+  const chosen=new Set(links.filter(Boolean).map(String));
+  const openTasks=(D.tasks||[]).filter(t=>!t.done);
   document.getElementById('mitslots').innerHTML=['1️⃣','2️⃣','3️⃣'].map((n,i)=>{
-    const v=D.mitTasks[i]||'',done=D.mitDone[i];
-    return `<div class="mitslot${v?' filled':''}${done?' done':''}">
+    const linkId=links[i];
+    const linkedTask=linkId?(D.tasks||[]).find(t=>String(t.id)===String(linkId)):null;
+    // Verknüpfte Aufgabe ist Quelle der Wahrheit; sonst Legacy-Freitext (abwärtskompatibel)
+    const name=linkedTask?cleanTaskName(linkedTask.name):(D.mitTasks[i]||'');
+    const done=linkedTask?linkedTask.done:!!D.mitDone[i];
+    if(!name){
+      // Leerer Slot: Aufgabe aus dem Vorrat wählen (verbindet Heute mit den Aufgaben)
+      const opts=openTasks.filter(t=>!chosen.has(String(t.id))).map(t=>`<option value="${t.id}">${esc(cleanTaskName(t.name).slice(0,48))}</option>`).join('');
+      return `<div class="mitslot">
+        <span>${n}</span>
+        <select class="sel" style="flex:1;min-width:0" onchange="setMitFromTask(${i},this.value)">
+          <option value="">${openTasks.length?'＋ Aufgabe als Tagesziel wählen…':'Erst oben eine Aufgabe anlegen…'}</option>
+          ${opts}
+        </select>
+      </div>`;
+    }
+    return `<div class="mitslot filled${done?' done':''}">
       <div class="mitcb${done?' on':''}" onclick="togMIT(${i})">${done?'✓':''}</div>
       <span>${n}</span>
       <div style="flex:1;min-width:0">
-        <input style="width:100%" value="${esc(v)}" placeholder="Wichtigste Aufgabe ${i+1}..." oninput="D.mitTasks[${i}]=this.value" onblur="saveMIT();renderMIT()">
-        ${v&&!done?`<input style="width:100%;margin-top:5px;font-size:.78rem;padding:6px 10px;border:1.5px dashed var(--bo);border-radius:var(--r3);background:var(--bg);outline:none;font-family:inherit;color:var(--txt)" value="${esc(plans[i]||'')}" placeholder="Wenn–dann: Wann &amp; wo startest du? (z. B. „Nach dem Mittagessen am Schreibtisch")" oninput="mitPlans()[${i}]=this.value" onblur="try{saveProfile()}catch(e){}">`:''}
-        ${v&&done&&plans[i]?`<div style="font-size:.72rem;color:var(--mu);margin-top:4px">⏱ ${esc(plans[i])}</div>`:''}
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;min-width:0;font-size:.9rem;font-weight:600;${done?'text-decoration:line-through;opacity:.6':''}">${esc(name)}</div>
+          <button class="delbtn" title="Tagesziel entfernen" onclick="clearMit(${i})">✕</button>
+        </div>
+        ${!done?`<input style="width:100%;margin-top:5px;font-size:.78rem;padding:6px 10px;border:1.5px dashed var(--bo);border-radius:var(--r3);background:var(--bg);outline:none;font-family:inherit;color:var(--txt)" value="${esc(plans[i]||'')}" placeholder="Wenn–dann: Wann &amp; wo startest du?" oninput="mitPlans()[${i}]=this.value" onblur="try{saveProfile()}catch(e){}">`:''}
+        ${done&&plans[i]?`<div style="font-size:.72rem;color:var(--mu);margin-top:4px">⏱ ${esc(plans[i])}</div>`:''}
       </div>
     </div>`;
   }).join('');
 }
-async function togMIT(i){D.mitDone[i]=!D.mitDone[i];if(D.mitDone[i]){D.todayScore+=25;toast('🎯 Hauptaufgabe erledigt! +25 Punkte');saveStats();logStep('mit_used');}await saveMIT();renderMIT();renderStats();}
+async function setMitFromTask(i,taskId){
+  const t=(D.tasks||[]).find(x=>String(x.id)===String(taskId));if(!t)return;
+  mitLinkIds()[i]=t.id;D.mitTasks[i]=cleanTaskName(t.name);D.mitDone[i]=t.done;
+  await saveMIT();try{saveProfile();}catch(e){}
+  renderMIT();
+}
+async function clearMit(i){
+  mitLinkIds()[i]='';D.mitTasks[i]='';D.mitDone[i]=false;mitPlans()[i]='';
+  await saveMIT();try{saveProfile();}catch(e){}
+  renderMIT();
+}
+async function togMIT(i){
+  const id=mitLinkIds()[i];
+  if(id){
+    // Verknüpfte Aufgabe togglen (zählt Punkte/Stats über toggleTask – kein Doppel)
+    const t=(D.tasks||[]).find(x=>String(x.id)===String(id));
+    if(t){await toggleTask(id);D.mitDone[i]=t.done;if(t.done)logStep('mit_used');}
+    await saveMIT();renderMIT();renderStats();
+    return;
+  }
+  // Legacy-Freitext ohne Verknüpfung: eigenes Punkte-Handling wie bisher
+  D.mitDone[i]=!D.mitDone[i];
+  if(D.mitDone[i]){D.todayScore+=25;toast('🎯 Hauptaufgabe erledigt! +25 Punkte');saveStats();logStep('mit_used');}
+  await saveMIT();renderMIT();renderStats();
+}
 
 // ═══════════════════════════════════════════════════════════════
 // ── ROUTINES (Pomodoro) ──  Timer, Fokus-Modus

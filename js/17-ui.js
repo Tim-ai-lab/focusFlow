@@ -133,10 +133,11 @@ function tabBtn(name){
 }
 // Plan-Hub: Heute (MIT), Aufgaben und Ziele in einem Tab rendern.
 function renderPlan(){
-  try{renderMIT();}catch(e){console.error('renderMIT',e);}
-  try{renderTasks();}catch(e){console.error('renderTasks',e);}
   try{renderGoals();}catch(e){console.error('renderGoals',e);}
+  try{renderTasks();}catch(e){console.error('renderTasks',e);}
+  try{renderMIT();}catch(e){console.error('renderMIT',e);}
   try{updateDepSelect();}catch(e){}
+  try{populateGoalSelect();}catch(e){}
 }
 function showTab(name,btn){
   // Aliase auf den Plan-Hub (Sektion merken, danach dorthin scrollen)

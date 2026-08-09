@@ -173,32 +173,41 @@
          renderGoals unverändert weiterlaufen. Alte Tab-Namen (tasks/mit/goals)
          werden in showTab hierher umgeleitet und scrollen zur Sektion. -->
     <div class="tpanel" id="tab-plan">
-      <!-- HEUTE (Tagesziele / MIT) -->
-      <div id="plan-today">
+      <!-- Leiter: Ziel (Wozu) → Aufgabe (Was) → Heute (Jetzt) -->
+      <!-- ZIELE -->
+      <div id="plan-goals">
         <div class="sec">
-          <div class="shdr"><div class="stitle">✅ Heute – deine 3 Hauptaufgaben</div><span style="font-size:.74rem;font-weight:700;color:var(--ac);background:#FFF7ED;border-radius:20px;padding:3px 10px;border:1px solid #FED7AA">MIT-Methode</span></div>
-          <p class="sdesc">Fokussiere dich auf maximal 3 Aufgaben pro Tag – die, die dich deinen Zielen wirklich näherbringen.</p>
-          <div id="mitslots"></div>
-          <div class="info-box info-orange">💡 <strong>Prokrastinations-Tipp:</strong> Starte mit der Aufgabe, vor der du dich am meisten drückst. Danach fühlt sich alles leichter an!</div>
+          <div class="shdr"><div class="stitle">🎯 Ziele & Meilensteine</div></div>
+          <p class="sdesc">Wozu das Ganze? Definiere konkrete Ziele mit Deadline und zerlege sie in Meilensteine – das Fundament deiner Aufgaben.</p>
+          <div class="row"><input class="ti" id="goal-title" placeholder="Neues Ziel..." onkeydown="if(event.key==='Enter')addGoal()"><button class="addbtn" id="add-goal-btn" onclick="addGoal()">+ Ziel</button></div>
+          <div class="row">
+            <select class="sel" id="goal-area"><option value="">Kein Lebensbereich</option><option value="career">💼 Karriere</option><option value="health">💪 Gesundheit</option><option value="relations">❤️ Beziehungen</option><option value="finance">💰 Finanzen</option><option value="personal">🧠 Persönlichkeit</option><option value="meaning">✨ Sinn & Zweck</option></select>
+            <div style="flex:1;min-width:130px"><div class="flbl">Ziel-Deadline (optional)</div><input type="date" class="sel" id="goal-deadline" style="width:100%"></div>
+          </div>
         </div>
+        <div id="goals-list"></div>
       </div>
       <!-- AUFGABEN -->
       <div id="plan-tasks">
         <div class="sec">
           <div class="shdr"><div class="stitle">📋 Aufgaben</div><span style="font-size:.74rem;color:var(--mu);font-weight:700" id="task-counter"></span></div>
+          <p class="sdesc">Was ist zu tun? Zerlege deine Ziele in konkrete, machbare Aufgaben – dein Vorrat für die Tagesauswahl.</p>
           <div id="frogtip" style="display:none" class="frogtip">🐸 Eat the Frog: Starte mit deiner schwersten Aufgabe!</div>
           <div style="margin-bottom:14px">
             <!-- Schnell-Eingabe: nur Name + Hinzufügen. Weitere Felder hinter "Details". -->
-            <div class="row"><input class="ti" id="tn" placeholder="Aufgabe eingeben..." onkeydown="if(event.key==='Enter')addTask()"><button class="addbtn" id="add-task-btn" onclick="addTask()">+ Hinzufügen</button><button class="lbtn" id="task-details-btn" onclick="toggleTaskDetails()" title="Priorität, Termin, Lebensbereich, Wiederholung …">⌄ Details</button></div>
+            <div class="row"><input class="ti" id="tn" placeholder="Aufgabe eingeben..." onkeydown="if(event.key==='Enter')addTask()"><button class="addbtn" id="add-task-btn" onclick="addTask()">+ Hinzufügen</button><button class="lbtn" id="task-details-btn" onclick="toggleTaskDetails()" title="Ziel, Priorität, Termin, Lebensbereich, Wiederholung …">⌄ Details</button></div>
             <div id="task-details" style="display:none">
+            <div class="row">
+              <select class="sel" id="tgoal" title="Diese Aufgabe zahlt auf welches Ziel ein?"><option value="">Kein Ziel</option></select>
+              <select class="sel" id="tlife"><option value="">Kein Lebensbereich</option><option value="career">💼 Karriere</option><option value="health">💪 Gesundheit</option><option value="relations">❤️ Beziehungen</option><option value="finance">💰 Finanzen</option><option value="personal">🧠 Persönlichkeit</option><option value="meaning">✨ Sinn & Zweck</option></select>
+            </div>
             <div class="row">
               <select class="sel" id="tprio"><option value="high">🔴 Hoch</option><option value="normal" selected>🔵 Normal</option><option value="low">⚪ Niedrig</option></select>
               <select class="sel" id="tdiff"><option value="easy">😊 Leicht</option><option value="medium" selected>😐 Mittel</option><option value="hard">😰 Schwer</option></select>
               <select class="sel" id="tsp"><option value="">Kein Spezial</option><option value="frog">🐸 Frog</option><option value="2min">⚡ 2-Min</option></select>
-              <select class="sel" id="tlife"><option value="">Kein Lebensbereich</option><option value="career">💼 Karriere</option><option value="health">💪 Gesundheit</option><option value="relations">❤️ Beziehungen</option><option value="finance">💰 Finanzen</option><option value="personal">🧠 Persönlichkeit</option><option value="meaning">✨ Sinn & Zweck</option></select>
+              <select class="sel" id="trec"><option value="">Keine Wiederholung</option><option value="daily">🔁 Täglich</option><option value="weekly">📅 Wöchentlich</option><option value="monthly">📆 Monatlich</option></select>
             </div>
             <div class="row">
-              <select class="sel" id="trec"><option value="">Keine Wiederholung</option><option value="daily">🔁 Täglich</option><option value="weekly">📅 Wöchentlich</option><option value="monthly">📆 Monatlich</option></select>
               <div style="flex:1;min-width:110px"><div class="flbl">Startdatum</div><input type="date" class="sel" id="tstart" style="width:100%"></div>
               <div style="flex:1;min-width:70px"><div class="flbl">Startzeit</div><input type="time" class="sel" id="tstart-time" style="width:100%"></div>
               <div style="flex:1;min-width:110px"><div class="flbl">Enddatum</div><input type="date" class="sel" id="tend" style="width:100%"></div>
@@ -212,18 +221,14 @@
           <div class="tlist" id="tlist"><div class="empty">Noch keine Aufgaben 🚀</div></div>
         </div>
       </div>
-      <!-- ZIELE -->
-      <div id="plan-goals">
+      <!-- HEUTE (Tagesziele / MIT – aus den Aufgaben oben gewählt) -->
+      <div id="plan-today">
         <div class="sec">
-          <div class="shdr"><div class="stitle">🎯 Ziele & Meilensteine</div></div>
-          <p class="sdesc">Definiere konkrete Ziele mit Deadline und zerlege sie in Meilensteine. Kleine Etappen machen große Ziele erreichbar – und sichtbar.</p>
-          <div class="row"><input class="ti" id="goal-title" placeholder="Neues Ziel..." onkeydown="if(event.key==='Enter')addGoal()"><button class="addbtn" id="add-goal-btn" onclick="addGoal()">+ Ziel</button></div>
-          <div class="row">
-            <select class="sel" id="goal-area"><option value="">Kein Lebensbereich</option><option value="career">💼 Karriere</option><option value="health">💪 Gesundheit</option><option value="relations">❤️ Beziehungen</option><option value="finance">💰 Finanzen</option><option value="personal">🧠 Persönlichkeit</option><option value="meaning">✨ Sinn & Zweck</option></select>
-            <div style="flex:1;min-width:130px"><div class="flbl">Ziel-Deadline (optional)</div><input type="date" class="sel" id="goal-deadline" style="width:100%"></div>
-          </div>
+          <div class="shdr"><div class="stitle">✅ Heute – deine 3 Hauptaufgaben</div><span style="font-size:.74rem;font-weight:700;color:var(--ac);background:#FFF7ED;border-radius:20px;padding:3px 10px;border:1px solid #FED7AA">MIT-Methode</span></div>
+          <p class="sdesc">Was zählt jetzt? Wähle max. 3 Aufgaben aus deinem Vorrat als Fokus für heute.</p>
+          <div id="mitslots"></div>
+          <div class="info-box info-orange">💡 <strong>Prokrastinations-Tipp:</strong> Starte mit der Aufgabe, vor der du dich am meisten drückst. Danach fühlt sich alles leichter an!</div>
         </div>
-        <div id="goals-list"></div>
       </div>
     </div>
 
