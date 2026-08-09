@@ -42,17 +42,30 @@ async function sbFetch(path,opts={},_retried){
 }
 
 async function sbAuth(path,body){
+  let res;
   try{
-    const res=await fetchWithTimeout(SB_URL+'/auth/v1'+path,{
+    res=await fetchWithTimeout(SB_URL+'/auth/v1'+path,{
       method:'POST',
       headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
-    return await res.json();
   }catch(e){
-    console.warn('sbAuth failed:',e.message);
-    return{error:{message:'Verbindung fehlgeschlagen. Bitte Internetverbindung prüfen.'}};
+    // NUR hier ist es wirklich ein Netz-/Timeout-Problem.
+    console.warn('sbAuth network error:',path,e.name,e.message);
+    return{error:{message:e.name==='AbortError'
+      ?'Zeitüberschreitung – der Server antwortet nicht. Bitte erneut versuchen.'
+      :'Verbindung fehlgeschlagen. Bitte Internetverbindung prüfen.'}};
   }
+  // Antwort ist angekommen. Ein LEERER Body (z. B. /recover 200 OK) ist KEIN
+  // Fehler – nur parsen, wenn Inhalt da ist, sonst als Erfolg ({}) behandeln.
+  let data={};
+  try{const t=await res.text();data=t?JSON.parse(t):{};}
+  catch(_){data={};}
+  // Fehler-Status ohne verwertbaren Fehler-Body → klare Status-Meldung.
+  if(!res.ok && !(data&&(data.error||data.msg||data.error_description||data.error_code))){
+    return{error:{message:'Server-Fehler ('+res.status+'). Bitte später erneut versuchen.'}};
+  }
+  return data;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -130,8 +143,10 @@ async function resetPassword(){
   btn.disabled=true;btn.textContent='Senden...';
   const r=await sbAuth('/recover',{email:e});
   btn.disabled=false;btn.textContent='Link senden';
-  if(r&&r.error){setErr(r.error.message||'Fehler beim Senden.');return;}
-  setOk('✅ Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet. Prüfe dein Postfach.');
+  // Fehler in allen GoTrue-Formaten erkennen (error-Objekt/-String, msg, error_description, code)
+  const errMsg=r&&((r.error&&r.error.message)||(typeof r.error==='string'?r.error:'')||r.error_description||r.msg);
+  if(errMsg){setErr(errMsg);return;}
+  setOk('✅ Falls ein Konto mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet. Prüfe dein Postfach (auch den Spam-Ordner).');
 }
 async function register(){
   const n=gv('rn'),e=gv('re'),p=gv('rp');
